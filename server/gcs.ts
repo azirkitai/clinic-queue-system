@@ -82,12 +82,14 @@ router.post("/upload", (req, res, next) => {
     const filename = `${Date.now()}_${req.file.originalname}`;
     const blob = bucket.file(filename);
     
-    // Create write stream
+    // Create write stream with public access metadata
     const stream = blob.createWriteStream({ 
       resumable: false,
       metadata: {
         contentType: req.file.mimetype,
-      }
+        cacheControl: 'public, max-age=31536000',
+      },
+      predefinedAcl: 'publicRead'
     });
 
     // Handle stream events
@@ -96,9 +98,6 @@ router.post("/upload", (req, res, next) => {
       stream.on("error", reject);
       stream.end(req.file!.buffer);
     });
-
-    // Make file publicly accessible
-    await blob.makePublic();
 
     // Return public URL
     const url = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
