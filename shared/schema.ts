@@ -177,6 +177,7 @@ export const insertMediaSchema = createInsertSchema(media).pick({
   name: true,
   filename: true,
   url: true,
+  data: true,
   type: true,
   mimeType: true,
   size: true,

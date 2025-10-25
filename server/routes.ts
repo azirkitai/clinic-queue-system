@@ -1237,7 +1237,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload media file directly to database (base64-encoded)
   app.post("/api/media/upload", requireAuth, multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+    limits: { 
+      fileSize: 5 * 1024 * 1024, // 5MB limit (reasonable for database storage)
+      files: 1
+    },
+    fileFilter: (req, file, cb) => {
+      // Only allow images
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only image files are allowed'));
+      }
+    }
   }).single('file'), async (req, res) => {
     try {
       if (!req.file) {
@@ -1248,6 +1259,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const filename = req.file.originalname;
       const mimeType = req.file.mimetype;
       const size = req.file.size;
+      
+      // Additional validation
+      if (size > 5 * 1024 * 1024) {
+        return res.status(400).json({ error: "File size exceeds 5MB limit" });
+      }
       
       // Convert buffer to base64
       const base64Data = req.file.buffer.toString('base64');
@@ -1273,8 +1289,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.status(201).json(media);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error uploading media:", error);
+      
+      // Handle multer file size error
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: "File size exceeds 5MB limit" });
+      }
+      
+      // Handle file type error
+      if (error.message && error.message.includes('Only image files')) {
+        return res.status(400).json({ error: "Only image files are allowed" });
+      }
+      
       res.status(500).json({ error: "Failed to upload file" });
     }
   });

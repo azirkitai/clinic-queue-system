@@ -97,7 +97,7 @@ export interface IStorage {
   
   // Media methods
   getMedia(userId: string): Promise<Media[]>;
-  getMediaById(id: string, userId: string): Promise<Media | undefined>;
+  getMediaById(id: string, userId?: string): Promise<Media | undefined>;
   createMedia(media: InsertMedia): Promise<Media>;
   updateMedia(id: string, updates: Partial<Media>, userId: string): Promise<Media | undefined>;
   deleteMedia(id: string, userId: string): Promise<boolean>;
@@ -828,9 +828,11 @@ export class MemStorage implements IStorage {
     return Array.from(this.media.values()).filter(m => m.userId === userId);
   }
 
-  async getMediaById(id: string, userId: string): Promise<Media | undefined> {
+  async getMediaById(id: string, userId?: string): Promise<Media | undefined> {
     const media = this.media.get(id);
-    if (!media || media.userId !== userId) return undefined;
+    if (!media) return undefined;
+    // If userId is provided, check ownership
+    if (userId && media.userId !== userId) return undefined;
     return media;
   }
 
@@ -838,6 +840,8 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const media: Media = {
       ...insertMedia,
+      data: insertMedia.data ?? null, // Convert undefined to null
+      url: insertMedia.url ?? null, // Convert undefined to null
       id,
       uploadedAt: new Date(),
       isActive: true,
@@ -1878,10 +1882,18 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(schema.media).where(eq(schema.media.userId, userId));
   }
 
-  async getMediaById(id: string, userId: string): Promise<Media | undefined> {
-    const [media] = await db.select().from(schema.media)
-      .where(and(eq(schema.media.id, id), eq(schema.media.userId, userId)));
-    return media;
+  async getMediaById(id: string, userId?: string): Promise<Media | undefined> {
+    if (userId) {
+      // If userId provided, check ownership
+      const [media] = await db.select().from(schema.media)
+        .where(and(eq(schema.media.id, id), eq(schema.media.userId, userId)));
+      return media;
+    } else {
+      // Public access - no userId check (for TV display)
+      const [media] = await db.select().from(schema.media)
+        .where(eq(schema.media.id, id));
+      return media;
+    }
   }
 
   async createMedia(insertMedia: InsertMedia): Promise<Media> {
