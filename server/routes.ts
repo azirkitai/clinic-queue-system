@@ -17,6 +17,7 @@ import multer from "multer";
 import fs from "fs/promises";
 import path from "path";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import gcsRouter from "./gcs";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -162,7 +163,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Object Storage routes
+  // Google Cloud Storage routes
+  app.use("/api/gcs", requireAuth, gcsRouter);
+
+  // Legacy Object Storage routes (kept for backward compatibility)
   // Get presigned upload URL for media files
   app.post("/api/objects/upload", requireAuth, async (req, res) => {
     try {
