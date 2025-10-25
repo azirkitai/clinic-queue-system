@@ -4,3 +4,12 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+.env
+.env.*
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!components.json
+!drizzle.config.ts
+attached_assets/*.json
