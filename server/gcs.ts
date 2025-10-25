@@ -87,4 +87,49 @@ router.post("/upload", upload.single("file"), async (req, res) => {
   }
 });
 
+// Download endpoint - serve files from GCS
+router.get("/download/:filename", async (req, res) => {
+  if (!storage || !bucket) {
+    return res.status(500).json({ error: "GCS not configured" });
+  }
+
+  try {
+    const { filename } = req.params;
+    const file = bucket.file(filename);
+
+    // Check if file exists
+    const [exists] = await file.exists();
+    if (!exists) {
+      return res.status(404).json({ error: "File not found" });
+    }
+
+    // Get file metadata
+    const [metadata] = await file.getMetadata();
+
+    // Set headers
+    res.set({
+      'Content-Type': metadata.contentType || 'application/octet-stream',
+      'Content-Length': metadata.size,
+      'Cache-Control': 'public, max-age=3600',
+    });
+
+    // Stream file to response
+    const stream = file.createReadStream();
+    
+    stream.on('error', (err: Error) => {
+      console.error('Stream error:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Error streaming file' });
+      }
+    });
+
+    stream.pipe(res);
+  } catch (error) {
+    console.error('GCS download error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to download file' });
+    }
+  }
+});
+
 export default router;
