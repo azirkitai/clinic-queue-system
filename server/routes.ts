@@ -744,8 +744,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete user
   app.delete("/api/users/:id", async (req, res) => {
     try {
+      console.log("🗑️ DELETE user request:", {
+        sessionUserId: req.session.userId,
+        targetUserId: req.params.id
+      });
+
       // Check authentication
       if (!req.session.userId) {
+        console.log("❌ No session userId");
         return res.status(401).json({ error: "Session inactive" });
       }
       
@@ -753,6 +759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Prevent self-deletion
       if (req.session.userId === id) {
+        console.log("❌ Attempting self-deletion");
         return res.status(403).json({ 
           error: "Cannot delete your own account"
         });
@@ -760,12 +767,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get the user to be deleted
       const targetUser = await storage.getUser(id);
+      console.log("👤 Target user:", targetUser);
+      
       if (!targetUser) {
+        console.log("❌ User not found");
         return res.status(404).json({ error: "User not found" });
       }
       
       // Prevent deleting the default admin account
       if (targetUser.username === "admin" && targetUser.role === "admin") {
+        console.log("❌ Attempting to delete default admin");
         return res.status(403).json({ 
           error: "Cannot delete default admin account"
         });
@@ -775,22 +786,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (targetUser.role === "admin") {
         const allUsers = await storage.getUsers();
         const adminCount = allUsers.filter(u => u.role === "admin").length;
+        console.log("👥 Admin count:", adminCount);
         
         if (adminCount <= 1) {
+          console.log("❌ Cannot delete last admin");
           return res.status(403).json({ 
             error: "Cannot delete the last admin user"
           });
         }
       }
       
+      console.log("✅ Proceeding with deletion");
       const success = await storage.deleteUser(id);
       if (!success) {
+        console.log("❌ Delete failed - user not found");
         return res.status(404).json({ error: "User not found" });
       }
       
+      console.log("✅ User deleted successfully");
       res.json({ message: "User deleted successfully" });
     } catch (error) {
-      console.error("Error deleting user:", error);
+      console.error("❌ Error deleting user:", error);
       res.status(500).json({ error: "Failed to delete user" });
     }
   });
