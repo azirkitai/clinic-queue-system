@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Shield, UserPlus, Trash2, Edit, Users, Monitor, Settings, Palette, FileImage } from "lucide-react";
+import { Shield, UserPlus, Trash2, Edit, Users, Monitor } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -273,27 +273,6 @@ export default function Administration() {
                           >
                             {user.isActive ? "Active" : "Inactive"}
                           </Badge>
-                        </div>
-                        
-                        <div className="text-xs text-muted-foreground border-t pt-2">
-                          <div className="grid grid-cols-2 gap-1">
-                            <div className="flex items-center">
-                              <Settings className="h-3 w-3 mr-1" />
-                              <span>Display Settings</span>
-                            </div>
-                            <div className="flex items-center">
-                              <Palette className="h-3 w-3 mr-1" />
-                              <span>Theme Config</span>
-                            </div>
-                            <div className="flex items-center">
-                              <FileImage className="h-3 w-3 mr-1" />
-                              <span>Media Files</span>
-                            </div>
-                            <div className="flex items-center">
-                              <Monitor className="h-3 w-3 mr-1" />
-                              <span>Screen Setup</span>
-                            </div>
-                          </div>
                         </div>
                         
                         <div className="flex items-center space-x-1 pt-2">
