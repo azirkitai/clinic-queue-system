@@ -82,14 +82,13 @@ router.post("/upload", (req, res, next) => {
     const filename = `${Date.now()}_${req.file.originalname}`;
     const blob = bucket.file(filename);
     
-    // Create write stream with public access metadata
+    // Create write stream (bucket-level access controls public visibility)
     const stream = blob.createWriteStream({ 
       resumable: false,
       metadata: {
         contentType: req.file.mimetype,
         cacheControl: 'public, max-age=31536000',
-      },
-      predefinedAcl: 'publicRead'
+      }
     });
 
     // Handle stream events
