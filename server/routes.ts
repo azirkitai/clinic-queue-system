@@ -741,12 +741,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Delete user - REMOVED for tenant security
-  // In multi-tenant system, clinic accounts cannot be self-deleted
+  // Delete user
   app.delete("/api/users/:id", async (req, res) => {
-    res.status(403).json({ 
-      error: "Operation not allowed - clinic account cannot delete itself"
-    });
+    try {
+      // Check authentication
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Session inactive" });
+      }
+      
+      const { id } = req.params;
+      
+      // Prevent self-deletion
+      if (req.session.userId === id) {
+        return res.status(403).json({ 
+          error: "Cannot delete your own account"
+        });
+      }
+      
+      // Get the user to be deleted
+      const targetUser = await storage.getUser(id);
+      if (!targetUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Prevent deleting the default admin account
+      if (targetUser.username === "admin" && targetUser.role === "admin") {
+        return res.status(403).json({ 
+          error: "Cannot delete default admin account"
+        });
+      }
+      
+      // If deleting an admin, check if there are other admins
+      if (targetUser.role === "admin") {
+        const allUsers = await storage.getUsers();
+        const adminCount = allUsers.filter(u => u.role === "admin").length;
+        
+        if (adminCount <= 1) {
+          return res.status(403).json({ 
+            error: "Cannot delete the last admin user"
+          });
+        }
+      }
+      
+      const success = await storage.deleteUser(id);
+      if (!success) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ error: "Failed to delete user" });
+    }
   });
 
   // Get user display configuration
