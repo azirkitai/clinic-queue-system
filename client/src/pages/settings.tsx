@@ -374,35 +374,25 @@ export default function Settings() {
     }
   };
 
-  // Upload media mutation using Google Cloud Storage
+  // Upload media mutation to database
   const uploadMediaMutation = useMutation({
     mutationFn: async (file: File) => {
       // Create FormData for file upload
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('name', file.name);
       
-      // Upload directly to GCS
-      const uploadResponse = await fetch('/api/gcs/upload', {
+      // Upload directly to database
+      const uploadResponse = await fetch('/api/media/upload', {
         method: 'POST',
         body: formData,
       });
       
       if (!uploadResponse.ok) {
-        throw new Error('Failed to upload to GCS');
+        throw new Error('Failed to upload file');
       }
       
-      const { url } = await uploadResponse.json();
-      
-      // Save metadata to database
-      const saveResponse = await apiRequest('POST', '/api/media/save-uploaded', {
-        uploadURL: url,
-        filename: file.name,
-        name: file.name,
-        mimeType: file.type,
-        size: file.size,
-      });
-      
-      return saveResponse.json();
+      return uploadResponse.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/media'] });
@@ -925,16 +915,16 @@ export default function Settings() {
                             <div className="bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-400 transition-colors flex items-center justify-center"
                                  style={{ aspectRatio: '16/9', minHeight: '120px' }}>
                               
-                              <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 ${media.type === 'image' && media.url ? 'hidden' : ''}`}>
+                              <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 ${media.type === 'image' ? 'hidden' : ''}`}>
                                 <div className="text-center p-2">
                                   <Upload className="h-8 w-8 text-blue-400 mx-auto mb-2" />
                                   <p className="text-xs text-blue-600 font-medium">{media.filename}</p>
                                 </div>
                               </div>
                               
-                              {media.type === 'image' && media.url && (
+                              {media.type === 'image' && (
                                 <img 
-                                  src={media.url} 
+                                  src={media.url || `/api/media/${media.id}/file`} 
                                   alt={media.filename}
                                   className="w-full h-full object-cover" 
                                 />
@@ -1102,32 +1092,24 @@ export default function Settings() {
                   const file = e.target.files?.[0];
                   if (file) {
                     try {
-                      // Upload to GCS
+                      // Upload to database
                       const formData = new FormData();
                       formData.append('file', file);
+                      formData.append('name', 'clinic-logo');
                       
-                      const uploadResponse = await fetch('/api/gcs/upload', {
+                      const uploadResponse = await fetch('/api/media/upload', {
                         method: 'POST',
                         body: formData,
                       });
                       
                       if (!uploadResponse.ok) {
-                        throw new Error('Failed to upload logo to GCS');
+                        throw new Error('Failed to upload logo');
                       }
                       
-                      const { url } = await uploadResponse.json();
+                      const media = await uploadResponse.json();
                       
-                      // Save metadata to database
-                      const saveResponse = await apiRequest('POST', '/api/media/save-uploaded', {
-                        uploadURL: url,
-                        filename: file.name,
-                        name: 'clinic-logo',
-                        mimeType: file.type,
-                        size: file.size,
-                      });
-                      
-                      const { url: objectPath } = await saveResponse.json();
-                      updateDisplaySetting('clinicLogo', objectPath);
+                      // Use media ID as reference (will be served via /api/media/:id/file)
+                      updateDisplaySetting('clinicLogo', `/api/media/${media.id}/file`);
                       
                       toast({
                         title: "Success",

@@ -235,8 +235,8 @@ export default function Dashboard() {
           queueHistory={history.map(convertToQueueItem)}
           clinicName={clinicName}
           mediaItems={activeMedia.map(media => ({
-            url: media.url,
-            type: media.url.includes('youtube') || media.url.includes('youtu.be') ? 'youtube' : media.type,
+            url: media.url || `/api/media/${media.id}/file`,
+            type: media.url?.includes('youtube') || media.url?.includes('youtu.be') ? 'youtube' : media.type,
             name: media.name
           }))}
           isFullscreen={true}
@@ -391,8 +391,8 @@ export default function Dashboard() {
                 queueHistory={history.slice(0, 4).map(convertToQueueItem)}
                 clinicName={clinicName}
                 mediaItems={activeMedia.map(media => ({
-                  url: media.url,
-                  type: media.url.includes('youtube') || media.url.includes('youtu.be') ? 'youtube' : media.type,
+                  url: media.url || `/api/media/${media.id}/file`,
+                  type: media.url?.includes('youtube') || media.url?.includes('youtu.be') ? 'youtube' : media.type,
                   name: media.name
                 }))}
                 showPrayerTimes={showPrayerTimes}

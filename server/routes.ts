@@ -1173,7 +1173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get media by ID
+  // Get media by ID (metadata only)
   app.get("/api/media/:id", async (req, res) => {
     try {
       // Check authentication
@@ -1188,14 +1188,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Media not found" });
       }
       
-      res.json(media);
+      // Return metadata only (no binary data)
+      const { data, ...metadata } = media;
+      res.json(metadata);
     } catch (error) {
       console.error("Error fetching media:", error);
       res.status(500).json({ error: "Failed to fetch media" });
     }
   });
 
-  // Save uploaded media metadata (after direct upload to object storage)
+  // Serve media file (binary data) from database
+  app.get("/api/media/:id/file", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Public endpoint - no auth required for serving files (TV display needs this)
+      const media = await storage.getMediaById(id);
+      
+      if (!media) {
+        return res.status(404).json({ error: "Media not found" });
+      }
+      
+      // If legacy URL-based media, redirect to external URL
+      if (media.url && !media.data) {
+        return res.redirect(media.url);
+      }
+      
+      // Serve base64-encoded data
+      if (!media.data) {
+        return res.status(404).json({ error: "Media file not found" });
+      }
+      
+      // Convert base64 to buffer
+      const buffer = Buffer.from(media.data, 'base64');
+      
+      // Set appropriate headers
+      res.setHeader('Content-Type', media.mimeType);
+      res.setHeader('Content-Length', buffer.length);
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+      
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error serving media file:", error);
+      res.status(500).json({ error: "Failed to serve file" });
+    }
+  });
+
+  // Upload media file directly to database (base64-encoded)
+  app.post("/api/media/upload", requireAuth, multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+  }).single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const { name } = req.body;
+      const filename = req.file.originalname;
+      const mimeType = req.file.mimetype;
+      const size = req.file.size;
+      
+      // Convert buffer to base64
+      const base64Data = req.file.buffer.toString('base64');
+      
+      // Determine file type
+      let type: 'image' | 'video' | 'audio' = 'image';
+      if (mimeType.startsWith('video/')) {
+        type = 'video';
+      } else if (mimeType.startsWith('audio/')) {
+        type = 'audio';
+      }
+
+      // Save to database with base64 data
+      const media = await storage.createMedia({
+        name: name || filename,
+        filename,
+        url: null, // No external URL, stored in database
+        data: base64Data, // Store base64-encoded data
+        type,
+        mimeType,
+        size,
+        userId: req.session.userId as string,
+      });
+
+      res.status(201).json(media);
+    } catch (error) {
+      console.error("Error uploading media:", error);
+      res.status(500).json({ error: "Failed to upload file" });
+    }
+  });
+
+  // Legacy: Save uploaded media metadata (for backward compatibility)
   app.post("/api/media/save-uploaded", requireAuth, async (req, res) => {
     try {
       const { uploadURL, filename, name, mimeType, size } = req.body;

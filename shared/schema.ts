@@ -78,7 +78,8 @@ export const media = pgTable("media", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   filename: text("filename").notNull(), // Original filename
-  url: text("url").notNull(), // Storage URL/path
+  url: text("url"), // Legacy: Storage URL/path (nullable for database-stored files)
+  data: text("data"), // Base64-encoded file data stored in database
   type: text("type").notNull(), // 'image', 'video', or 'audio'
   mimeType: text("mime_type").notNull(), // e.g., 'image/jpeg', 'video/mp4', 'audio/mpeg'
   size: integer("size").notNull(), // File size in bytes
