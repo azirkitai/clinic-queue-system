@@ -34,15 +34,26 @@ let storage: Storage | null = null;
 let bucket: any = null;
 
 try {
-  const key = JSON.parse(process.env.GC_SERVICE_KEY || '{}');
+  const gcServiceKey = process.env.GC_SERVICE_KEY;
+  const gcsBucketName = process.env.GCS_BUCKET_NAME;
+  
+  if (!gcServiceKey || !gcsBucketName) {
+    throw new Error('GC_SERVICE_KEY and GCS_BUCKET_NAME environment variables must be set');
+  }
+  
+  // Parse the service account key
+  const key = JSON.parse(gcServiceKey);
+  
   storage = new Storage({
     projectId: key.project_id,
     credentials: key,
   });
-  bucket = storage.bucket(process.env.GCS_BUCKET_NAME || '');
-  console.log('✅ GCS initialized successfully');
+  
+  bucket = storage.bucket(gcsBucketName);
+  console.log('✅ GCS initialized successfully with bucket:', gcsBucketName);
 } catch (error) {
   console.error('❌ Failed to initialize GCS:', error);
+  console.error('Make sure GC_SERVICE_KEY contains valid JSON and GCS_BUCKET_NAME is set');
 }
 
 // Upload endpoint - direct upload to GCS
