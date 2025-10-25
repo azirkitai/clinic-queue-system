@@ -1204,21 +1204,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Upload URL and filename are required" });
       }
 
-      // Normalize the upload URL to object path
-      const objectStorageService = new ObjectStorageService();
-      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+      let finalUrl = uploadURL;
 
-      // Set ACL policy for public access (TV display images)
-      await objectStorageService.trySetObjectEntityAclPolicy(uploadURL, {
-        owner: req.session.userId as string,
-        visibility: "public",
-      });
+      // Check if this is a GCS URL (from new GCS upload) or legacy Replit object storage URL
+      if (uploadURL.startsWith('https://storage.googleapis.com/')) {
+        // GCS URL - use directly, already public
+        finalUrl = uploadURL;
+      } else {
+        // Legacy Replit Object Storage - apply ACL policy
+        const objectStorageService = new ObjectStorageService();
+        finalUrl = objectStorageService.normalizeObjectEntityPath(uploadURL);
+
+        // Set ACL policy for public access (TV display images)
+        await objectStorageService.trySetObjectEntityAclPolicy(uploadURL, {
+          owner: req.session.userId as string,
+          visibility: "public",
+        });
+      }
 
       // Save to database
       const media = await storage.createMedia({
         name: name || filename,
         filename,
-        url: objectPath,
+        url: finalUrl,
         type: 'image',
         mimeType: mimeType || 'image/jpeg',
         size: size || 0,
