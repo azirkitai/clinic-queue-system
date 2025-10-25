@@ -374,29 +374,28 @@ export default function Settings() {
     }
   };
 
-  // Upload media mutation using object storage
+  // Upload media mutation using Google Cloud Storage
   const uploadMediaMutation = useMutation({
     mutationFn: async (file: File) => {
-      // Step 1: Get presigned upload URL
-      const urlResponse = await apiRequest('POST', '/api/objects/upload');
-      const { uploadURL } = await urlResponse.json();
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('file', file);
       
-      // Step 2: Upload file directly to object storage
-      const uploadResponse = await fetch(uploadURL, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
+      // Upload directly to GCS
+      const uploadResponse = await fetch('/api/gcs/upload', {
+        method: 'POST',
+        body: formData,
       });
       
       if (!uploadResponse.ok) {
-        throw new Error('Failed to upload to storage');
+        throw new Error('Failed to upload to GCS');
       }
       
-      // Step 3: Save metadata to database
+      const { url } = await uploadResponse.json();
+      
+      // Save metadata to database
       const saveResponse = await apiRequest('POST', '/api/media/save-uploaded', {
-        uploadURL,
+        uploadURL: url,
         filename: file.name,
         name: file.name,
         mimeType: file.type,
@@ -1103,25 +1102,24 @@ export default function Settings() {
                   const file = e.target.files?.[0];
                   if (file) {
                     try {
-                      // Upload to object storage
-                      const urlResponse = await apiRequest('POST', '/api/objects/upload');
-                      const { uploadURL } = await urlResponse.json();
+                      // Upload to GCS
+                      const formData = new FormData();
+                      formData.append('file', file);
                       
-                      const uploadResponse = await fetch(uploadURL, {
-                        method: 'PUT',
-                        body: file,
-                        headers: {
-                          'Content-Type': file.type,
-                        },
+                      const uploadResponse = await fetch('/api/gcs/upload', {
+                        method: 'POST',
+                        body: formData,
                       });
                       
                       if (!uploadResponse.ok) {
-                        throw new Error('Failed to upload logo');
+                        throw new Error('Failed to upload logo to GCS');
                       }
                       
-                      // Normalize and set the object path
+                      const { url } = await uploadResponse.json();
+                      
+                      // Save metadata to database
                       const saveResponse = await apiRequest('POST', '/api/media/save-uploaded', {
-                        uploadURL,
+                        uploadURL: url,
                         filename: file.name,
                         name: 'clinic-logo',
                         mimeType: file.type,
