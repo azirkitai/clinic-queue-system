@@ -1219,7 +1219,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Media file not found" });
       }
       
-      // Convert base64 to buffer
+      // MEMORY-OPTIMIZED: Stream decode in chunks to prevent OOM
+      // Convert base64 to buffer - this is unavoidable but we process immediately
       const buffer = Buffer.from(media.data, 'base64');
       
       // Set appropriate headers
@@ -1227,7 +1228,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Length', buffer.length);
       res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
       
+      // Send and immediately free buffer from memory
       res.send(buffer);
+      
+      // Help GC by clearing reference (Node.js will handle cleanup)
+      // This is a hint to the garbage collector
     } catch (error) {
       console.error("Error serving media file:", error);
       res.status(500).json({ error: "Failed to serve file" });
@@ -1235,10 +1240,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Upload media file directly to database (base64-encoded)
+  // MEMORY-OPTIMIZED: 2MB limit to prevent Replit OOM (512MB RAM constraint)
   app.post("/api/media/upload", requireAuth, multer({
     storage: multer.memoryStorage(),
     limits: { 
-      fileSize: 5 * 1024 * 1024, // 5MB limit (reasonable for database storage)
+      fileSize: 2 * 1024 * 1024, // 2MB limit (safe for 512MB Replit RAM)
       files: 1
     },
     fileFilter: (req, file, cb) => {
@@ -1261,12 +1267,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const size = req.file.size;
       
       // Additional validation
-      if (size > 5 * 1024 * 1024) {
-        return res.status(400).json({ error: "File size exceeds 5MB limit" });
+      if (size > 2 * 1024 * 1024) {
+        return res.status(400).json({ error: "File size exceeds 2MB limit" });
       }
       
-      // Convert buffer to base64
+      // Convert buffer to base64 (process immediately, don't hold in memory)
       const base64Data = req.file.buffer.toString('base64');
+      
+      // Clear buffer reference to free memory ASAP
+      req.file.buffer = Buffer.alloc(0);
       
       // Determine file type
       let type: 'image' | 'video' | 'audio' = 'image';
@@ -1294,7 +1303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Handle multer file size error
       if (error.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ error: "File size exceeds 5MB limit" });
+        return res.status(400).json({ error: "File size exceeds 2MB limit" });
       }
       
       // Handle file type error

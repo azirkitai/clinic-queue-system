@@ -823,7 +823,7 @@ export default function Settings() {
                       <Upload className="h-12 w-12 text-gray-400" />
                       <div>
                         <p className="text-sm text-gray-600 font-medium">Upload New Images</p>
-                        <p className="text-xs text-gray-500 mt-1">Supported formats: PNG, JPEG only (Max 5MB)</p>
+                        <p className="text-xs text-gray-500 mt-1">Supported formats: PNG, JPEG only (Max 2MB)</p>
                       </div>
                     </div>
                     
