@@ -9,22 +9,19 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    // Allow images, videos, and audio files
-    const allowedMimeTypes = [
-      'image/png', 
-      'image/jpeg', 
-      'image/jpg',
-      'image/gif',
-      'video/mp4',
-      'video/webm',
-      'audio/mpeg',
-      'audio/mp3'
-    ];
+    // Allow all image, video, and audio formats using wildcard matching
+    const mimeType = file.mimetype.toLowerCase();
+    const isImage = mimeType.startsWith('image/');
+    const isVideo = mimeType.startsWith('video/');
+    const isAudio = mimeType.startsWith('audio/');
     
-    if (allowedMimeTypes.includes(file.mimetype)) {
+    if (isImage || isVideo || isAudio) {
       cb(null, true);
     } else {
-      cb(null, false);
+      // Return error for unsupported file types
+      const error = new Error(`Unsupported file type: ${file.mimetype}. Only image, video, and audio files are allowed.`);
+      (error as any).code = 'UNSUPPORTED_MEDIA_TYPE';
+      cb(error as any);
     }
   }
 });
@@ -57,7 +54,21 @@ try {
 }
 
 // Upload endpoint - direct upload to GCS
-router.post("/upload", upload.single("file"), async (req, res) => {
+router.post("/upload", (req, res, next) => {
+  upload.single("file")(req, res, (err: any) => {
+    if (err) {
+      // Handle multer errors
+      if (err.code === 'UNSUPPORTED_MEDIA_TYPE') {
+        return res.status(415).json({ error: err.message });
+      }
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ error: 'File too large. Maximum size is 10MB' });
+      }
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No file provided" });
   }
