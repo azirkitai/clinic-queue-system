@@ -1157,6 +1157,7 @@ export class DatabaseStorage implements IStorage {
     this.initializeDefaultTheme();
     this.initializeDefaultTextGroups();
     this.initializeDefaultWindows();
+    this.initializeDefaultAdmin();
   }
 
   private async initializeDefaultSettings() {
@@ -1266,6 +1267,28 @@ export class DatabaseStorage implements IStorage {
           .set({ isPermanent: true })
           .where(eq(schema.windows.id, existing[0].id));
       }
+    }
+  }
+
+  private async initializeDefaultAdmin() {
+    // Check if any admin user exists
+    const existingAdmin = await db.select().from(users)
+      .where(eq(users.role, "admin"))
+      .limit(1);
+
+    if (existingAdmin.length === 0) {
+      // No admin exists, create default admin
+      const bcrypt = await import('bcryptjs');
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      
+      await db.insert(users).values({
+        username: 'admin',
+        password: hashedPassword,
+        role: 'admin',
+        isActive: true,
+      });
+
+      console.log('✅ Default admin user created (username: admin, password: admin123)');
     }
   }
 
