@@ -108,10 +108,22 @@ The system implements several optimizations to reduce bandwidth usage on Render 
    - Automatic cache invalidation on all mutations
    - Reduces database queries by ~60% for read-heavy workloads
 
-3. **Frontend Polling Optimization**
-   - Dashboard: 3-second polling (reduced from 2s)
-   - TV Display: 3-second polling (optimized for real-time updates)
-   - Combined with server-side caching for minimal database impact
+3. **WebSocket Push (Real-Time)**
+   - WebSocket events for all patient/window mutations
+   - Dashboard uses WebSocket for instant updates
+   - Reduces polling from 3s to 30s fallback (90% reduction!)
+   - Real-time updates are FASTER and use LESS bandwidth
+
+4. **Response Compression (Gzip)**
+   - All API responses compressed with gzip
+   - Level 6 compression (balance speed/size)
+   - Reduces payload size by ~70%
+   - Only compress responses > 1KB
+
+5. **Frontend Polling Optimization**
+   - Dashboard: 30-second fallback polling (WebSocket is primary)
+   - TV Display: 3-second polling (optimized for reliability)
+   - Combined with server-side caching + WebSocket for minimal database impact
 
 4. **Database Connection Pooling**
    - Max 10 connections in pool

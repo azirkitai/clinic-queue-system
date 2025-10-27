@@ -492,6 +492,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Invalidate cache after creating patient
       invalidateCache(req.session.userId);
       
+      // Emit WebSocket event for real-time updates
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('patient:created', {
+          patient,
+          timestamp: Date.now()
+        });
+      }
+      
       res.json(patient);
     } catch (error) {
       console.error("Error creating patient:", error);
@@ -582,6 +590,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Invalidate cache after status update
       invalidateCache(req.session.userId);
       
+      // Emit WebSocket event for real-time updates
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('patient:status-updated', {
+          patient,
+          timestamp: Date.now()
+        });
+      }
+      
       res.json(patient);
     } catch (error) {
       console.error("Error updating patient status:", error);
@@ -607,6 +623,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Invalidate cache after priority toggle
       invalidateCache(req.session.userId);
       
+      // Emit WebSocket event for real-time updates
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('patient:priority-updated', {
+          patient,
+          timestamp: Date.now()
+        });
+      }
+      
       res.json(patient);
     } catch (error) {
       console.error("Error toggling patient priority:", error);
@@ -631,6 +655,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Invalidate cache after deletion
       invalidateCache(req.session.userId);
+      
+      // Emit WebSocket event for real-time updates
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('patient:deleted', {
+          patientId: id,
+          timestamp: Date.now()
+        });
+      }
       
       res.json({ success: true });
     } catch (error) {
@@ -667,6 +699,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Invalidate all cache after reset
       invalidateCache(req.session.userId);
+      
+      // Emit WebSocket event for real-time updates
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('queue:reset', {
+          timestamp: Date.now()
+        });
+      }
       
       res.json({ 
         success: true, 
@@ -1056,6 +1095,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Invalidate cache after creating window
       invalidateCache(userId);
       
+      // Emit WebSocket event for real-time updates
+      if (globalIo) {
+        globalIo.to(`clinic:${userId}`).emit('window:created', {
+          window,
+          timestamp: Date.now()
+        });
+      }
+      
       res.status(201).json(window);
     } catch (error) {
       console.error("Error creating window:", error);
@@ -1085,6 +1132,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Invalidate cache after updating window
       invalidateCache(req.session.userId);
+      
+      // Emit WebSocket event for real-time updates
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('window:updated', {
+          window,
+          timestamp: Date.now()
+        });
+      }
       
       res.json(window);
     } catch (error) {
@@ -1161,6 +1216,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Invalidate cache after updating window patient
       invalidateCache(req.session.userId);
+      
+      // Emit WebSocket event for real-time updates
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('window:patient-updated', {
+          window,
+          timestamp: Date.now()
+        });
+      }
       
       res.json(window);
     } catch (error) {

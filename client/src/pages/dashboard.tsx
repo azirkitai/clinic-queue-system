@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Monitor, Settings, Users, Clock } from "lucide-react";
 import { type Patient } from "@shared/schema";
+import { useWebSocket } from "@/hooks/use-websocket";
 
 interface QueueItem {
   id: string;
@@ -28,6 +29,12 @@ export default function Dashboard() {
   const [fullscreen, setFullscreen] = useState(false);
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
   const [showExitButton, setShowExitButton] = useState(false);
+  
+  // WebSocket connection for real-time updates
+  useWebSocket({
+    onConnect: () => console.log('[Dashboard] WebSocket connected'),
+    onDisconnect: () => console.log('[Dashboard] WebSocket disconnected'),
+  });
 
   // Listen for browser fullscreen changes
   useEffect(() => {
@@ -112,35 +119,34 @@ export default function Dashboard() {
     }
   };
 
-  // Fetch dashboard statistics
+  // Fetch dashboard statistics (WebSocket updates automatically, slow fallback polling)
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats & { totalWindows: number }>({
     queryKey: ['/api/dashboard/stats'],
-    refetchInterval: 3000, // Refresh every 3 seconds for real-time dashboard updates
+    refetchInterval: 30000, // Fallback polling every 30s (WebSocket is primary update mechanism)
   });
 
-  // Fetch current call
+  // Fetch current call (WebSocket updates automatically, slow fallback polling)
   const { data: currentCall, error: currentCallError, isLoading: currentCallLoading } = useQuery<Patient | null>({
-    queryKey: ['/api/dashboard/current-call'], // Stable query key
-    refetchInterval: 3000, // Refresh every 3 seconds (server-side caching handles real-time updates)
+    queryKey: ['/api/dashboard/current-call'],
+    refetchInterval: 30000, // Fallback polling every 30s (WebSocket is primary update mechanism)
   });
 
-
-  // Fetch recent history 
+  // Fetch recent history (WebSocket updates automatically, slow fallback polling)
   const { data: history = [] } = useQuery<Patient[]>({
     queryKey: ['/api/dashboard/history'],
-    refetchInterval: 10000, // Refresh every 10 seconds
+    refetchInterval: 30000, // Fallback polling every 30s (WebSocket is primary update mechanism)
   });
 
-  // Fetch windows data to map window IDs to names
+  // Fetch windows data (WebSocket updates automatically, slow fallback polling)
   const { data: windows = [] } = useQuery<any[]>({
     queryKey: ['/api/windows'],
-    refetchInterval: 5000, // Refresh every 5 seconds to stay in sync with patient calls
+    refetchInterval: 30000, // Fallback polling every 30s (WebSocket is primary update mechanism)
   });
 
-  // Fetch active media for display
+  // Fetch active media for display (less critical, slower polling)
   const { data: activeMedia = [] } = useQuery<any[]>({
     queryKey: ['/api/display'],
-    refetchInterval: 10000, // Refresh every 10 seconds to get updated media
+    refetchInterval: 60000, // Polling every 60s (rarely changes)
   });
 
   // Fetch display settings

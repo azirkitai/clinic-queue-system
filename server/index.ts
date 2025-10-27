@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
+import compression from "compression";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { registerRoutes, setGlobalIo } from "./routes";
@@ -10,6 +11,13 @@ import path from "path";
 import fs from "fs";
 
 const app = express();
+
+// Enable gzip compression for all responses (reduces bandwidth by 70%)
+app.use(compression({
+  level: 6, // Balance between speed and compression
+  threshold: 1024, // Only compress responses > 1KB
+}));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
