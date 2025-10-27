@@ -608,6 +608,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear completed patients (manual cleanup to reduce database size)
+  app.post("/api/patients/clear-completed", async (req, res) => {
+    try {
+      // Check authentication
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Session inactive" });
+      }
+      
+      // Delete ALL completed patients
+      const deletedCount = await storage.deleteAllCompletedPatients(req.session.userId);
+      
+      console.log(`[CLEAR COMPLETED] Deleted ${deletedCount} completed patients for user ${req.session.userId}`);
+      
+      res.json({ 
+        success: true, 
+        deletedCount,
+        message: `${deletedCount} completed patient(s) deleted. Database cleaned up successfully.` 
+      });
+    } catch (error) {
+      console.error("[CLEAR COMPLETED] Error:", error);
+      res.status(500).json({ error: "Failed to clear completed patients" });
+    }
+  });
+
+  // Clear old completed patients (cleanup patients older than X hours)
+  app.post("/api/patients/clear-old-completed", async (req, res) => {
+    try {
+      // Check authentication
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Session inactive" });
+      }
+      
+      const { hoursOld = 24 } = req.body; // Default to 24 hours
+      
+      // Validate hoursOld
+      if (typeof hoursOld !== 'number' || hoursOld < 1 || hoursOld > 720) {
+        return res.status(400).json({ error: "hoursOld must be between 1 and 720 (30 days)" });
+      }
+      
+      // Delete completed patients older than specified hours
+      const deletedCount = await storage.deleteOldCompletedPatients(req.session.userId, hoursOld);
+      
+      console.log(`[CLEAR OLD] Deleted ${deletedCount} completed patients older than ${hoursOld}h for user ${req.session.userId}`);
+      
+      res.json({ 
+        success: true, 
+        deletedCount,
+        hoursOld,
+        message: `${deletedCount} completed patient(s) older than ${hoursOld} hours deleted.` 
+      });
+    } catch (error) {
+      console.error("[CLEAR OLD] Error:", error);
+      res.status(500).json({ error: "Failed to clear old completed patients" });
+    }
+  });
+
   // User management routes
   
   // Get all users - Admin only
