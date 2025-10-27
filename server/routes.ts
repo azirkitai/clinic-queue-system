@@ -577,8 +577,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
       
-      // Delete ALL today's patients (hard delete) - this will reset next number to 1
-      const deletedCount = await storage.deleteAllTodayPatients(req.session.userId);
+      // Delete ALL today's patients (hard delete)
+      const todayDeleted = await storage.deleteAllTodayPatients(req.session.userId);
+      
+      // ALSO delete ALL completed patients (reduce database size & bandwidth)
+      const completedDeleted = await storage.deleteAllCompletedPatients(req.session.userId);
+      
+      const totalDeleted = todayDeleted + completedDeleted;
       
       // Clear all windows
       const windows = await storage.getWindows(req.session.userId);
@@ -588,13 +593,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      console.log(`[RESET QUEUE] Deleted ${todayDeleted} today's patients + ${completedDeleted} old completed patients = ${totalDeleted} total for user ${req.session.userId}`);
+      
       res.json({ 
         success: true, 
-        deletedCount,
-        message: `Queue reset complete. ${deletedCount} patient(s) deleted. Next number will start from 1.` 
+        deletedCount: totalDeleted,
+        todayDeleted,
+        completedDeleted,
+        message: `Queue reset complete. ${totalDeleted} patient(s) deleted (${todayDeleted} today + ${completedDeleted} old completed). Next number starts from 1.` 
       });
     } catch (error) {
-      console.error("Error resetting queue:", error);
+      console.error("[RESET QUEUE] Error:", error);
       res.status(500).json({ error: "Failed to reset queue" });
     }
   });
