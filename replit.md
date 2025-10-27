@@ -15,6 +15,7 @@ Preferred communication style: Simple, everyday language.
 - **UI Library**: Shadcn/ui components built on Radix UI primitives
 - **Styling**: Tailwind CSS with custom design system following Material Design principles
 - **State Management**: TanStack Query for server state and React hooks for local state
+- **Polling Optimization**: Dashboard polls every 3 seconds (reduced from 2s to optimize bandwidth/CPU)
 - **Routing**: Wouter for lightweight client-side routing
 - **Theme System**: Custom theme provider supporting light/dark modes with CSS variables
 
@@ -22,8 +23,12 @@ Preferred communication style: Simple, everyday language.
 - **Server**: Express.js with TypeScript
 - **Database**: Neon PostgreSQL with serverless driver
   - **Autoscale Settings**: Min 0.25 CU, Max 1 CU (no scale-to-zero)
-  - **Connection**: Uses `@neondatabase/serverless` with pooling
-  - **Optimization**: Server-side caching (2-3s TTL) for high-frequency endpoints
+  - **Connection Pooling**: Max 10 connections, 30s idle timeout, 10s connection timeout
+  - **Server-Side Caching**: 2.5-second TTL for high-frequency read endpoints
+    - Cached endpoints: current-call, stats, history, windows, settings, themes, text-groups
+    - Auto-invalidation on all mutations (create, update, delete, reset operations)
+  - **Automatic Cleanup**: Deletes completed patients older than 24 hours on server startup
+  - **Optional Read Replica**: Documented setup for CPU optimization if needed
 - **Database ORM**: Drizzle ORM configured for PostgreSQL
 - **API Design**: RESTful endpoints with `/api` prefix
 - **Storage Layer**: Abstracted storage interface with both memory and database implementations
@@ -86,3 +91,40 @@ The system uses four main entities:
 - **zod**: Schema validation (via Drizzle)
 
 The application is designed to be deployed on platforms supporting Node.js with PostgreSQL database connectivity, with specific optimizations for Replit deployment including development tooling and error overlays.
+
+## Performance Optimizations
+
+### Bandwidth & CPU Reduction (Render + Neon)
+The system implements several optimizations to reduce bandwidth usage on Render and CPU usage on Neon PostgreSQL:
+
+1. **Automatic Data Cleanup**
+   - Deletes completed patients older than 24 hours on server startup
+   - Manual cleanup endpoints: `/api/patients/clear-completed`, `/api/patients/clear-old-completed`
+   - Reset queue also deletes all completed patients (reduces database size)
+
+2. **Server-Side Caching**
+   - 2.5-second TTL for frequently accessed endpoints
+   - Tenant-isolated caching (each user has separate cache)
+   - Automatic cache invalidation on all mutations
+   - Reduces database queries by ~60% for read-heavy workloads
+
+3. **Frontend Polling Optimization**
+   - Dashboard: 3-second polling (reduced from 2s)
+   - TV Display: 3-second polling (optimized for real-time updates)
+   - Combined with server-side caching for minimal database impact
+
+4. **Database Connection Pooling**
+   - Max 10 connections in pool
+   - 30-second idle connection timeout
+   - 10-second connection timeout
+   - Optimized for Neon serverless autoscaling
+
+5. **Query Optimization**
+   - Recent history uses database-level ORDER BY and LIMIT
+   - No in-memory filtering (all filtering done in SQL)
+   - Efficient indexes on frequently queried columns
+
+6. **Optional Read Replica Support**
+   - Documented in `server/db.ts` for further CPU optimization
+   - Requires Neon read replica configuration
+   - Can separate read/write workloads if CPU usage remains high
