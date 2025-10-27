@@ -1318,8 +1318,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   }).single('file'), async (req, res) => {
+    const uploadStartTime = Date.now();
     try {
+      console.log('[MEDIA UPLOAD] Request received:', {
+        hasFile: !!req.file,
+        userId: req.session.userId,
+        contentType: req.headers['content-type']
+      });
+
       if (!req.file) {
+        console.log('[MEDIA UPLOAD] ERROR: No file in request');
         return res.status(400).json({ error: "No file uploaded" });
       }
 
@@ -1328,13 +1336,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mimeType = req.file.mimetype;
       const size = req.file.size;
       
+      console.log('[MEDIA UPLOAD] File details:', {
+        filename,
+        mimeType,
+        size: `${(size / 1024).toFixed(2)}KB`,
+        name: name || 'unnamed'
+      });
+      
       // Additional validation
       if (size > 2 * 1024 * 1024) {
+        console.log('[MEDIA UPLOAD] ERROR: File too large:', size);
         return res.status(400).json({ error: "File size exceeds 2MB limit" });
       }
       
       // Convert buffer to base64 (process immediately, don't hold in memory)
+      const conversionStart = Date.now();
       const base64Data = req.file.buffer.toString('base64');
+      const conversionTime = Date.now() - conversionStart;
+      
+      console.log('[MEDIA UPLOAD] Base64 conversion:', {
+        originalSize: size,
+        base64Size: base64Data.length,
+        conversionTimeMs: conversionTime
+      });
       
       // Clear buffer reference to free memory ASAP
       req.file.buffer = Buffer.alloc(0);
@@ -1348,6 +1372,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Save to database with base64 data
+      console.log('[MEDIA UPLOAD] Saving to database...');
+      const dbStart = Date.now();
       const media = await storage.createMedia({
         name: name || filename,
         filename,
@@ -1358,10 +1384,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         size,
         userId: req.session.userId as string,
       });
+      const dbTime = Date.now() - dbStart;
+      
+      const totalTime = Date.now() - uploadStartTime;
+      console.log('[MEDIA UPLOAD] SUCCESS:', {
+        mediaId: media.id,
+        dbTimeMs: dbTime,
+        totalTimeMs: totalTime
+      });
 
       res.status(201).json(media);
     } catch (error: any) {
-      console.error("Error uploading media:", error);
+      const totalTime = Date.now() - uploadStartTime;
+      console.error('[MEDIA UPLOAD] ERROR after', totalTime, 'ms:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack?.split('\n')[0]
+      });
       
       // Handle multer file size error
       if (error.code === 'LIMIT_FILE_SIZE') {
@@ -1373,7 +1412,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Only image files are allowed" });
       }
       
-      res.status(500).json({ error: "Failed to upload file" });
+      // Return detailed error for debugging
+      res.status(500).json({ 
+        error: "Failed to upload file",
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
