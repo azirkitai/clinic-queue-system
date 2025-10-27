@@ -2120,11 +2120,11 @@ export class DatabaseStorage implements IStorage {
     const endOfDay = new Date(today);
     endOfDay.setHours(23, 59, 59, 999);
 
-    // Get current call
+    // Get current call to exclude it from history
     const currentCall = await this.getCurrentCall(userId);
 
-    // Get all patients that have been called today with their tracking history
-    // EXCLUDE patients with status 'dispensary' or 'requeue' - they should not appear on TV until manually called again
+    // OPTIMIZED: Use database-level ORDER BY and LIMIT instead of JavaScript sorting
+    // Fetch only the records we need (limit + 1 in case current call needs to be excluded)
     const patients = await db.select({
       id: schema.patients.id,
       name: schema.patients.name,
@@ -2152,14 +2152,15 @@ export class DatabaseStorage implements IStorage {
           sql`${schema.patients.status} != 'dispensary'`, // Exclude dispensary patients from TV display
           sql`${schema.patients.status} != 'requeue'` // Exclude requeued patients from TV display - they go back to waiting
         )
-      );
+      )
+      .orderBy(sql`${schema.patients.calledAt} DESC`) // Sort by most recent first at database level
+      .limit(limit + 1); // Fetch one extra in case we need to exclude current call
 
-    // Get windows to map room names
+    // Get windows to map room names (cached in single query)
     const windows = await db.select().from(schema.windows).where(eq(schema.windows.userId, userId));
     
-    // Create unique patient entries with their LATEST room assignment
+    // Create patient entries with room names
     const patientEntries: Array<Patient & { room?: string }> = patients.map(patient => {
-      // Get room name from windowId
       const window = windows.find(w => w.id === patient.windowId);
       const roomName = window?.name || 'Unknown Room';
       
@@ -2169,23 +2170,12 @@ export class DatabaseStorage implements IStorage {
       };
     });
 
-    // Sort by call timestamp (most recent first) and exclude current call
-    const sortedHistory = patientEntries
-      .sort((a, b) => {
-        const timeA = a.calledAt?.getTime() || 0;
-        const timeB = b.calledAt?.getTime() || 0;
-        return timeB - timeA;
-      })
-      .filter(patient => {
-        // Exclude current call from history (keep it in current display only)
-        if (currentCall && patient.id === currentCall.id) {
-          return false;
-        }
-        return true;
-      })
+    // Exclude current call and limit to requested size
+    const filteredHistory = patientEntries
+      .filter(patient => !currentCall || patient.id !== currentCall.id)
       .slice(0, limit);
 
-    return sortedHistory;
+    return filteredHistory;
   }
 
   // QR Session methods
