@@ -121,20 +121,7 @@ export default function Dashboard() {
   // Fetch current call
   const { data: currentCall, error: currentCallError, isLoading: currentCallLoading } = useQuery<Patient | null>({
     queryKey: ['/api/dashboard/current-call'], // Stable query key
-    queryFn: async () => {
-      const response = await fetch(`/api/dashboard/current-call?t=${Date.now()}`, {
-        method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch current call');
-      return response.json();
-    },
-    refetchInterval: 2000, // Refresh every 2 seconds for real-time updates
-    staleTime: 0, // Always consider data stale
-    gcTime: 0, // Don't cache results
+    refetchInterval: 3000, // Refresh every 3 seconds (server-side caching handles real-time updates)
   });
 
 

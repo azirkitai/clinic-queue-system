@@ -1052,6 +1052,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const window = await storage.createWindow({ name, userId });
+      
+      // Invalidate cache after creating window
+      invalidateCache(userId);
+      
       res.status(201).json(window);
     } catch (error) {
       console.error("Error creating window:", error);
@@ -1079,6 +1083,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Window not found" });
       }
       
+      // Invalidate cache after updating window
+      invalidateCache(req.session.userId);
+      
       res.json(window);
     } catch (error) {
       console.error("Error updating window:", error);
@@ -1100,6 +1107,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!success) {
         return res.status(400).json({ error: "Cannot delete window - window not found or currently occupied" });
       }
+      
+      // Invalidate cache after deleting window
+      invalidateCache(req.session.userId);
       
       res.status(204).send();
     } catch (error) {
@@ -1123,6 +1133,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Window not found" });
       }
       
+      // Invalidate cache after toggling window status
+      invalidateCache(req.session.userId);
+      
       res.json(window);
     } catch (error) {
       console.error("Error toggling window status:", error);
@@ -1145,6 +1158,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!window) {
         return res.status(404).json({ error: "Window not found" });
       }
+      
+      // Invalidate cache after updating window patient
+      invalidateCache(req.session.userId);
       
       res.json(window);
     } catch (error) {
@@ -1326,6 +1342,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         setting = await storage.setSetting(key, value, category, req.session.userId);
       }
 
+      // Invalidate cache after updating setting
+      invalidateCache(req.session.userId);
+      
       // Notify all connected clients about settings update
       if (globalIo) {
         globalIo.emit('settings:updated', { key, timestamp: Date.now() });
@@ -1370,6 +1389,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedSettings.push(setting);
       }
 
+      // Invalidate cache after updating settings
+      invalidateCache(req.session.userId);
+      
       // Notify all connected clients about settings update
       if (globalIo) {
         globalIo.emit('settings:updated', { 
@@ -1399,6 +1421,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!deleted) {
         return res.status(404).json({ error: "Setting not found" });
       }
+      
+      // Invalidate cache after deleting setting
+      invalidateCache(req.session.userId);
       
       res.json({ success: true });
     } catch (error) {
@@ -2180,6 +2205,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Theme not found" });
       }
       
+      // Invalidate cache after updating theme
+      invalidateCache(req.session.userId);
+      
       // Notify all connected clients about theme update
       if (globalIo) {
         globalIo.emit('themes:updated', { id, timestamp: Date.now() });
@@ -2207,6 +2235,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Theme not found" });
       }
       
+      // Invalidate cache after activating theme
+      invalidateCache(req.session.userId);
+      
       // Notify all connected clients about active theme change
       if (globalIo) {
         globalIo.emit('themes:updated', { id, activated: true, timestamp: Date.now() });
@@ -2233,6 +2264,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!deleted) {
         return res.status(404).json({ error: "Theme not found or cannot delete active theme" });
       }
+      
+      // Invalidate cache after deleting theme
+      invalidateCache(req.session.userId);
       
       res.json({ success: true });
     } catch (error) {
