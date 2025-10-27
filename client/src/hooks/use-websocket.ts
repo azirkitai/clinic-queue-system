@@ -75,11 +75,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
     socket.on('window:updated', () => {
       queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
     });
 
     socket.on('window:patient-updated', () => {
       queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/current-call'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
     });
 
     // Settings/Theme events (already exist)
