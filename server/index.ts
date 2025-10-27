@@ -123,8 +123,7 @@ app.use((req, res, next) => {
   // AUTO-CLEANUP: Delete old completed patients on startup to reduce database size
   // This runs once when server starts to ensure old data doesn't accumulate
   try {
-    const { getStorage } = await import("./storage");
-    const storage = getStorage();
+    const { storage } = await import("./storage");
     
     // Get all users and clean up their old completed patients (>24 hours)
     const users = await storage.getUsers();
