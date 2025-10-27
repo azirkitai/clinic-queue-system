@@ -67,6 +67,8 @@ export interface IStorage {
   deletePatient(patientId: string, userId: string): Promise<boolean>;
   archiveCompletedPatients(userId: string): Promise<number>; // Soft delete completed patients for queue reset
   deleteAllTodayPatients(userId: string): Promise<number>; // Delete ALL today's patients for complete queue reset
+  deleteOldCompletedPatients(userId: string, hoursOld: number): Promise<number>; // Delete completed patients older than X hours
+  deleteAllCompletedPatients(userId: string): Promise<number>; // Delete ALL completed patients regardless of time
   
   // Window methods
   getWindows(userId: string): Promise<Window[]>;
@@ -582,6 +584,47 @@ export class MemStorage implements IStorage {
       }
     }
     
+    return deletedCount;
+  }
+
+  async deleteOldCompletedPatients(userId: string, hoursOld: number = 24): Promise<number> {
+    const cutoffTime = new Date();
+    cutoffTime.setHours(cutoffTime.getHours() - hoursOld);
+    
+    const allPatients = Array.from(this.patients.values()).filter(p => p.userId === userId);
+    const oldCompletedPatients = allPatients.filter(p => 
+      p.status === "completed" && 
+      p.completedAt && 
+      p.completedAt < cutoffTime
+    );
+    
+    let deletedCount = 0;
+    
+    for (const patient of oldCompletedPatients) {
+      const deleted = this.patients.delete(patient.id);
+      if (deleted) {
+        deletedCount++;
+      }
+    }
+    
+    console.log(`[CLEANUP] Deleted ${deletedCount} completed patients older than ${hoursOld} hours for user ${userId}`);
+    return deletedCount;
+  }
+
+  async deleteAllCompletedPatients(userId: string): Promise<number> {
+    const allPatients = Array.from(this.patients.values()).filter(p => p.userId === userId);
+    const completedPatients = allPatients.filter(p => p.status === "completed");
+    
+    let deletedCount = 0;
+    
+    for (const patient of completedPatients) {
+      const deleted = this.patients.delete(patient.id);
+      if (deleted) {
+        deletedCount++;
+      }
+    }
+    
+    console.log(`[CLEANUP] Deleted ${deletedCount} completed patients for user ${userId}`);
     return deletedCount;
   }
 
@@ -1850,6 +1893,41 @@ export class DatabaseStorage implements IStorage {
       );
     
     return result.rowCount || 0;
+  }
+
+  async deleteOldCompletedPatients(userId: string, hoursOld: number = 24): Promise<number> {
+    const cutoffTime = new Date();
+    cutoffTime.setHours(cutoffTime.getHours() - hoursOld);
+
+    // Delete completed patients older than cutoff time (hard delete)
+    const result = await db.delete(schema.patients)
+      .where(
+        and(
+          eq(schema.patients.userId, userId),
+          eq(schema.patients.status, "completed"),
+          sql`${schema.patients.completedAt} IS NOT NULL`,
+          sql`${schema.patients.completedAt} < ${cutoffTime.toISOString()}`
+        )
+      );
+    
+    const deletedCount = result.rowCount || 0;
+    console.log(`[CLEANUP] Deleted ${deletedCount} completed patients older than ${hoursOld} hours for user ${userId}`);
+    return deletedCount;
+  }
+
+  async deleteAllCompletedPatients(userId: string): Promise<number> {
+    // Delete ALL completed patients (hard delete)
+    const result = await db.delete(schema.patients)
+      .where(
+        and(
+          eq(schema.patients.userId, userId),
+          eq(schema.patients.status, "completed")
+        )
+      );
+    
+    const deletedCount = result.rowCount || 0;
+    console.log(`[CLEANUP] Deleted ${deletedCount} completed patients for user ${userId}`);
+    return deletedCount;
   }
 
   // Media methods
