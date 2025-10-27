@@ -47,9 +47,8 @@ try {
   });
   
   bucket = storage.bucket(gcsBucketName);
-  console.log('✅ GCS initialized successfully with bucket:', gcsBucketName);
 } catch (error) {
-  console.error('❌ Failed to initialize GCS:', error);
+  console.error('[GCS] Failed to initialize GCS:', error);
   console.error('Make sure GC_SERVICE_KEY contains valid JSON and GCS_BUCKET_NAME is set');
 }
 

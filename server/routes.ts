@@ -282,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "QR successfully authenticated - please enter code from phone",
           timestamp: new Date()
         });
-        console.log(`✅ Server emitted QR authorization to room: ${qrRoom}`);
+        // console.log removed (emoji)
       }
 
       // Return 6-digit code to PHONE to display
@@ -336,7 +336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             message: "Login QR selesai - TV perlu refresh untuk apply session",
             timestamp: new Date()
           });
-          console.log(`🎯 Server emitted QR finalization to room: ${qrRoom}`);
+          // console.log removed (emoji)
           
           // Clean up the QR room after a short delay
           setTimeout(() => {
@@ -415,7 +415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
       
-      console.log("📥 POST /api/patients - Request body:", req.body);
+      console.log("[PATIENT] POST /api/patients - Request body:", req.body);
       
       // Add userId from session to patient data
       const patientDataWithUser = {
@@ -423,13 +423,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.session.userId
       };
       
-      console.log("📦 Patient data with user:", patientDataWithUser);
+      console.log("[PATIENT] Patient data with user:", patientDataWithUser);
       
       const patientData = insertPatientSchema.parse(patientDataWithUser);
-      console.log("✅ Parsed patient data:", patientData);
+      console.log("[PATIENT] Parsed patient data:", patientData);
       
       const patient = await storage.createPatient(patientData);
-      console.log("💾 Created patient:", patient);
+      console.log("[PATIENT] Created patient:", patient);
       
       res.json(patient);
     } catch (error) {
@@ -744,14 +744,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete user
   app.delete("/api/users/:id", async (req, res) => {
     try {
-      console.log("🗑️ DELETE user request:", {
+      console.log("[DELETE USER] Request:", {
         sessionUserId: req.session.userId,
         targetUserId: req.params.id
       });
 
       // Check authentication
       if (!req.session.userId) {
-        console.log("❌ No session userId");
+        console.log("[DELETE USER] ERROR: No session userId");
         return res.status(401).json({ error: "Session inactive" });
       }
       
@@ -759,7 +759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Prevent self-deletion
       if (req.session.userId === id) {
-        console.log("❌ Attempting self-deletion");
+        console.log("[DELETE USER] ERROR: Attempting self-deletion");
         return res.status(403).json({ 
           error: "Cannot delete your own account"
         });
@@ -767,16 +767,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get the user to be deleted
       const targetUser = await storage.getUser(id);
-      console.log("👤 Target user:", targetUser);
+      console.log("[DELETE USER] Target user:", targetUser);
       
       if (!targetUser) {
-        console.log("❌ User not found");
+        console.log("[DELETE USER] ERROR: User not found");
         return res.status(404).json({ error: "User not found" });
       }
       
       // Prevent deleting the default admin account
       if (targetUser.username === "admin" && targetUser.role === "admin") {
-        console.log("❌ Attempting to delete default admin");
+        console.log("[DELETE USER] ERROR: Attempting to delete default admin");
         return res.status(403).json({ 
           error: "Cannot delete default admin account"
         });
@@ -786,27 +786,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (targetUser.role === "admin") {
         const allUsers = await storage.getUsers();
         const adminCount = allUsers.filter(u => u.role === "admin").length;
-        console.log("👥 Admin count:", adminCount);
+        console.log("[DELETE USER] Admin count:", adminCount);
         
         if (adminCount <= 1) {
-          console.log("❌ Cannot delete last admin");
+          console.log("[DELETE USER] ERROR: Cannot delete last admin");
           return res.status(403).json({ 
             error: "Cannot delete the last admin user"
           });
         }
       }
       
-      console.log("✅ Proceeding with deletion");
+      console.log("[DELETE USER] Proceeding with deletion");
       const success = await storage.deleteUser(id);
       if (!success) {
-        console.log("❌ Delete failed - user not found");
+        console.log("[DELETE USER] ERROR: Delete failed - user not found");
         return res.status(404).json({ error: "User not found" });
       }
       
-      console.log("✅ User deleted successfully");
+      console.log("[DELETE USER] SUCCESS: User deleted");
       res.json({ message: "User deleted successfully" });
     } catch (error) {
-      console.error("❌ Error deleting user:", error);
+      console.error("[DELETE USER] ERROR:", error);
       res.status(500).json({ error: "Failed to delete user" });
     }
   });

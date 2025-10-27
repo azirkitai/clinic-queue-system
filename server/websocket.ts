@@ -43,24 +43,24 @@ export function setupWebSocket(io: Server) {
         // Authenticated connection - assign userId and clinic room
         socket.userId = req.session.userId;
         socket.clinicRoom = `clinic:${req.session.userId}`;
-        console.log(`✅ WebSocket authenticated: User ${socket.userId} -> Room ${socket.clinicRoom}`);
+        // console.log removed (emoji)
         next();
       } else {
         // Unauthenticated connection - could be TV display
         // For now, we'll allow but without joining clinic rooms
-        console.log(`⚠️ WebSocket unauthenticated connection: ${socket.id}`);
+        // console.log removed (emoji)
         next();
       }
     });
   });
 
   io.on("connection", (socket: AuthenticatedSocket) => {
-    console.log(`🔌 WebSocket connected: ${socket.id} (User: ${socket.userId || 'anonymous'})`);
+    // console.log removed (emoji)
 
     if (socket.userId && socket.clinicRoom) {
       // Join clinic-specific room for tenant isolation
       socket.join(socket.clinicRoom);
-      console.log(`🏥 User ${socket.userId} joined clinic room: ${socket.clinicRoom}`);
+      // console.log removed (emoji)
       
       // Emit welcome message to confirm room join
       socket.emit("clinic:joined", {
@@ -77,7 +77,7 @@ export function setupWebSocket(io: Server) {
         return;
       }
       
-      console.log(`📞 Patient call from clinic ${socket.userId}:`, data);
+      console.log(`[WEBSOCKET] Patient call from clinic ${socket.userId}:`, data);
       
       // Broadcast to all clients in the same clinic room
       io.to(socket.clinicRoom).emit("patient:called", {
@@ -94,7 +94,7 @@ export function setupWebSocket(io: Server) {
         return;
       }
       
-      console.log(`📋 Patient update from clinic ${socket.userId}:`, data);
+      console.log(`[WEBSOCKET] Patient update from clinic ${socket.userId}:`, data);
       
       // Broadcast to all clients in the same clinic room
       io.to(socket.clinicRoom).emit("patient:updated", {
@@ -111,7 +111,7 @@ export function setupWebSocket(io: Server) {
         return;
       }
       
-      console.log(`🎯 Queue update from clinic ${socket.userId}:`, data);
+      console.log(`[WEBSOCKET] Queue update from clinic ${socket.userId}:`, data);
       
       // Broadcast to all clients in the same clinic room
       io.to(socket.clinicRoom).emit("queue:updated", {
@@ -132,7 +132,7 @@ export function setupWebSocket(io: Server) {
       
       // TODO: Validate TV token and join appropriate clinic room
       // This will be implemented when TV token validation is needed
-      console.log(`📺 TV display connection attempt with token: ${token}`);
+      // console.log removed (emoji)
       socket.emit("tv:connected", { message: "TV display connected" });
     });
 
@@ -166,7 +166,7 @@ export function setupWebSocket(io: Server) {
         
         const qrRoom = `qr:${qrId}`;
         socket.join(qrRoom);
-        console.log(`🔗 Client ${socket.id} joined QR room: ${qrRoom} (validated)`);
+        // console.log removed (emoji)
         
         socket.emit("qr:joined", { 
           qrId, 
@@ -185,10 +185,10 @@ export function setupWebSocket(io: Server) {
 
     // Handle disconnection
     socket.on("disconnect", (reason) => {
-      console.log(`🔌❌ WebSocket disconnected: ${socket.id} (User: ${socket.userId || 'anonymous'}) - Reason: ${reason}`);
+      // console.log removed (emoji)
       
       if (socket.clinicRoom) {
-        console.log(`🏥❌ User ${socket.userId} left clinic room: ${socket.clinicRoom}`);
+        // console.log removed (emoji)
       }
     });
 
@@ -198,13 +198,13 @@ export function setupWebSocket(io: Server) {
     });
   });
 
-  console.log("🌐 WebSocket server initialized with multi-tenant room isolation");
+  console.log("[WEBSOCKET] WebSocket server initialized with multi-tenant room isolation");
 }
 
 // Helper function to broadcast to specific clinic
 export function broadcastToClinic(io: Server, userId: string, event: string, data: any) {
   const clinicRoom = `clinic:${userId}`;
-  console.log(`📡 Broadcasting to clinic ${userId} (room: ${clinicRoom}):`, event);
+  console.log(`[WEBSOCKET] Broadcasting to clinic ${userId} (room: ${clinicRoom}):`, event);
   
   io.to(clinicRoom).emit(event, {
     ...data,

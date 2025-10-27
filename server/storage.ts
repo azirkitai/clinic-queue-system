@@ -305,34 +305,23 @@ export class MemStorage implements IStorage {
 
   // Authentication method - verify user credentials
   async authenticateUser(username: string, password: string): Promise<User | null> {
-    console.log('🔐 AUTH: Attempting login for username:', username);
     const user = await this.getUserByUsername(username);
     
     if (!user) {
-      console.log('❌ AUTH: User not found');
       return null;
     }
     
     if (!user.isActive) {
-      console.log('❌ AUTH: User is inactive');
       return null;
     }
-    
-    console.log('🔑 AUTH: User found, verifying password...');
-    console.log('🔑 AUTH: Provided password length:', password.length);
-    console.log('🔑 AUTH: Stored hash starts with:', user.password.substring(0, 10));
     
     // Compare provided password with hashed password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     
-    console.log('🔑 AUTH: Password valid?', isPasswordValid);
-    
     if (!isPasswordValid) {
-      console.log('❌ AUTH: Invalid password');
       return null; // Invalid password
     }
     
-    console.log('✅ AUTH: Login successful for user:', username);
     // Return user without updating lastLogin since column doesn't exist in database
     return user;
   }
@@ -1287,8 +1276,6 @@ export class DatabaseStorage implements IStorage {
         role: 'admin',
         isActive: true,
       });
-
-      console.log('✅ Default admin user created (username: admin, password: admin123)');
     }
   }
 
@@ -1751,12 +1738,6 @@ export class DatabaseStorage implements IStorage {
     
     // Special handling for "requeue" status - keep window unchanged, patient stays visible on TV
     if (status === "requeue") {
-      console.log(`🔄 REQUEUE: Keeping windowId unchanged (patient stays on TV)`, {
-        patientId: id,
-        currentWindowId: currentPatient.windowId,
-        requeueReason: requeueReason
-      });
-      
       const updateData: any = { 
         status,
         // windowId remains unchanged - patient stays visible on TV
@@ -1769,24 +1750,11 @@ export class DatabaseStorage implements IStorage {
         .where(and(eq(schema.patients.id, id), eq(schema.patients.userId, userId)))
         .returning();
 
-      console.log(`✅ REQUEUE updated (stays on TV):`, {
-        id: updatedPatient?.id,
-        name: updatedPatient?.name,
-        status: updatedPatient?.status,
-        windowId: updatedPatient?.windowId,
-        requeueReason: updatedPatient?.requeueReason
-      });
-
       return updatedPatient;
     }
     
     // Special handling for "completed" status - keep window unchanged, patient stays visible on TV
     if (status === "completed") {
-      console.log(`🔄 COMPLETED: Keeping windowId unchanged (patient stays on TV)`, {
-        patientId: id,
-        currentWindowId: currentPatient.windowId
-      });
-      
       const updateData: any = { 
         status,
         // windowId remains unchanged - patient stays visible on TV
@@ -1798,13 +1766,6 @@ export class DatabaseStorage implements IStorage {
         .set(updateData)
         .where(and(eq(schema.patients.id, id), eq(schema.patients.userId, userId)))
         .returning();
-
-      console.log(`✅ COMPLETED updated (stays on TV):`, {
-        id: updatedPatient?.id,
-        name: updatedPatient?.name,
-        status: updatedPatient?.status,
-        windowId: updatedPatient?.windowId
-      });
 
       return updatedPatient;
     }
@@ -1823,21 +1784,12 @@ export class DatabaseStorage implements IStorage {
     if (status === "called") {
       updateData.calledAt = now;
       updateData.readyForDispensary = false; // Clear flag when patient is called
-      console.log(`📞 CALLING PATIENT: ${id} - New calledAt: ${now.toISOString()}`);
     }
 
     const [updatedPatient] = await db.update(schema.patients)
       .set(updateData)
       .where(and(eq(schema.patients.id, id), eq(schema.patients.userId, userId)))
       .returning();
-
-    console.log(`✅ Patient status updated:`, {
-      id: updatedPatient?.id,
-      name: updatedPatient?.name,
-      status: updatedPatient?.status,
-      calledAt: updatedPatient?.calledAt?.toISOString(),
-      windowId: updatedPatient?.windowId
-    });
 
     return updatedPatient;
   }
@@ -2075,14 +2027,11 @@ export class DatabaseStorage implements IStorage {
       .orderBy(sql`${schema.patients.calledAt} DESC`) // Most recent call first
       .limit(1);
     
-    console.log("🔍 getCurrentCall raw result:", result);
-    
     const finalResult = result ? {
       ...result,
       windowName: result.room || undefined
     } as Patient & { room?: string } : undefined;
     
-    console.log("🔍 getCurrentCall final result:", finalResult);
     return finalResult;
   }
 
