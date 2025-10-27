@@ -20,6 +20,10 @@ Preferred communication style: Simple, everyday language.
 
 ### Backend Architecture
 - **Server**: Express.js with TypeScript
+- **Database**: Neon PostgreSQL with serverless driver
+  - **Autoscale Settings**: Min 0.25 CU, Max 1 CU (no scale-to-zero)
+  - **Connection**: Uses `@neondatabase/serverless` with pooling
+  - **Optimization**: Server-side caching (2-3s TTL) for high-frequency endpoints
 - **Database ORM**: Drizzle ORM configured for PostgreSQL
 - **API Design**: RESTful endpoints with `/api` prefix
 - **Storage Layer**: Abstracted storage interface with both memory and database implementations
