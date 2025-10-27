@@ -120,6 +120,29 @@ app.use((req, res, next) => {
   // Register API routes (but use httpServer instead of app.listen)
   await registerRoutes(app);
 
+  // AUTO-CLEANUP: Delete old completed patients on startup to reduce database size
+  // This runs once when server starts to ensure old data doesn't accumulate
+  try {
+    const { getStorage } = await import("./storage");
+    const storage = getStorage();
+    
+    // Get all users and clean up their old completed patients (>24 hours)
+    const users = await storage.getUsers();
+    let totalCleaned = 0;
+    
+    for (const user of users) {
+      const cleaned = await storage.deleteOldCompletedPatients(user.id, 24);
+      totalCleaned += cleaned;
+    }
+    
+    if (totalCleaned > 0) {
+      console.log(`[STARTUP CLEANUP] Deleted ${totalCleaned} old completed patients (>24h) across all users`);
+    }
+  } catch (error) {
+    console.error('[STARTUP CLEANUP] Error during cleanup:', error);
+    // Don't crash server if cleanup fails
+  }
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
