@@ -19,6 +19,64 @@ import path from "path";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import gcsRouter from "./gcs";
 
+// Server-side cache for high-frequency read endpoints
+// Reduces Neon CPU usage by caching responses for 2-3 seconds
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+  userId: string;
+}
+
+const apiCache = new Map<string, CacheEntry>();
+const CACHE_TTL = 2500; // 2.5 seconds - balance between freshness and CPU reduction
+
+// Cache helper with tenant isolation
+function getCached(key: string, userId: string): any | null {
+  const cacheKey = `${userId}:${key}`;
+  const entry = apiCache.get(cacheKey);
+  
+  if (entry && Date.now() - entry.timestamp < CACHE_TTL && entry.userId === userId) {
+    return entry.data;
+  }
+  
+  // Clean up expired entry
+  if (entry) {
+    apiCache.delete(cacheKey);
+  }
+  
+  return null;
+}
+
+function setCache(key: string, userId: string, data: any): void {
+  const cacheKey = `${userId}:${key}`;
+  apiCache.set(cacheKey, {
+    data,
+    timestamp: Date.now(),
+    userId
+  });
+}
+
+function invalidateCache(userId: string, pattern?: string): void {
+  // Invalidate all cache entries for this user
+  for (const [key, entry] of apiCache.entries()) {
+    if (entry.userId === userId) {
+      if (!pattern || key.includes(pattern)) {
+        apiCache.delete(key);
+      }
+    }
+  }
+}
+
+// Periodic cache cleanup (every 10 seconds)
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of apiCache.entries()) {
+    if (now - entry.timestamp > CACHE_TTL) {
+      apiCache.delete(key);
+    }
+  }
+}, 10000);
+
 // Configure multer for file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -431,6 +489,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const patient = await storage.createPatient(patientData);
       console.log("[PATIENT] Created patient:", patient);
       
+      // Invalidate cache after creating patient
+      invalidateCache(req.session.userId);
+      
       res.json(patient);
     } catch (error) {
       console.error("Error creating patient:", error);
@@ -518,6 +579,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Invalidate cache after status update
+      invalidateCache(req.session.userId);
+      
       res.json(patient);
     } catch (error) {
       console.error("Error updating patient status:", error);
@@ -540,6 +604,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Patient not found" });
       }
       
+      // Invalidate cache after priority toggle
+      invalidateCache(req.session.userId);
+      
       res.json(patient);
     } catch (error) {
       console.error("Error toggling patient priority:", error);
@@ -561,6 +628,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!deleted) {
         return res.status(404).json({ error: "Patient not found" });
       }
+      
+      // Invalidate cache after deletion
+      invalidateCache(req.session.userId);
       
       res.json({ success: true });
     } catch (error) {
@@ -595,6 +665,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[RESET QUEUE] Deleted ${todayDeleted} today's patients + ${completedDeleted} old completed patients = ${totalDeleted} total for user ${req.session.userId}`);
       
+      // Invalidate all cache after reset
+      invalidateCache(req.session.userId);
+      
       res.json({ 
         success: true, 
         deletedCount: totalDeleted,
@@ -620,6 +693,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deletedCount = await storage.deleteAllCompletedPatients(req.session.userId);
       
       console.log(`[CLEAR COMPLETED] Deleted ${deletedCount} completed patients for user ${req.session.userId}`);
+      
+      // Invalidate cache after clearing completed patients
+      invalidateCache(req.session.userId);
       
       res.json({ 
         success: true, 
@@ -651,6 +727,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deletedCount = await storage.deleteOldCompletedPatients(req.session.userId, hoursOld);
       
       console.log(`[CLEAR OLD] Deleted ${deletedCount} completed patients older than ${hoursOld}h for user ${req.session.userId}`);
+      
+      // Invalidate cache after clearing old completed patients
+      invalidateCache(req.session.userId);
       
       res.json({ 
         success: true, 
@@ -939,7 +1018,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
       
+      // Check server-side cache first (2.5s TTL)
+      const cached = getCached('windows', req.session.userId);
+      if (cached !== null) {
+        return res.json(cached);
+      }
+      
       const windows = await storage.getWindows(req.session.userId);
+      
+      // Cache the result
+      setCache('windows', req.session.userId, windows);
+      
       res.json(windows);
     } catch (error) {
       console.error("Error fetching windows:", error);
@@ -1074,7 +1163,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
       
+      // Check server-side cache first (2.5s TTL)
+      const cached = getCached('dashboard-stats', req.session.userId);
+      if (cached !== null) {
+        return res.json(cached);
+      }
+      
       const stats = await storage.getDashboardStats(req.session.userId);
+      
+      // Cache the result
+      setCache('dashboard-stats', req.session.userId, stats);
+      
       res.json(stats);
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
@@ -1090,16 +1189,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
       
-      // Force no cache for current call API to ensure real-time updates
-      res.set({
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'ETag': `"${Date.now()}"` // Unique ETag to prevent 304 responses
-      });
+      // Check server-side cache first (2.5s TTL)
+      const cached = getCached('current-call', req.session.userId);
+      if (cached !== null) {
+        return res.json(cached);
+      }
       
+      // Fetch from database
       const currentCall = await storage.getCurrentCall(req.session.userId);
-      res.json(currentCall || null);
+      const result = currentCall || null;
+      
+      // Cache the result
+      setCache('current-call', req.session.userId, result);
+      
+      res.json(result);
     } catch (error) {
       console.error("Error fetching current call:", error);
       res.status(500).json({ error: "Failed to fetch current call" });
@@ -1115,7 +1218,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const limit = parseInt(req.query.limit as string) || 10;
+      
+      // Check server-side cache first (2.5s TTL)
+      const cacheKey = `history-${limit}`;
+      const cached = getCached(cacheKey, req.session.userId);
+      if (cached !== null) {
+        return res.json(cached);
+      }
+      
       const history = await storage.getRecentHistory(req.session.userId, limit);
+      
+      // Cache the result
+      setCache(cacheKey, req.session.userId, history);
+      
       res.json(history);
     } catch (error) {
       console.error("Error fetching recent history:", error);
@@ -1133,7 +1248,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
       
+      // Check server-side cache first (2.5s TTL)
+      const cached = getCached('settings', req.session.userId);
+      if (cached !== null) {
+        return res.json(cached);
+      }
+      
       const settings = await storage.getSettings(req.session.userId);
+      
+      // Cache the result
+      setCache('settings', req.session.userId, settings);
+      
       res.json(settings);
     } catch (error) {
       console.error("Error fetching settings:", error);
@@ -1792,7 +1917,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
       
+      // Check server-side cache first (2.5s TTL)
+      const cached = getCached('active-text-groups', req.session.userId);
+      if (cached !== null) {
+        return res.json(cached);
+      }
+      
       const activeTextGroups = await storage.getActiveTextGroups(req.session.userId);
+      
+      // Cache the result
+      setCache('active-text-groups', req.session.userId, activeTextGroups);
+      
       res.json(activeTextGroups);
     } catch (error) {
       console.error("Error fetching active text groups:", error);
@@ -1964,11 +2099,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
       
+      // Check server-side cache first (2.5s TTL)
+      const cached = getCached('active-theme', req.session.userId);
+      if (cached !== null) {
+        return res.json(cached);
+      }
+      
       const activeTheme = await storage.getActiveTheme(req.session.userId);
       
       if (!activeTheme) {
         return res.status(404).json({ error: "No active theme found" });
       }
+      
+      // Cache the result
+      setCache('active-theme', req.session.userId, activeTheme);
       
       res.json(activeTheme);
     } catch (error) {
