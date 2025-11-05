@@ -92,6 +92,31 @@ The system uses four main entities:
 
 The application is designed to be deployed on platforms supporting Node.js with PostgreSQL database connectivity, with specific optimizations for Replit deployment including development tooling and error overlays.
 
+## Bug Fixes & Stability Improvements
+
+### Fix: System Stuck/Loading After Long Runtime (Nov 2025)
+
+**Problem:** Devices would get stuck without real-time updates after running for extended periods. Dashboard wouldn't update when patients were called in another room, requiring manual refresh.
+
+**Root Causes:**
+1. WebSocket reconnection limited to 5 attempts - after failures, connection would give up permanently
+2. `staleTime: Infinity` prevented polling fallback from working
+3. `useWebSocket` dependency array caused unnecessary reconnections
+4. No query refetch on WebSocket reconnection - missed events weren't caught up
+
+**Fixes Implemented:**
+1. ✅ **Infinite Reconnection** - Changed `reconnectionAttempts: 5` → `Infinity` to never give up
+2. ✅ **Polling Fallback** - Override `staleTime: 5000` in Dashboard queries to enable 30s fallback polling
+3. ✅ **Stable Dependencies** - Use refs for callbacks to prevent useEffect re-runs
+4. ✅ **Catch-up Refetch** - Enable `refetchOnReconnect: true` + auto-refetch on reconnect
+5. ✅ **Connection Indicator** - Yellow banner shows when WebSocket is disconnected
+
+**Impact:**
+- ✅ Devices never permanently stuck - fallback polling ensures data updates
+- ✅ Auto-recovery on reconnect - missed events are fetched automatically  
+- ✅ Visual feedback - operators can see connection status
+- ✅ Production-ready for 24/7 operation
+
 ## Performance Optimizations
 
 ### Bandwidth & CPU Reduction (Render + Neon)
