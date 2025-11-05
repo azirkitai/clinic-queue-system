@@ -31,7 +31,7 @@ export default function Dashboard() {
   const [showExitButton, setShowExitButton] = useState(false);
   
   // WebSocket connection for real-time updates
-  useWebSocket({
+  const { connected: wsConnected } = useWebSocket({
     onConnect: () => console.log('[Dashboard] WebSocket connected'),
     onDisconnect: () => console.log('[Dashboard] WebSocket disconnected'),
   });
@@ -119,34 +119,44 @@ export default function Dashboard() {
     }
   };
 
-  // Fetch dashboard statistics (WebSocket updates automatically, slow fallback polling)
+  // Fetch dashboard statistics (WebSocket updates automatically, polling as fallback)
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats & { totalWindows: number }>({
     queryKey: ['/api/dashboard/stats'],
-    refetchInterval: 30000, // Fallback polling every 30s (WebSocket is primary update mechanism)
+    staleTime: 5000, // ✅ Consider data stale after 5s to enable polling
+    refetchInterval: 30000, // Fallback polling every 30s (WebSocket is primary)
+    refetchOnReconnect: true, // Refetch when network reconnects
   });
 
-  // Fetch current call (WebSocket updates automatically, slow fallback polling)
+  // Fetch current call (WebSocket updates automatically, polling as fallback)
   const { data: currentCall, error: currentCallError, isLoading: currentCallLoading } = useQuery<Patient | null>({
     queryKey: ['/api/dashboard/current-call'],
-    refetchInterval: 30000, // Fallback polling every 30s (WebSocket is primary update mechanism)
+    staleTime: 5000, // ✅ Consider data stale after 5s to enable polling
+    refetchInterval: 30000, // Fallback polling every 30s (WebSocket is primary)
+    refetchOnReconnect: true,
   });
 
-  // Fetch recent history (WebSocket updates automatically, slow fallback polling)
+  // Fetch recent history (WebSocket updates automatically, polling as fallback)
   const { data: history = [] } = useQuery<Patient[]>({
     queryKey: ['/api/dashboard/history'],
-    refetchInterval: 30000, // Fallback polling every 30s (WebSocket is primary update mechanism)
+    staleTime: 5000, // ✅ Consider data stale after 5s to enable polling
+    refetchInterval: 30000, // Fallback polling every 30s (WebSocket is primary)
+    refetchOnReconnect: true,
   });
 
-  // Fetch windows data (WebSocket updates automatically, slow fallback polling)
+  // Fetch windows data (WebSocket updates automatically, polling as fallback)
   const { data: windows = [] } = useQuery<any[]>({
     queryKey: ['/api/windows'],
-    refetchInterval: 30000, // Fallback polling every 30s (WebSocket is primary update mechanism)
+    staleTime: 5000, // ✅ Consider data stale after 5s to enable polling
+    refetchInterval: 30000, // Fallback polling every 30s (WebSocket is primary)
+    refetchOnReconnect: true,
   });
 
   // Fetch active media for display (less critical, slower polling)
   const { data: activeMedia = [] } = useQuery<any[]>({
     queryKey: ['/api/display'],
+    staleTime: 30000, // Consider data stale after 30s
     refetchInterval: 60000, // Polling every 60s (rarely changes)
+    refetchOnReconnect: true,
   });
 
   // Fetch display settings
@@ -289,6 +299,16 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Connection Status Indicator (only show when disconnected) */}
+      {!wsConnected && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 flex items-center gap-2" data-testid="status-websocket-disconnected">
+          <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+          <span className="text-sm text-yellow-800 dark:text-yellow-200">
+            Reconnecting to real-time updates... (using fallback polling)
+          </span>
         </div>
       )}
 

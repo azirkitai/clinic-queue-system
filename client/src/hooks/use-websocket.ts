@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { queryClient } from '@/lib/queryClient';
 
@@ -9,16 +9,28 @@ interface UseWebSocketOptions {
 
 export function useWebSocket(options: UseWebSocketOptions = {}) {
   const socketRef = useRef<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
   const { onConnect, onDisconnect } = options;
+  
+  // Stable callbacks to prevent useEffect re-runs
+  const onConnectRef = useRef(onConnect);
+  const onDisconnectRef = useRef(onDisconnect);
+  
+  useEffect(() => {
+    onConnectRef.current = onConnect;
+    onDisconnectRef.current = onDisconnect;
+  }, [onConnect, onDisconnect]);
 
   useEffect(() => {
-    // Create socket connection
+    // Create socket connection with infinite reconnection attempts
     const socket = io({
       path: '/socket.io',
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: Infinity, // ✅ Never give up reconnecting!
+      timeout: 20000,
     });
 
     socketRef.current = socket;
@@ -26,12 +38,29 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     // Connection events
     socket.on('connect', () => {
       console.log('[WS] Connected:', socket.id);
-      onConnect?.();
+      setIsConnected(true);
+      
+      // Refetch all queries on reconnect to catch up missed events
+      queryClient.refetchQueries({ 
+        type: 'active',
+        stale: true 
+      });
+      
+      onConnectRef.current?.();
     });
 
     socket.on('disconnect', (reason) => {
       console.log('[WS] Disconnected:', reason);
-      onDisconnect?.();
+      setIsConnected(false);
+      onDisconnectRef.current?.();
+    });
+    
+    socket.on('reconnect_attempt', (attemptNumber) => {
+      console.log('[WS] Reconnection attempt:', attemptNumber);
+    });
+    
+    socket.on('reconnect_error', (error) => {
+      console.error('[WS] Reconnection error:', error.message);
     });
 
     socket.on('clinic:joined', (data) => {
@@ -101,6 +130,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     return () => {
       socket.off('connect');
       socket.off('disconnect');
+      socket.off('reconnect_attempt');
+      socket.off('reconnect_error');
       socket.off('clinic:joined');
       socket.off('patient:created');
       socket.off('patient:status-updated');
@@ -115,7 +146,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       socket.off('text-groups:updated');
       socket.disconnect();
     };
-  }, [onConnect, onDisconnect]);
+  }, []); // ✅ Empty deps - only run once on mount
 
   // Emit helper
   const emit = useCallback((event: string, data?: any) => {
@@ -127,6 +158,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   return {
     socket: socketRef.current,
     emit,
-    connected: socketRef.current?.connected ?? false,
+    connected: isConnected,
   };
 }
