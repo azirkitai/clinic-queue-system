@@ -70,7 +70,7 @@ function invalidateCache(userId: string, pattern?: string, immediate: boolean = 
   
   // Function to actually invalidate
   const doInvalidate = () => {
-    for (const [key, entry] of apiCache.entries()) {
+    for (const [key, entry] of Array.from(apiCache.entries())) {
       if (entry.userId === userId) {
         if (!pattern || key.includes(pattern)) {
           apiCache.delete(key);
@@ -93,7 +93,7 @@ function invalidateCache(userId: string, pattern?: string, immediate: boolean = 
 // Periodic cache cleanup (every 10 seconds)
 setInterval(() => {
   const now = Date.now();
-  for (const [key, entry] of apiCache.entries()) {
+  for (const [key, entry] of Array.from(apiCache.entries())) {
     if (now - entry.timestamp > CACHE_TTL) {
       apiCache.delete(key);
     }
