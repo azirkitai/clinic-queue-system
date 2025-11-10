@@ -56,14 +56,37 @@ function setCache(key: string, userId: string, data: any): void {
   });
 }
 
-function invalidateCache(userId: string, pattern?: string): void {
-  // Invalidate all cache entries for this user
-  for (const [key, entry] of apiCache.entries()) {
-    if (entry.userId === userId) {
-      if (!pattern || key.includes(pattern)) {
-        apiCache.delete(key);
+// Debounce timers for cache invalidation (batch rapid mutations)
+const invalidateTimers = new Map<string, NodeJS.Timeout>();
+const INVALIDATE_DEBOUNCE_MS = 300; // 300ms debounce to batch rapid mutations
+
+function invalidateCache(userId: string, pattern?: string, immediate: boolean = false): void {
+  const timerKey = `${userId}:${pattern || 'all'}`;
+  
+  // Clear existing debounce timer
+  if (invalidateTimers.has(timerKey)) {
+    clearTimeout(invalidateTimers.get(timerKey)!);
+  }
+  
+  // Function to actually invalidate
+  const doInvalidate = () => {
+    for (const [key, entry] of apiCache.entries()) {
+      if (entry.userId === userId) {
+        if (!pattern || key.includes(pattern)) {
+          apiCache.delete(key);
+        }
       }
     }
+    invalidateTimers.delete(timerKey);
+  };
+  
+  // Immediate invalidation for destructive actions (reset, delete)
+  if (immediate) {
+    doInvalidate();
+  } else {
+    // Debounced invalidation for updates (batch within 300ms)
+    const timer = setTimeout(doInvalidate, INVALIDATE_DEBOUNCE_MS);
+    invalidateTimers.set(timerKey, timer);
   }
 }
 
@@ -653,8 +676,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Patient not found" });
       }
       
-      // Invalidate cache after deletion
-      invalidateCache(req.session.userId);
+      // Invalidate cache immediately after deletion (destructive action)
+      invalidateCache(req.session.userId, undefined, true);
       
       // Emit WebSocket event for real-time updates
       if (globalIo) {
@@ -697,8 +720,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[RESET QUEUE] Deleted ${todayDeleted} today's patients + ${completedDeleted} old completed patients = ${totalDeleted} total for user ${req.session.userId}`);
       
-      // Invalidate all cache after reset
-      invalidateCache(req.session.userId);
+      // Invalidate all cache immediately after reset (destructive action)
+      invalidateCache(req.session.userId, undefined, true);
       
       // Emit WebSocket event for real-time updates
       if (globalIo) {
@@ -733,8 +756,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[CLEAR COMPLETED] Deleted ${deletedCount} completed patients for user ${req.session.userId}`);
       
-      // Invalidate cache after clearing completed patients
-      invalidateCache(req.session.userId);
+      // Invalidate cache immediately after clearing completed (destructive action)
+      invalidateCache(req.session.userId, undefined, true);
       
       res.json({ 
         success: true, 
@@ -767,8 +790,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[CLEAR OLD] Deleted ${deletedCount} completed patients older than ${hoursOld}h for user ${req.session.userId}`);
       
-      // Invalidate cache after clearing old completed patients
-      invalidateCache(req.session.userId);
+      // Invalidate cache immediately after clearing old completed (destructive action)
+      invalidateCache(req.session.userId, undefined, true);
       
       res.json({ 
         success: true, 
@@ -1163,8 +1186,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Cannot delete window - window not found or currently occupied" });
       }
       
-      // Invalidate cache after deleting window
-      invalidateCache(req.session.userId);
+      // Invalidate cache immediately after deleting window (destructive action)
+      invalidateCache(req.session.userId, undefined, true);
       
       res.status(204).send();
     } catch (error) {
@@ -1485,8 +1508,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Setting not found" });
       }
       
-      // Invalidate cache after deleting setting
-      invalidateCache(req.session.userId);
+      // Invalidate cache immediately after deleting setting (destructive action)
+      invalidateCache(req.session.userId, undefined, true);
       
       res.json({ success: true });
     } catch (error) {
@@ -2328,8 +2351,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Theme not found or cannot delete active theme" });
       }
       
-      // Invalidate cache after deleting theme
-      invalidateCache(req.session.userId);
+      // Invalidate cache immediately after deleting theme (destructive action)
+      invalidateCache(req.session.userId, undefined, true);
       
       res.json({ success: true });
     } catch (error) {

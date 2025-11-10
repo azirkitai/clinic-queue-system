@@ -67,48 +67,106 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       console.log('[WS] Joined clinic room:', data);
     });
 
-    // Patient events - invalidate relevant queries
-    socket.on('patient:created', () => {
+    // Patient events - use optimistic cache updates to reduce HTTP refetches
+    socket.on('patient:created', (data: any) => {
+      // Optimistic update: Add patient to cache instead of refetching
+      if (data.patient) {
+        queryClient.setQueryData(['/api/patients'], (old: any) => {
+          if (!old) return old;
+          return [...old, data.patient];
+        });
+      }
+      // Still invalidate stats (lightweight query)
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
     });
 
-    socket.on('patient:status-updated', () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+    socket.on('patient:status-updated', (data: any) => {
+      // Optimistic update: Update patient in cache directly
+      if (data.patient) {
+        queryClient.setQueryData(['/api/patients'], (old: any) => {
+          if (!old) return old;
+          return old.map((p: any) => 
+            p.id === data.patient.id ? data.patient : p
+          );
+        });
+      }
+      
+      // Invalidate dependent queries (lightweight)
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/current-call'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/history'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
-    });
-
-    socket.on('patient:priority-updated', () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
-    });
-
-    socket.on('patient:deleted', () => {
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
+      
+      // Only invalidate history if patient completed
+      if (data.patient?.status === 'completed') {
+        queryClient.invalidateQueries({ queryKey: ['/api/dashboard/history'] });
+      }
+    });
+
+    socket.on('patient:priority-updated', (data: any) => {
+      // Optimistic update: Update patient priority in cache
+      if (data.patient) {
+        queryClient.setQueryData(['/api/patients'], (old: any) => {
+          if (!old) return old;
+          return old.map((p: any) => 
+            p.id === data.patient.id ? data.patient : p
+          );
+        });
+      }
+    });
+
+    socket.on('patient:deleted', (data: any) => {
+      // Optimistic update: Remove patient from cache
+      if (data.patientId) {
+        queryClient.setQueryData(['/api/patients'], (old: any) => {
+          if (!old) return old;
+          return old.filter((p: any) => p.id !== data.patientId);
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
     });
 
     socket.on('queue:reset', () => {
+      // Queue reset affects everything - full invalidation needed
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/current-call'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/history'] });
       queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
     });
 
-    // Window events
-    socket.on('window:created', () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
+    // Window events - optimistic updates
+    socket.on('window:created', (data: any) => {
+      // Optimistic update: Add window to cache
+      if (data.window) {
+        queryClient.setQueryData(['/api/windows'], (old: any) => {
+          if (!old) return old;
+          return [...old, data.window];
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
     });
 
-    socket.on('window:updated', () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
+    socket.on('window:updated', (data: any) => {
+      // Optimistic update: Update window in cache
+      if (data.window) {
+        queryClient.setQueryData(['/api/windows'], (old: any) => {
+          if (!old) return old;
+          return old.map((w: any) => 
+            w.id === data.window.id ? data.window : w
+          );
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
     });
 
-    socket.on('window:patient-updated', () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
+    socket.on('window:patient-updated', (data: any) => {
+      // Optimistic update: Update window with new patient assignment
+      if (data.window) {
+        queryClient.setQueryData(['/api/windows'], (old: any) => {
+          if (!old) return old;
+          return old.map((w: any) => 
+            w.id === data.window.id ? data.window : w
+          );
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/current-call'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
     });
