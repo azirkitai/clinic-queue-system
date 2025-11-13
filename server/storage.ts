@@ -60,6 +60,7 @@ export interface IStorage {
   // Patient methods
   createPatient(patient: InsertPatient): Promise<Patient>;
   getPatients(userId: string): Promise<Patient[]>;
+  getActivePatients(userId: string): Promise<Patient[]>; // Get non-archived, non-completed patients
   getPatientsByDate(date: string, userId: string): Promise<Patient[]>;
   getNextPatientNumber(userId: string): Promise<number>;
   updatePatientStatus(patientId: string, status: string, userId: string, windowId?: string | null, requeueReason?: string): Promise<Patient | undefined>;
@@ -372,6 +373,13 @@ export class MemStorage implements IStorage {
   async getPatients(userId: string): Promise<Patient[]> {
     // Filter out archived patients (soft delete)
     return Array.from(this.patients.values()).filter(p => p.userId === userId && !p.archivedAt);
+  }
+
+  async getActivePatients(userId: string): Promise<Patient[]> {
+    // Filter out archived AND completed patients (lighter response for dashboards)
+    return Array.from(this.patients.values()).filter(
+      p => p.userId === userId && !p.archivedAt && p.status !== 'completed'
+    );
   }
 
   async getPatientsByDate(date: string, userId: string): Promise<Patient[]> {
@@ -1680,6 +1688,18 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(schema.patients.userId, userId),
           sql`${schema.patients.archivedAt} IS NULL`
+        )
+      );
+  }
+
+  async getActivePatients(userId: string): Promise<Patient[]> {
+    // Filter out archived AND completed patients (lighter response for dashboards)
+    return await db.select().from(schema.patients)
+      .where(
+        and(
+          eq(schema.patients.userId, userId),
+          sql`${schema.patients.archivedAt} IS NULL`,
+          sql`${schema.patients.status} != 'completed'`
         )
       );
   }

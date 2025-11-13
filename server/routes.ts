@@ -549,6 +549,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get active patients (excludes completed patients for lighter payloads)
+  app.get("/api/patients/active", async (req, res) => {
+    try {
+      // Check authentication
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Session inactive" });
+      }
+      
+      // Check server-side cache first (2.5s TTL)
+      const cached = getCached('active-patients', req.session.userId);
+      if (cached !== null) {
+        return res.json(cached);
+      }
+      
+      const activePatients = await storage.getActivePatients(req.session.userId);
+      
+      // Cache the result
+      setCache('active-patients', req.session.userId, activePatients);
+      
+      res.json(activePatients);
+    } catch (error) {
+      console.error("Error fetching active patients:", error);
+      res.status(500).json({ error: "Failed to fetch active patients" });
+    }
+  });
+
   // Get today's patients
   app.get("/api/patients/today", async (req, res) => {
     try {
