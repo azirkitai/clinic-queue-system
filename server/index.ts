@@ -171,17 +171,23 @@ app.use((req, res, next) => {
       // Auto-complete old dispensary patients across all tenants
       const results = await storage.autoCompleteOldDispensaryPatients();
       
-      // Emit WebSocket events for each affected tenant
+      // Emit WebSocket events for each completed patient (so frontend updates in real-time)
       for (const result of results) {
         if (result.count > 0) {
-          io.to(`clinic:${result.userId}`).emit('patient:auto-completed', {
-            count: result.count,
-            patientIds: result.patientIds,
-            timestamp: Date.now()
-          });
+          // For each auto-completed patient, emit standard patient:status-updated event
+          for (const patientId of result.patientIds) {
+            const patient = await storage.getPatient(patientId);
+            if (patient) {
+              io.to(`clinic:${result.userId}`).emit('patient:status-updated', {
+                patient,
+                timestamp: Date.now()
+              });
+            }
+          }
           
-          // Trigger cache refresh on clients
+          // Also invalidate stats and history
           io.to(`clinic:${result.userId}`).emit('cache:invalidate', {
+            queries: ['stats', 'history'],
             reason: 'auto-complete-dispensary',
             timestamp: Date.now()
           });
