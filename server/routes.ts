@@ -694,6 +694,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Auto-complete dispensary patients older than 90 minutes
+  app.post("/api/patients/auto-complete-dispensary", async (req, res) => {
+    try {
+      // Check authentication
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Session inactive" });
+      }
+      
+      // Get all patients ready for dispensary
+      const allPatients = await storage.getPatients(req.session.userId);
+      const dispensaryPatients = allPatients.filter(p => p.readyForDispensary && p.status !== 'completed');
+      
+      const autoCompletedPatients: string[] = [];
+      const NINETY_MINUTES_MS = 90 * 60 * 1000; // 90 minutes in milliseconds
+      
+      for (const patient of dispensaryPatients) {
+        // Find when patient entered dispensary from trackingHistory
+        const trackingHistory = patient.trackingHistory as any[] || [];
+        const dispensaryEvent = trackingHistory.find((event: any) => event.action === 'dispensary');
+        
+        if (dispensaryEvent && dispensaryEvent.timestamp) {
+          const dispensaryTime = new Date(dispensaryEvent.timestamp).getTime();
+          const currentTime = Date.now();
+          const timeDiff = currentTime - dispensaryTime;
+          
+          // If patient has been in dispensary for more than 90 minutes, auto-complete
+          if (timeDiff > NINETY_MINUTES_MS) {
+            console.log(`[AUTO-COMPLETE] Patient ${patient.id} (${patient.name || patient.number}) in dispensary for ${Math.round(timeDiff / 60000)} minutes - auto-completing`);
+            
+            // Complete the patient (windowId null, no requeueReason)
+            await storage.updatePatientStatus(patient.id, 'completed', req.session.userId, null);
+            
+            // Clear patient from window if assigned
+            const windows = await storage.getWindows(req.session.userId);
+            const currentWindow = windows.find(w => w.currentPatientId === patient.id);
+            if (currentWindow) {
+              await storage.updateWindowPatient(currentWindow.id, req.session.userId, undefined);
+            }
+            
+            autoCompletedPatients.push(patient.id);
+            
+            // Emit WebSocket event for real-time updates
+            if (globalIo) {
+              const updatedPatient = await storage.getPatient(patient.id);
+              globalIo.to(`clinic:${req.session.userId}`).emit('patient:status-updated', {
+                patient: updatedPatient,
+                timestamp: Date.now()
+              });
+            }
+          }
+        }
+      }
+      
+      // Invalidate cache if any patients were auto-completed
+      if (autoCompletedPatients.length > 0) {
+        invalidateCache(req.session.userId);
+      }
+      
+      res.json({ 
+        success: true, 
+        autoCompletedCount: autoCompletedPatients.length,
+        patientIds: autoCompletedPatients,
+        message: `${autoCompletedPatients.length} patient(s) auto-completed from dispensary`
+      });
+    } catch (error) {
+      console.error("[AUTO-COMPLETE] Error:", error);
+      res.status(500).json({ error: "Failed to auto-complete dispensary patients" });
+    }
+  });
+
   // Manual reset/clear queue (for 24-hour clinics)
   app.post("/api/patients/reset-queue", async (req, res) => {
     try {
