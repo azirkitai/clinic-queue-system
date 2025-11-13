@@ -436,7 +436,7 @@ export function PatientCard({
                 Call Again
               </Button>
               
-              {patient.windowName === "DISPENSARY" ? (
+              {(patient.windowName === "DISPENSARY" || patient.readyForDispensary) ? (
                 <Button
                   onClick={handleComplete}
                   disabled={shouldDisableButtons}
@@ -448,7 +448,7 @@ export function PatientCard({
                   <CheckCircle className="h-4 w-4 mr-1" />
                   Complete
                 </Button>
-              ) : !patient.readyForDispensary && (
+              ) : (
                 <Button
                   onClick={handleDispense}
                   size="sm"
