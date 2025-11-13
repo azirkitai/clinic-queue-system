@@ -150,6 +150,65 @@ app.use((req, res, next) => {
     // Don't crash server if cleanup fails
   }
 
+  // AUTO-COMPLETE SCHEDULER: Auto-complete dispensary patients older than 90 minutes
+  // Runs every 5 minutes with mutex to prevent overlapping runs
+  let isAutoCompleteRunning = false;
+  const AUTO_COMPLETE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+  
+  const runAutoComplete = async () => {
+    // Skip if already running (mutex guard)
+    if (isAutoCompleteRunning) {
+      console.log('[AUTO-COMPLETE] Skipping run - previous run still in progress');
+      return;
+    }
+    
+    isAutoCompleteRunning = true;
+    const startTime = Date.now();
+    
+    try {
+      const { storage } = await import("./storage");
+      
+      // Auto-complete old dispensary patients across all tenants
+      const results = await storage.autoCompleteOldDispensaryPatients();
+      
+      // Emit WebSocket events for each affected tenant
+      for (const result of results) {
+        if (result.count > 0) {
+          io.to(`clinic:${result.userId}`).emit('patient:auto-completed', {
+            count: result.count,
+            patientIds: result.patientIds,
+            timestamp: Date.now()
+          });
+          
+          // Trigger cache refresh on clients
+          io.to(`clinic:${result.userId}`).emit('cache:invalidate', {
+            reason: 'auto-complete-dispensary',
+            timestamp: Date.now()
+          });
+        }
+      }
+      
+      const duration = Date.now() - startTime;
+      const totalCompleted = results.reduce((sum, r) => sum + r.count, 0);
+      
+      if (totalCompleted > 0) {
+        console.log(`[AUTO-COMPLETE] Completed ${totalCompleted} patient(s) across ${results.length} clinic(s) in ${duration}ms`);
+      }
+    } catch (error) {
+      console.error('[AUTO-COMPLETE] Scheduler error:', error);
+      // Don't crash - just log and continue
+    } finally {
+      isAutoCompleteRunning = false;
+    }
+  };
+  
+  // Run immediately on startup (to catch any patients that became overdue while server was down)
+  runAutoComplete();
+  
+  // Then run every 5 minutes
+  setInterval(runAutoComplete, AUTO_COMPLETE_INTERVAL_MS);
+  console.log('[AUTO-COMPLETE] Scheduler started - running every 5 minutes');
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";

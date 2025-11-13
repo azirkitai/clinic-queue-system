@@ -28,6 +28,11 @@ Preferred communication style: Simple, everyday language.
     - Cached endpoints: current-call, stats, history, windows, settings, themes, text-groups
     - Auto-invalidation on all mutations (create, update, delete, reset operations)
   - **Automatic Cleanup**: Deletes completed patients older than 24 hours on server startup
+  - **Auto-Complete Dispensary Scheduler**: Server-side job runs every 5 minutes to auto-complete patients in dispensary >90 minutes
+    - Prevents queue congestion from patients who left without being manually completed
+    - Mutex guard prevents overlapping runs
+    - Multi-tenant support with tenant-isolated WebSocket notifications
+    - Error isolation per patient (failures don't affect other patients/tenants)
   - **Optional Read Replica**: Documented setup for CPU optimization if needed
 - **Database ORM**: Drizzle ORM configured for PostgreSQL
 - **API Design**: RESTful endpoints with `/api` prefix
@@ -55,6 +60,7 @@ The system uses four main entities:
 - **TV Display Mode**: Large-format display for patient calling with Islamic prayer times integration
 - **Audio Integration**: Configurable sound alerts and text-to-speech capabilities
 - **Theme Customization**: Medical blue color scheme with accessibility considerations
+- **Auto-Complete Dispensary**: Server-side scheduler automatically completes patients who have been in dispensary for more than 90 minutes (prevents queue congestion)
 
 ### Security & Access Control
 - **Role-based Authentication**: Admin and user roles with different permission levels

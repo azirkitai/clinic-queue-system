@@ -69,6 +69,7 @@ export interface IStorage {
   deleteAllTodayPatients(userId: string): Promise<number>; // Delete ALL today's patients for complete queue reset
   deleteOldCompletedPatients(userId: string, hoursOld: number): Promise<number>; // Delete completed patients older than X hours
   deleteAllCompletedPatients(userId: string): Promise<number>; // Delete ALL completed patients regardless of time
+  autoCompleteOldDispensaryPatients(): Promise<{ userId: string; patientIds: string[]; count: number }[]>; // Auto-complete dispensary patients older than 90 minutes (all tenants)
   
   // Window methods
   getWindows(userId: string): Promise<Window[]>;
@@ -626,6 +627,72 @@ export class MemStorage implements IStorage {
     
     console.log(`[CLEANUP] Deleted ${deletedCount} completed patients for user ${userId}`);
     return deletedCount;
+  }
+
+  async autoCompleteOldDispensaryPatients(): Promise<{ userId: string; patientIds: string[]; count: number }[]> {
+    const NINETY_MINUTES_MS = 90 * 60 * 1000; // 90 minutes
+    const now = Date.now();
+    
+    // Get all dispensary patients across all tenants
+    const allPatients = Array.from(this.patients.values());
+    const dispensaryPatients = allPatients.filter(p => p.readyForDispensary && p.status !== 'completed');
+    
+    // Group by userId and process
+    const resultsByUser = new Map<string, string[]>();
+    
+    for (const patient of dispensaryPatients) {
+      try {
+        // Extract dispensary timestamp from trackingHistory
+        const trackingHistory = (patient.trackingHistory as any[]) || [];
+        const dispensaryEvent = trackingHistory.find((event: any) => event.action === 'dispensary');
+        
+        if (dispensaryEvent && dispensaryEvent.timestamp) {
+          const dispensaryTime = new Date(dispensaryEvent.timestamp).getTime();
+          const timeDiff = now - dispensaryTime;
+          
+          // If patient > 90 minutes in dispensary, auto-complete
+          if (timeDiff > NINETY_MINUTES_MS) {
+            console.log(`[AUTO-COMPLETE] Patient ${patient.id} (${patient.name || patient.number}) in dispensary for ${Math.round(timeDiff / 60000)} minutes - auto-completing`);
+            
+            // Complete patient
+            await this.updatePatientStatus(patient.id, 'completed', patient.userId, null);
+            
+            // Clear from window if assigned
+            if (patient.windowId) {
+              const window = this.windows.get(patient.windowId);
+              if (window && window.currentPatientId === patient.id) {
+                this.windows.set(patient.windowId, {
+                  ...window,
+                  currentPatientId: undefined
+                });
+              }
+            }
+            
+            // Track result by userId
+            if (!resultsByUser.has(patient.userId)) {
+              resultsByUser.set(patient.userId, []);
+            }
+            resultsByUser.get(patient.userId)!.push(patient.id);
+          }
+        }
+      } catch (error) {
+        // Isolate failures per patient
+        console.error(`[AUTO-COMPLETE] Error processing patient ${patient.id}:`, error);
+      }
+    }
+    
+    // Convert to result array
+    const results: { userId: string; patientIds: string[]; count: number }[] = [];
+    for (const [userId, patientIds] of Array.from(resultsByUser.entries())) {
+      results.push({
+        userId,
+        patientIds,
+        count: patientIds.length
+      });
+      console.log(`[AUTO-COMPLETE] Completed ${patientIds.length} dispensary patient(s) for user ${userId}`);
+    }
+    
+    return results;
   }
 
   async getWindows(userId: string): Promise<Window[]> {
@@ -1928,6 +1995,84 @@ export class DatabaseStorage implements IStorage {
     const deletedCount = result.rowCount || 0;
     console.log(`[CLEANUP] Deleted ${deletedCount} completed patients for user ${userId}`);
     return deletedCount;
+  }
+
+  async autoCompleteOldDispensaryPatients(): Promise<{ userId: string; patientIds: string[]; count: number }[]> {
+    const NINETY_MINUTES_MS = 90 * 60 * 1000; // 90 minutes
+    const now = Date.now();
+    
+    // Query all dispensary patients across all tenants
+    const dispensaryPatients = await db.select().from(schema.patients)
+      .where(
+        and(
+          eq(schema.patients.readyForDispensary, true),
+          sql`${schema.patients.status} != 'completed'`
+        )
+      );
+    
+    // Group by userId and process
+    const resultsByUser = new Map<string, string[]>();
+    
+    for (const patient of dispensaryPatients) {
+      try {
+        // Extract dispensary timestamp from trackingHistory
+        const trackingHistory = (patient.trackingHistory as any[]) || [];
+        const dispensaryEvent = trackingHistory.find((event: any) => event.action === 'dispensary');
+        
+        if (dispensaryEvent && dispensaryEvent.timestamp) {
+          const dispensaryTime = new Date(dispensaryEvent.timestamp).getTime();
+          const timeDiff = now - dispensaryTime;
+          
+          // If patient > 90 minutes in dispensary, auto-complete
+          if (timeDiff > NINETY_MINUTES_MS) {
+            console.log(`[AUTO-COMPLETE] Patient ${patient.id} (${patient.name || patient.number}) in dispensary for ${Math.round(timeDiff / 60000)} minutes - auto-completing`);
+            
+            // Complete patient (no windowId needed for completed status)
+            await this.updatePatientStatus(patient.id, 'completed', patient.userId, null);
+            
+            // Clear from window if assigned
+            if (patient.windowId) {
+              const window = await db.select().from(schema.windows)
+                .where(
+                  and(
+                    eq(schema.windows.id, patient.windowId),
+                    eq(schema.windows.currentPatientId, patient.id)
+                  )
+                )
+                .limit(1);
+              
+              if (window.length > 0) {
+                await db.update(schema.windows)
+                  .set({ currentPatientId: null })
+                  .where(eq(schema.windows.id, patient.windowId));
+              }
+            }
+            
+            // Track result by userId
+            if (!resultsByUser.has(patient.userId)) {
+              resultsByUser.set(patient.userId, []);
+            }
+            resultsByUser.get(patient.userId)!.push(patient.id);
+          }
+        }
+      } catch (error) {
+        // Isolate failures per patient
+        console.error(`[AUTO-COMPLETE] Error processing patient ${patient.id}:`, error);
+      }
+    }
+    
+    // Convert to result array
+    const results: { userId: string; patientIds: string[]; count: number }[] = [];
+    for (const [userId, patientIds] of Array.from(resultsByUser.entries())) {
+      results.push({
+        userId,
+        patientIds,
+        count: patientIds.length
+      });
+      console.log(`[AUTO-COMPLETE] Completed ${patientIds.length} dispensary patient(s) for user ${userId}`);
+    }
+    
+    return results;
   }
 
   // Media methods
