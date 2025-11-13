@@ -69,9 +69,15 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
     // Patient events - use optimistic cache updates to reduce HTTP refetches
     socket.on('patient:created', (data: any) => {
-      // Optimistic update: Add patient to cache instead of refetching
+      // Optimistic update: Add patient to BOTH caches instead of refetching
       if (data.patient) {
         queryClient.setQueryData(['/api/patients'], (old: any) => {
+          if (!old) return old;
+          return [...old, data.patient];
+        });
+        
+        // Also add to active patients cache (new patients are always active)
+        queryClient.setQueryData(['/api/patients/active'], (old: any) => {
           if (!old) return old;
           return [...old, data.patient];
         });
@@ -81,7 +87,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     });
 
     socket.on('patient:status-updated', (data: any) => {
-      // Optimistic update: Update patient in cache directly
+      // Optimistic update: Update patient in BOTH caches
       if (data.patient) {
         queryClient.setQueryData(['/api/patients'], (old: any) => {
           if (!old) return old;
@@ -89,6 +95,23 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
             p.id === data.patient.id ? data.patient : p
           );
         });
+        
+        // Update active patients cache
+        if (data.patient.status === 'completed') {
+          // Remove completed patients from active cache
+          queryClient.setQueryData(['/api/patients/active'], (old: any) => {
+            if (!old) return old;
+            return old.filter((p: any) => p.id !== data.patient.id);
+          });
+        } else {
+          // Update active patients (waiting, called, in-progress, dispensary)
+          queryClient.setQueryData(['/api/patients/active'], (old: any) => {
+            if (!old) return old;
+            return old.map((p: any) => 
+              p.id === data.patient.id ? data.patient : p
+            );
+          });
+        }
       }
       
       // Invalidate dependent queries (lightweight)
@@ -102,9 +125,16 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     });
 
     socket.on('patient:priority-updated', (data: any) => {
-      // Optimistic update: Update patient priority in cache
+      // Optimistic update: Update patient priority in BOTH caches
       if (data.patient) {
         queryClient.setQueryData(['/api/patients'], (old: any) => {
+          if (!old) return old;
+          return old.map((p: any) => 
+            p.id === data.patient.id ? data.patient : p
+          );
+        });
+        
+        queryClient.setQueryData(['/api/patients/active'], (old: any) => {
           if (!old) return old;
           return old.map((p: any) => 
             p.id === data.patient.id ? data.patient : p
@@ -114,9 +144,14 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     });
 
     socket.on('patient:deleted', (data: any) => {
-      // Optimistic update: Remove patient from cache
+      // Optimistic update: Remove patient from BOTH caches
       if (data.patientId) {
         queryClient.setQueryData(['/api/patients'], (old: any) => {
+          if (!old) return old;
+          return old.filter((p: any) => p.id !== data.patientId);
+        });
+        
+        queryClient.setQueryData(['/api/patients/active'], (old: any) => {
           if (!old) return old;
           return old.filter((p: any) => p.id !== data.patientId);
         });
@@ -125,11 +160,12 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     });
 
     socket.on('queue:reset', () => {
-      // Queue reset affects everything - full invalidation needed
+      // Queue reset affects everything - full invalidation needed for BOTH patient caches
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/current-call'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/history'] });
       queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] });
     });
 
     // Window events - optimistic updates

@@ -49,9 +49,9 @@ export default function Dispensary() {
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch all patients
+  // Fetch active patients (excludes completed for lighter payloads)
   const { data: patients = [], isLoading: patientsLoading } = useQuery<Patient[]>({
-    queryKey: ['/api/patients'],
+    queryKey: ['/api/patients/active'],
   });
 
   // Fetch windows
@@ -76,13 +76,13 @@ export default function Dispensary() {
       return response.json();
     },
     onMutate: async ({ patientId, status, windowId }) => {
-      await queryClient.cancelQueries({ queryKey: ['/api/patients'] });
+      await queryClient.cancelQueries({ queryKey: ['/api/patients/active'] });
       await queryClient.cancelQueries({ queryKey: ['/api/windows'] });
 
-      const previousPatients = queryClient.getQueryData(['/api/patients']);
+      const previousPatients = queryClient.getQueryData(['/api/patients/active']);
       const previousWindows = queryClient.getQueryData(['/api/windows']);
 
-      queryClient.setQueryData(['/api/patients'], (old: any) => {
+      queryClient.setQueryData(['/api/patients/active'], (old: any) => {
         if (!old) return old;
         return old.map((patient: any) => 
           patient.id === patientId 
@@ -117,7 +117,7 @@ export default function Dispensary() {
     },
     onError: (err, variables, context) => {
       if (context?.previousPatients) {
-        queryClient.setQueryData(['/api/patients'], context.previousPatients);
+        queryClient.setQueryData(['/api/patients/active'], context.previousPatients);
       }
       if (context?.previousWindows) {
         queryClient.setQueryData(['/api/windows'], context.previousWindows);
@@ -129,7 +129,7 @@ export default function Dispensary() {
       });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] });
       queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
     },
   });
@@ -140,7 +140,7 @@ export default function Dispensary() {
       await apiRequest("DELETE", `/api/patients/${patientId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] });
       queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
       toast({
         title: "Success",
@@ -161,7 +161,7 @@ export default function Dispensary() {
     setIsRefreshing(true);
     try {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['/api/patients'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] }),
         queryClient.invalidateQueries({ queryKey: ['/api/windows'] }),
         queryClient.invalidateQueries({ queryKey: ['/api/settings'] }),
       ]);

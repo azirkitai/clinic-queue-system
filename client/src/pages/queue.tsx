@@ -31,9 +31,9 @@ export default function Queue() {
   const [selectedWindow, setSelectedWindow] = useState<string>("");
   const { toast } = useToast();
 
-  // Fetch all patients (24-hour clinic operation)
+  // Fetch active patients (excludes completed for lighter payloads)
   const { data: patients = [], isLoading: patientsLoading, refetch: refetchPatients } = useQuery<Patient[]>({
-    queryKey: ['/api/patients'],
+    queryKey: ['/api/patients/active'],
   });
 
   // Fetch windows
@@ -54,15 +54,15 @@ export default function Queue() {
     },
     onMutate: async ({ patientId, status, windowId }) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-      await queryClient.cancelQueries({ queryKey: ['/api/patients'] });
+      await queryClient.cancelQueries({ queryKey: ['/api/patients/active'] });
       await queryClient.cancelQueries({ queryKey: ['/api/windows'] });
 
       // Snapshot the previous values
-      const previousPatients = queryClient.getQueryData(['/api/patients']);
+      const previousPatients = queryClient.getQueryData(['/api/patients/active']);
       const previousWindows = queryClient.getQueryData(['/api/windows']);
 
       // Optimistically update patients
-      queryClient.setQueryData(['/api/patients'], (old: any) => {
+      queryClient.setQueryData(['/api/patients/active'], (old: any) => {
         if (!old) return old;
         return old.map((patient: any) => 
           patient.id === patientId 
@@ -102,14 +102,14 @@ export default function Queue() {
     onError: (err, { patientId, status, windowId }, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousPatients) {
-        queryClient.setQueryData(['/api/patients'], context.previousPatients);
+        queryClient.setQueryData(['/api/patients/active'], context.previousPatients);
       }
       if (context?.previousWindows) {
         queryClient.setQueryData(['/api/windows'], context.previousWindows);
       }
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] });
       queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/current-call'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/history'] });
@@ -135,7 +135,7 @@ export default function Queue() {
     },
     onSettled: () => {
       // Always refetch after mutation settles, whether success or error
-      queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] });
       queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
     },
   });
@@ -147,7 +147,7 @@ export default function Queue() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] });
       queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
       toast({
         title: "Success",
@@ -171,7 +171,7 @@ export default function Queue() {
       return response.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] });
       queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       queryClient.invalidateQueries({ queryKey: ['/api/patients/next-number'] });
