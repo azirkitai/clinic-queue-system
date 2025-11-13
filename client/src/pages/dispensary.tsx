@@ -195,9 +195,12 @@ export default function Dispensary() {
 
   // Filter dispensary patients
   // Include: 1) readyForDispensary flag (waiting), 2) called/in-progress to DISPENSARY window
+  // EXCLUDE: completed patients (even if readyForDispensary is true)
   const dispensaryPatients = enhancedPatients.filter(p => 
-    p.readyForDispensary || 
-    ((p.status === 'called' || p.status === 'in-progress') && p.windowName === 'DISPENSARY')
+    p.status !== 'completed' && (
+      p.readyForDispensary || 
+      ((p.status === 'called' || p.status === 'in-progress') && p.windowName === 'DISPENSARY')
+    )
   );
   const priorityDispensary = dispensaryPatients.filter(p => p.isPriority);
   const normalDispensary = dispensaryPatients.filter(p => !p.isPriority);
