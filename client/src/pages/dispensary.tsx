@@ -369,6 +369,7 @@ export default function Dispensary() {
                 onRequeue={handleRequeue}
                 disabled={updatePatientStatusMutation.isPending}
                 selectedWindow={dispensaryWindow.id}
+                showDeleteButton={false}
               />
             ))}
           </div>
@@ -403,6 +404,7 @@ export default function Dispensary() {
                 onRequeue={handleRequeue}
                 disabled={updatePatientStatusMutation.isPending}
                 selectedWindow={dispensaryWindow.id}
+                showDeleteButton={false}
               />
             ))}
           </div>

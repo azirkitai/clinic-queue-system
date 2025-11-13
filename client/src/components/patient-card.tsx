@@ -44,6 +44,7 @@ interface PatientCardProps {
   onRequeue: (patientId: string, reason?: string) => void;
   disabled?: boolean;
   selectedWindow?: string; // Current selected window by user
+  showDeleteButton?: boolean; // Hide delete button (e.g., in dispensary to prevent data loss)
 }
 
 export function PatientCard({
@@ -56,7 +57,8 @@ export function PatientCard({
   onDispense,
   onRequeue,
   disabled = false,
-  selectedWindow
+  selectedWindow,
+  showDeleteButton = true // Default to true for backward compatibility
 }: PatientCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showRequeueDropdown, setShowRequeueDropdown] = useState(false);
@@ -119,6 +121,12 @@ export function PatientCard({
   };
 
   const handleDelete = () => {
+    // Prevent delete if button is hidden (e.g., in dispensary)
+    if (!showDeleteButton) {
+      console.warn('Delete action blocked - showDeleteButton is false');
+      return;
+    }
+    
     if (isDeleting) {
       console.log(`Deleting patient ${patient.id}`);
       onDelete(patient.id);
@@ -530,16 +538,18 @@ export function PatientCard({
             </>
           )}
 
-          <Button
-            onClick={handleDelete}
-            disabled={shouldDisableButtons}
-            size="sm"
-            variant={isDeleting ? "destructive" : "outline"}
-            data-testid={`button-delete-${patient.id}`}
-          >
-            <Trash2 className="h-4 w-4 mr-1" />
-            {isDeleting ? "Confirm Delete" : "Delete"}
-          </Button>
+          {showDeleteButton && (
+            <Button
+              onClick={handleDelete}
+              disabled={shouldDisableButtons}
+              size="sm"
+              variant={isDeleting ? "destructive" : "outline"}
+              data-testid={`button-delete-${patient.id}`}
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              {isDeleting ? "Confirm Delete" : "Delete"}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
