@@ -28,14 +28,17 @@ interface CacheEntry {
 }
 
 const apiCache = new Map<string, CacheEntry>();
-const CACHE_TTL = 2500; // 2.5 seconds - balance between freshness and CPU reduction
 
-// Cache helper with tenant isolation
-function getCached(key: string, userId: string): any | null {
+// Tiered cache TTLs - optimize for different update frequencies
+const CACHE_TTL_SHORT = 2500; // 2.5s for frequently changing data (patients, windows, current-call)
+const CACHE_TTL_LONG = 30000;  // 30s for rarely changing data (themes, settings, text-groups) - 10x bandwidth reduction!
+
+// Cache helper with tenant isolation and configurable TTL
+function getCached(key: string, userId: string, ttl: number = CACHE_TTL_SHORT): any | null {
   const cacheKey = `${userId}:${key}`;
   const entry = apiCache.get(cacheKey);
   
-  if (entry && Date.now() - entry.timestamp < CACHE_TTL && entry.userId === userId) {
+  if (entry && Date.now() - entry.timestamp < ttl && entry.userId === userId) {
     return entry.data;
   }
   
@@ -90,11 +93,11 @@ function invalidateCache(userId: string, pattern?: string, immediate: boolean = 
   }
 }
 
-// Periodic cache cleanup (every 10 seconds)
+// Periodic cache cleanup (every 10 seconds) - use longest TTL as cleanup threshold
 setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of Array.from(apiCache.entries())) {
-    if (now - entry.timestamp > CACHE_TTL) {
+    if (now - entry.timestamp > CACHE_TTL_LONG) {
       apiCache.delete(key);
     }
   }
@@ -1420,8 +1423,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
       
-      // Check server-side cache first (2.5s TTL)
-      const cached = getCached('settings', req.session.userId);
+      // Check server-side cache first (30s TTL - rarely changes)
+      const cached = getCached('settings', req.session.userId, CACHE_TTL_LONG);
       if (cached !== null) {
         return res.json(cached);
       }
@@ -2098,8 +2101,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
       
-      // Check server-side cache first (2.5s TTL)
-      const cached = getCached('active-text-groups', req.session.userId);
+      // Check server-side cache first (30s TTL - rarely changes)
+      const cached = getCached('active-text-groups', req.session.userId, CACHE_TTL_LONG);
       if (cached !== null) {
         return res.json(cached);
       }
@@ -2280,8 +2283,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
       
-      // Check server-side cache first (2.5s TTL)
-      const cached = getCached('active-theme', req.session.userId);
+      // Check server-side cache first (30s TTL - rarely changes)
+      const cached = getCached('active-theme', req.session.userId, CACHE_TTL_LONG);
       if (cached !== null) {
         return res.json(cached);
       }

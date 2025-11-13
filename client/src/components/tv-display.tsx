@@ -154,8 +154,8 @@ export function TVDisplay({
       if (!response.ok) throw new Error('Failed to fetch theme');
       return response.json();
     },
-    staleTime: 0, // No cache - always refetch for instant updates
-    refetchInterval: 3000, // Poll every 3 seconds as fallback
+    staleTime: 30000, // Cache for 30s - WebSocket provides instant updates
+    refetchInterval: 30000, // Poll every 30 seconds as fallback (10x bandwidth reduction!)
     refetchOnMount: 'always',
     retry: 1,
   });
@@ -169,8 +169,8 @@ export function TVDisplay({
       if (!response.ok) throw new Error('Failed to fetch text groups');
       return response.json();
     },
-    staleTime: 0, // No cache - always refetch for instant updates
-    refetchInterval: 3000, // Poll every 3 seconds as fallback
+    staleTime: 30000, // Cache for 30s - WebSocket provides instant updates
+    refetchInterval: 30000, // Poll every 30 seconds as fallback (10x bandwidth reduction!)
     refetchOnMount: 'always',
   });
 
@@ -183,8 +183,8 @@ export function TVDisplay({
       if (!response.ok) throw new Error('Failed to fetch settings');
       return response.json();
     },
-    staleTime: 0, // No cache - always refetch for instant updates
-    refetchInterval: 3000, // Poll every 3 seconds for real-time updates
+    staleTime: 30000, // Cache for 30s - WebSocket provides instant updates
+    refetchInterval: 30000, // Poll every 30 seconds as fallback (10x bandwidth reduction!)
     refetchOnMount: 'always',
   });
 
