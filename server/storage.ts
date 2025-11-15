@@ -850,21 +850,10 @@ export class MemStorage implements IStorage {
     const userPatients = Array.from(this.patients.values()).filter(p => p.userId === userId);
     const userWindows = Array.from(this.windows.values()).filter(w => w.userId === userId);
     
-    // Get today's start and end boundaries (local timezone)
-    const today = new Date();
-    const startOfDay = new Date(today);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(today);
-    endOfDay.setHours(23, 59, 59, 999);
-    
     const totalWaiting = userPatients.filter(p => p.status === 'waiting').length;
     const totalCalled = userPatients.filter(p => p.status === 'called').length;
-    const totalCompleted = userPatients.filter(p => 
-      p.status === 'completed' && 
-      p.completedAt && 
-      p.completedAt >= startOfDay && 
-      p.completedAt <= endOfDay
-    ).length;
+    // ✅ Count ALL completed patients regardless of date (persist until reset/requeue)
+    const totalCompleted = userPatients.filter(p => p.status === 'completed').length;
     const activeWindows = userWindows.filter(w => w.isActive).length;
     const totalWindows = userWindows.length;
 
@@ -2307,7 +2296,8 @@ export class DatabaseStorage implements IStorage {
     const endOfDay = new Date(today);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const patients = await db.select().from(schema.patients)
+    // Get today's active patients (waiting/called)
+    const todayPatients = await db.select().from(schema.patients)
       .where(
         and(
           eq(schema.patients.userId, userId),
@@ -2316,12 +2306,21 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
+    // Get ALL completed patients regardless of registration date (persist until reset/requeue)
+    const allCompleted = await db.select().from(schema.patients)
+      .where(
+        and(
+          eq(schema.patients.userId, userId),
+          eq(schema.patients.status, "completed")
+        )
+      );
+
     const windows = await this.getWindows(userId);
 
     return {
-      totalWaiting: patients.filter(p => p.status === "waiting").length,
-      totalCalled: patients.filter(p => p.status === "called").length,
-      totalCompleted: patients.filter(p => p.status === "completed").length,
+      totalWaiting: todayPatients.filter(p => p.status === "waiting").length,
+      totalCalled: todayPatients.filter(p => p.status === "called").length,
+      totalCompleted: allCompleted.length, // ✅ Count ALL completed (not just today)
       activeWindows: windows.filter(w => w.isActive && w.currentPatientId).length,
       totalWindows: windows.filter(w => w.isActive).length
     };
