@@ -40,11 +40,12 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       console.log('[WS] Connected:', socket.id);
       setIsConnected(true);
       
-      // Refetch all queries on reconnect to catch up missed events
-      queryClient.refetchQueries({ 
-        type: 'active',
-        stale: true 
-      });
+      // Refetch ONLY critical queries on reconnect (not heavy dashboard endpoints!)
+      // This prevents bandwidth spike from refetching dashboard/current-call + history
+      queryClient.refetchQueries({ queryKey: ['/api/patients'] });
+      queryClient.refetchQueries({ queryKey: ['/api/patients/active'] });
+      queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }); // ✅ Lightweight TV endpoint
+      queryClient.refetchQueries({ queryKey: ['/api/windows'] });
       
       onConnectRef.current?.();
     });
@@ -82,8 +83,9 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
           return [...old, data.patient];
         });
       }
-      // Still invalidate stats (lightweight query)
+      // Invalidate lightweight queries (stats + TV)
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] });
     });
 
     socket.on('patient:status-updated', (data: any) => {
@@ -117,6 +119,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       // Invalidate dependent queries (lightweight)
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/current-call'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] }); // ✅ TV display cache
       
       // Only invalidate history if patient completed
       if (data.patient?.status === 'completed') {
@@ -141,6 +144,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
           );
         });
       }
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] }); // ✅ TV display cache
     });
 
     socket.on('patient:deleted', (data: any) => {
@@ -157,15 +162,17 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] }); // ✅ TV display cache
     });
 
     socket.on('queue:reset', () => {
-      // Queue reset affects everything - full invalidation needed for BOTH patient caches
+      // Queue reset affects everything - full invalidation needed for BOTH patient caches + TV
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/current-call'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/history'] });
       queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
       queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] }); // ✅ TV display cache
     });
 
     // Window events - optimistic updates
@@ -191,6 +198,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] }); // ✅ TV display cache (room names)
     });
 
     socket.on('window:patient-updated', (data: any) => {
@@ -205,6 +213,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       }
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/current-call'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] }); // ✅ TV display cache (assignments)
     });
 
     // Settings/Theme events (already exist)
