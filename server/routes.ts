@@ -2077,7 +2077,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Otherwise return regular uploaded media
         const activeMedia = await storage.getActiveMedia(req.session.userId);
-        res.json(activeMedia);
+        // ✅ BANDWIDTH OPTIMIZATION: Exclude base64 data field (frontend loads via /api/media/:id/file)
+        const lightweightMedia = activeMedia.map(({ data, ...rest }) => rest);
+        res.json(lightweightMedia);
       }
     } catch (error) {
       console.error("Error fetching display media:", error);
