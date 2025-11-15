@@ -68,7 +68,8 @@ interface MediaItem {
 
 interface TVDisplayProps {
   currentPatient?: QueueItem;
-  queueHistory?: QueueItem[];
+  queueWaiting?: QueueItem[]; // ✅ Waiting patients for queue list
+  queueHistory?: QueueItem[]; // Completed patients (history) - optional/unused for now
   clinicName?: string;
   mediaItems?: MediaItem[];
   prayerTimes?: PrayerTime[];
@@ -82,7 +83,8 @@ interface TVDisplayProps {
 
 export function TVDisplay({ 
   currentPatient,
-  queueHistory = [],
+  queueWaiting = [], // ✅ Waiting queue for TV display
+  queueHistory = [], // History (unused for now)
   clinicName = "MAIN CLINIC 24 HOURS",
   mediaItems = [],
   prayerTimes = [],
@@ -1058,9 +1060,9 @@ export function TVDisplay({
           </div>
         )}
 
-        {/* History Section */}
+        {/* Waiting Queue Section (NOTE: misleadingly labeled "History Section" previously) */}
         <div className="flex-1 mt-4">
-          {/* History Header */}
+          {/* Queue Header */}
           <div className="mb-4">
             <div className="grid grid-cols-2 gap-1">
               <div className="font-bold text-center" style={{ 
@@ -1076,10 +1078,10 @@ export function TVDisplay({
             </div>
           </div>
           
-          {/* History Items */}
+          {/* Waiting Queue Items (show first 3 waiting patients) */}
           <div className="space-y-4 overflow-y-auto flex-1" data-testid="queue-list">
-            {queueHistory.length > 0 ? (
-              queueHistory.slice(0, 3).map((item) => (
+            {queueWaiting.length > 0 ? (
+              queueWaiting.slice(0, 3).map((item) => (
                 <div key={item.id} className="grid grid-cols-2 gap-1 p-2 rounded-lg"
                      style={{
                        ...getBackgroundStyle(queueItemBackgroundMode, queueItemBackgroundColor, queueItemBackgroundGradient, '#2563eb')

@@ -130,7 +130,7 @@ export default function Dashboard() {
 
   // ✅ Use lightweight TV patients endpoint (85% bandwidth reduction: ~70KB → ~10KB!)
   // Replaces heavy /api/dashboard/current-call + /api/dashboard/history endpoints
-  const { currentPatient, queueHistory, isLoading: tvPatientsLoading } = useTvPatients();
+  const { currentPatient, queueWaiting, queueHistory, isLoading: tvPatientsLoading } = useTvPatients();
 
   // Fetch windows data (WebSocket updates automatically, polling as fallback)
   const { data: windows = [] } = useQuery<any[]>({
@@ -198,8 +198,9 @@ export default function Dashboard() {
         }}
       >
         <TVDisplay
-          currentPatient={currentCall ? convertToQueueItem(currentCall) : undefined}
-          queueHistory={history.map(convertToQueueItem)}
+          currentPatient={currentPatient || undefined}
+          queueWaiting={queueWaiting}
+          queueHistory={queueHistory}
           clinicName={clinicName}
           mediaItems={activeMedia.map(media => ({
             url: media.url || `/api/media/${media.id}/file`,
@@ -364,8 +365,9 @@ export default function Dashboard() {
           <div className="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden max-w-2xl mx-auto" style={{ aspectRatio: '16/9' }}>
             <div className="h-full scale-[0.42] origin-top-left" style={{ width: '238%', height: '238%' }}>
               <TVDisplay
-                currentPatient={currentCall ? convertToQueueItem(currentCall) : undefined}
-                queueHistory={history.slice(0, 4).map(convertToQueueItem)}
+                currentPatient={currentPatient || undefined}
+                queueWaiting={queueWaiting.slice(0, 4)}
+                queueHistory={queueHistory}
                 clinicName={clinicName}
                 mediaItems={activeMedia.map(media => ({
                   url: media.url || `/api/media/${media.id}/file`,

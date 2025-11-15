@@ -85,7 +85,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       }
       // Invalidate lightweight queries (stats + TV)
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] });
+      queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }); // ✅ Force immediate refetch for real-time updates
     });
 
     socket.on('patient:status-updated', (data: any) => {
@@ -117,14 +117,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       }
       
       // Invalidate dependent queries (lightweight)
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/current-call'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] }); // ✅ TV display cache
-      
-      // Only invalidate history if patient completed
-      if (data.patient?.status === 'completed') {
-        queryClient.invalidateQueries({ queryKey: ['/api/dashboard/history'] });
-      }
+      queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }); // ✅ Force immediate refetch for real-time updates
     });
 
     socket.on('patient:priority-updated', (data: any) => {
@@ -145,7 +139,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] }); // ✅ TV display cache
+      queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }); // ✅ Force immediate refetch for real-time updates
     });
 
     socket.on('patient:deleted', (data: any) => {
@@ -162,17 +156,15 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] }); // ✅ TV display cache
+      queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }); // ✅ Force immediate refetch for real-time updates
     });
 
     socket.on('queue:reset', () => {
-      // Queue reset affects everything - full invalidation needed for BOTH patient caches + TV
+      // Queue reset affects everything - full invalidation needed for all patient caches
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/current-call'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/history'] });
       queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
       queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] }); // ✅ TV display cache
+      queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }); // ✅ Force immediate refetch for real-time updates
     });
 
     // Window events - optimistic updates
@@ -198,7 +190,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] }); // ✅ TV display cache (room names)
+      queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }); // ✅ Force immediate refetch for real-time updates (room names)
     });
 
     socket.on('window:patient-updated', (data: any) => {
@@ -211,9 +203,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
           );
         });
       }
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/current-call'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] }); // ✅ TV display cache (assignments)
+      queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }); // ✅ Force immediate refetch for real-time updates (assignments)
     });
 
     // Settings/Theme events (already exist)
