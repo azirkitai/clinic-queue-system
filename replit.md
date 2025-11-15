@@ -42,8 +42,20 @@ Key entities: Users (auth/roles), Windows (rooms/stations), Patients (queue mana
 - **Security**: Role-based authentication (admin/user), secure session handling, BCrypt password hashing.
 
 ### Performance Optimizations
-- **Bandwidth Reduction**: Reduced TV display polling, tiered server-side caching, active patients endpoint for smaller payloads, response compression (Gzip), and dual-cache WebSocket sync.
-- **CPU/Database Load Reduction**: Automatic data cleanup, server-side caching reducing DB queries by ~60%, WebSocket push minimizing polling, database connection pooling, and optimized SQL queries.
+- **Bandwidth Reduction**: 
+  - Lightweight TV endpoint (`/api/patients/tv`) with TvQueueItem DTO achieving 85% payload reduction (~70KB → ~10KB for 10 patients)
+  - Reduced TV display polling from 3s to 30s
+  - Tiered server-side caching (2.5s for patients, 30s for settings)
+  - Active patients endpoint (`/api/patients/active`) excluding completed patients for smaller payloads
+  - Response compression (Gzip)
+  - Dual-cache WebSocket synchronization
+- **CPU/Database Load Reduction**: 
+  - Automatic data cleanup (completed patients >24 hours)
+  - Server-side caching reducing DB queries by ~60%
+  - WebSocket push minimizing polling
+  - Database connection pooling (max 10 connections, 30s idle timeout)
+  - Optimized SQL queries with LEFT JOIN for window names
+  - Auto-Complete Dispensary Scheduler (every 5 minutes)
 - **Scalability**: Documented support for Neon read replicas for further CPU optimization.
 
 ## External Dependencies
