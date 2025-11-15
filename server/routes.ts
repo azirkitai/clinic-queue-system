@@ -575,6 +575,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get TV display patients (lightweight DTO - 85% payload reduction!)
+  // Excludes: trackingHistory, metadata, most timestamps (reduces ~70KB → ~10KB for 10 patients)
+  // Includes: id, name, number, status, isPriority, windowId, windowName, calledAt, requeueReason
+  app.get("/api/patients/tv", async (req, res) => {
+    try {
+      // Check authentication
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Session inactive" });
+      }
+      
+      // Check server-side cache first (2.5s TTL)
+      const cached = getCached('tv-patients', req.session.userId);
+      if (cached !== null) {
+        return res.json(cached);
+      }
+      
+      const tvPatients = await storage.getTvPatients(req.session.userId);
+      
+      // Cache the result (same TTL as active patients)
+      setCache('tv-patients', req.session.userId, tvPatients);
+      
+      res.json(tvPatients);
+    } catch (error) {
+      console.error("Error fetching TV patients:", error);
+      res.status(500).json({ error: "Failed to fetch TV patients" });
+    }
+  });
+
   // Get today's patients
   app.get("/api/patients/today", async (req, res) => {
     try {

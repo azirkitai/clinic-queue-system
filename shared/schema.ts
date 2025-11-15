@@ -276,3 +276,18 @@ export type Media = typeof media.$inferSelect;
 export type TextGroup = typeof textGroups.$inferSelect;
 export type Theme = typeof themes.$inferSelect;
 export type QrSession = typeof qrSessions.$inferSelect;
+
+// Lightweight DTO for TV Display (reduces payload from ~70KB to ~10KB)
+// Excludes: trackingHistory, metadata, most timestamps, dispensary flags
+// Includes: Essential display fields + isPriority for visual indicators
+export type TvQueueItem = {
+  id: string;
+  name: string | null;
+  number: number;
+  status: "waiting" | "called" | "in-progress" | "completed" | "requeue" | "dispensary";
+  isPriority: boolean; // ✅ Keep for priority badge display
+  windowId: string | null; // ✅ Keep for dispensary logic and reconciliation
+  windowName: string | null; // Joined from windows table
+  calledAt: string | null; // ✅ ISO string format for JSON efficiency
+  requeueReason: string | null;
+};

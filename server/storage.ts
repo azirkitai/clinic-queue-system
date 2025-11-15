@@ -61,6 +61,7 @@ export interface IStorage {
   createPatient(patient: InsertPatient): Promise<Patient>;
   getPatients(userId: string): Promise<Patient[]>;
   getActivePatients(userId: string): Promise<Patient[]>; // Get non-archived, non-completed patients
+  getTvPatients(userId: string): Promise<schema.TvQueueItem[]>; // Lightweight payload for TV display (excludes trackingHistory, priority, etc)
   getPatientsByDate(date: string, userId: string): Promise<Patient[]>;
   getNextPatientNumber(userId: string): Promise<number>;
   updatePatientStatus(patientId: string, status: string, userId: string, windowId?: string | null, requeueReason?: string): Promise<Patient | undefined>;
@@ -380,6 +381,46 @@ export class MemStorage implements IStorage {
     return Array.from(this.patients.values()).filter(
       p => p.userId === userId && !p.archivedAt && p.status !== 'completed'
     );
+  }
+
+  async getTvPatients(userId: string): Promise<schema.TvQueueItem[]> {
+    // Get all windows for name mapping
+    const windows = Array.from(this.windows.values())
+      .filter(w => w.userId === userId);
+    const windowMap = new Map(windows.map(w => [w.id, w.name]));
+    
+    // Get ALL non-archived patients (include completed for handoff window!)
+    const patients = Array.from(this.patients.values())
+      .filter(p => p.userId === userId && !p.archivedAt)
+      // Sort by latest activity first: calledAt DESC (nulls last), then registeredAt DESC
+      .sort((a, b) => {
+        // Patients with calledAt come first, sorted DESC
+        if (a.calledAt && b.calledAt) {
+          return b.calledAt.getTime() - a.calledAt.getTime();
+        }
+        if (a.calledAt) return -1;
+        if (b.calledAt) return 1;
+        // Both have no calledAt - sort by registeredAt DESC
+        return b.registeredAt.getTime() - a.registeredAt.getTime();
+      });
+    
+    // Valid statuses for type safety
+    const validStatuses = new Set(["waiting", "called", "in-progress", "completed", "requeue", "dispensary"]);
+    
+    // Map to lightweight DTO with validation
+    return patients
+      .filter(p => validStatuses.has(p.status)) // ✅ Validate status
+      .map(p => ({
+        id: p.id,
+        name: p.name,
+        number: p.number,
+        status: p.status as schema.TvQueueItem['status'], // Safe after validation
+        isPriority: p.isPriority,
+        windowId: p.windowId || null,
+        windowName: p.windowId ? (windowMap.get(p.windowId) || null) : null,
+        calledAt: p.calledAt ? p.calledAt.toISOString() : null,
+        requeueReason: p.requeueReason || null,
+      }));
   }
 
   async getPatientsByDate(date: string, userId: string): Promise<Patient[]> {
@@ -1702,6 +1743,58 @@ export class DatabaseStorage implements IStorage {
           sql`${schema.patients.status} != 'completed'`
         )
       );
+  }
+
+  async getTvPatients(userId: string): Promise<schema.TvQueueItem[]> {
+    // Single SQL query with LEFT JOIN for window names + lightweight DTO
+    const results = await db
+      .select({
+        id: schema.patients.id,
+        name: schema.patients.name,
+        number: schema.patients.number,
+        status: schema.patients.status,
+        isPriority: schema.patients.isPriority,
+        windowId: schema.patients.windowId,
+        windowName: schema.windows.name, // JOIN for room name
+        calledAt: schema.patients.calledAt,
+        requeueReason: schema.patients.requeueReason,
+        registeredAt: schema.patients.registeredAt, // For sorting
+      })
+      .from(schema.patients)
+      .leftJoin(
+        schema.windows,
+        eq(schema.patients.windowId, schema.windows.id)
+      )
+      .where(
+        and(
+          eq(schema.patients.userId, userId),
+          sql`${schema.patients.archivedAt} IS NULL`
+          // ✅ Include completed patients for handoff window (don't filter status)
+        )
+      )
+      .orderBy(
+        // ✅ Latest activity first: calledAt DESC (nulls last), then registeredAt DESC
+        sql`${schema.patients.calledAt} DESC NULLS LAST`,
+        sql`${schema.patients.registeredAt} DESC`
+      );
+    
+    // Valid statuses for type safety
+    const validStatuses = new Set(["waiting", "called", "in-progress", "completed", "requeue", "dispensary"]);
+    
+    // Map to TvQueueItem with validation
+    return results
+      .filter(r => validStatuses.has(r.status)) // ✅ Validate status
+      .map(r => ({
+        id: r.id,
+        name: r.name,
+        number: r.number,
+        status: r.status as schema.TvQueueItem['status'], // Safe after validation
+        isPriority: r.isPriority,
+        windowId: r.windowId,
+        windowName: r.windowName,
+        calledAt: r.calledAt ? r.calledAt.toISOString() : null, // ✅ Convert Date to ISO string
+        requeueReason: r.requeueReason,
+      }));
   }
 
   async getPatient(id: string): Promise<Patient | undefined> {
