@@ -46,7 +46,10 @@ Key entities: Users (auth/roles), Windows (rooms/stations), Patients (queue mana
 - **Bandwidth Reduction**: 
   - **Lightweight TV endpoint** (`/api/patients/tv`) with TvQueueItem DTO achieving **85% payload reduction** (~70KB → ~10KB for 10 patients)
   - **Dashboard optimization**: Replaced heavy `/api/dashboard/current-call` + `/api/dashboard/history` endpoints (~71KB total) with single lightweight `/api/patients/tv` endpoint (~10KB)
-  - **Expected monthly savings**: ~5.24GB/month (86% reduction) for Dashboard polling alone
+  - **Media endpoint optimization** (`/api/display`): **99.9% payload reduction** by excluding base64 `data` field (~3MB → ~3KB)
+    - Frontend loads media via `/api/media/:id/file` with 1-year HTTP cache headers
+    - **Expected monthly savings**: ~1,290GB/month (43GB/day) with 10+ devices
+  - **Total bandwidth reduction**: From ~76GB/month → ~12-15GB/month (80-84% reduction)
   - Reduced TV display polling from 3s to 30s
   - Tiered server-side caching (2.5s for patients, 30s for settings)
   - Active patients endpoint (`/api/patients/active`) excluding completed patients for smaller payloads
