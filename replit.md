@@ -13,7 +13,8 @@ Preferred communication style: Simple, everyday language.
 - **UI/UX**: Shadcn/ui (Radix UI) and Tailwind CSS with Material Design principles. Custom theme system supporting light/dark modes.
 - **State Management**: TanStack Query for server state, React hooks for local state.
 - **Routing**: Wouter.
-- **Real-time Updates**: WebSocket-driven, with 30-second polling as a fallback for dashboards and 3-second polling for TV displays.
+- **Real-time Updates**: WebSocket-driven with targeted `refetchQueries` for instant updates, with 30-second polling as fallback.
+- **Custom Hooks**: `useTvPatients` hook consolidates TV display data from lightweight `/api/patients/tv` endpoint (currentPatient, queueWaiting, queueHistory).
 
 ### Backend
 - **Server**: Express.js with TypeScript.
@@ -43,7 +44,9 @@ Key entities: Users (auth/roles), Windows (rooms/stations), Patients (queue mana
 
 ### Performance Optimizations
 - **Bandwidth Reduction**: 
-  - Lightweight TV endpoint (`/api/patients/tv`) with TvQueueItem DTO achieving 85% payload reduction (~70KB → ~10KB for 10 patients)
+  - **Lightweight TV endpoint** (`/api/patients/tv`) with TvQueueItem DTO achieving **85% payload reduction** (~70KB → ~10KB for 10 patients)
+  - **Dashboard optimization**: Replaced heavy `/api/dashboard/current-call` + `/api/dashboard/history` endpoints (~71KB total) with single lightweight `/api/patients/tv` endpoint (~10KB)
+  - **Expected monthly savings**: ~5.24GB/month (86% reduction) for Dashboard polling alone
   - Reduced TV display polling from 3s to 30s
   - Tiered server-side caching (2.5s for patients, 30s for settings)
   - Active patients endpoint (`/api/patients/active`) excluding completed patients for smaller payloads
@@ -52,7 +55,9 @@ Key entities: Users (auth/roles), Windows (rooms/stations), Patients (queue mana
 - **CPU/Database Load Reduction**: 
   - Automatic data cleanup (completed patients >24 hours)
   - Server-side caching reducing DB queries by ~60%
-  - WebSocket push minimizing polling
+  - **WebSocket optimizations**: 
+    - Targeted `refetchQueries` on specific endpoints (patients, patients/tv, windows) for instant real-time updates
+    - Reconnect only refetches essential queries (prevents bandwidth spike from heavy endpoints)
   - Database connection pooling (max 10 connections, 30s idle timeout)
   - Optimized SQL queries with LEFT JOIN for window names
   - Auto-Complete Dispensary Scheduler (every 5 minutes)
