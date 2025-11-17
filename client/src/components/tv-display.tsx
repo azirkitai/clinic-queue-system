@@ -99,6 +99,52 @@ export function TVDisplay({
   const stageRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   
+  // ✅ TV BROWSER AUTO-DETECTION
+  // Detect Smart TV browsers and apply optimizations automatically (component-scoped)
+  const [isTVBrowser, setIsTVBrowser] = useState(false);
+  
+  useEffect(() => {
+    // Comprehensive TV browser detection - ALLOWLIST ONLY (prevent false positives)
+    const ua = navigator.userAgent.toLowerCase();
+    const isTVDetected = 
+      // Samsung
+      ua.includes('tizen') ||
+      ua.includes('samsung') && (ua.includes('smart') || ua.includes('tv')) ||
+      // LG
+      ua.includes('webos') || ua.includes('web0s') || ua.includes('netcast') ||
+      // Generic Smart TV
+      ua.includes('smarttv') || ua.includes('smart-tv') || ua.includes('smart tv') ||
+      // Standards
+      ua.includes('hbbtv') ||         // HbbTV (Europe)
+      // Apple
+      ua.includes('appletv') ||
+      // Google/Android
+      ua.includes('googletv') || ua.includes('androidtv') || ua.includes('android tv') ||
+      // Amazon
+      ua.includes('firetv') || ua.includes('fire tv') || ua.includes('aftm') ||
+      // Sony
+      ua.includes('bravia') || ua.includes('sonydtv') || ua.includes('playstation') ||
+      // Panasonic
+      ua.includes('viera') ||
+      // Philips
+      ua.includes('philips') ||
+      // Sharp
+      ua.includes('aquos') ||
+      // Hisense
+      ua.includes('hisense') ||
+      // Vewd (common TV browser)
+      ua.includes('vewd') ||
+      // Opera TV
+      ua.includes('opera tv') || ua.includes('opr/tv') ||
+      // Chromecast (strict - needs both keywords)
+      (ua.includes('crkey') && ua.includes('tv'));
+    
+    if (isTVDetected) {
+      console.log('📺 TV Browser Detected - Component-scoped optimizations active:', ua);
+      setIsTVBrowser(true);
+    }
+  }, []);
+  
   // WebSocket connection for real-time updates
   const { socket } = useWebSocket();
   
@@ -903,8 +949,8 @@ export function TVDisplay({
   };
 
   const wrapperClass = isFullscreen 
-    ? "text-gray-900 grid"  // No h-screen - inline 1080px is enough
-    : "h-screen text-gray-900 grid";
+    ? `text-gray-900 grid${isTVBrowser ? ' tv-mode' : ''}`  // No h-screen - inline 1080px is enough
+    : `h-screen text-gray-900 grid${isTVBrowser ? ' tv-mode' : ''}`;
 
   // Render content - same for both fullscreen and non-fullscreen
   const renderContent = () => (
