@@ -587,6 +587,18 @@
     line-height: 1.4 !important;
   }
   
+  /* TV Mode: Override CSS variables for dynamic font sizes */
+  .tv-mode {
+    --tv-fs-xs: clamp(24px, 3vmin, 36px);
+    --tv-fs-sm: clamp(28px, 4vmin, 48px);
+    --tv-fs-base: clamp(32px, 5vmin, 56px);
+    --tv-fs-lg: clamp(36px, 6vmin, 64px);
+    --tv-fs-xl: clamp(44px, 7vmin, 80px);  /* Used for NAME/ROOM history */
+    --tv-fs-2xl: clamp(56px, 9vmin, 100px); /* Used for headers */
+    --tv-fs-3xl: clamp(64px, 10vmin, 120px);
+    --tv-fs-4xl: clamp(72px, 12vmin, 140px);
+  }
+  
   /* TV Mode: Increase badge and button sizes */
   .tv-mode .badge,
   .tv-mode [class*="badge"] {

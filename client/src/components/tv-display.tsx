@@ -141,6 +141,19 @@ export function TVDisplay({
     };
   }, []);
   
+  // Update font sizes when TV Mode changes
+  useEffect(() => {
+    if (isTVMode) {
+      console.log('📺 TV Mode ON - Increasing font sizes 2x');
+      setPatientNameFontSize('14rem');
+      setRoomNameFontSize('5rem');
+    } else {
+      console.log('📺 TV Mode OFF - Using normal font sizes');
+      setPatientNameFontSize('7rem');
+      setRoomNameFontSize('2.5rem');
+    }
+  }, [isTVMode]);
+  
   // WebSocket connection for real-time updates
   const { socket } = useWebSocket();
   
@@ -547,9 +560,9 @@ export function TVDisplay({
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [isMediaVisible, setIsMediaVisible] = useState(true);
   
-  // Auto-resize text functionality
-  const [patientNameFontSize, setPatientNameFontSize] = useState('7rem');
-  const [roomNameFontSize, setRoomNameFontSize] = useState('2.5rem');
+  // Auto-resize text functionality (TV Mode multiplies by 2x)
+  const [patientNameFontSize, setPatientNameFontSize] = useState(() => isTVMode ? '14rem' : '7rem');
+  const [roomNameFontSize, setRoomNameFontSize] = useState(() => isTVMode ? '5rem' : '2.5rem');
   const [historyFontSizes, setHistoryFontSizes] = useState<Record<string, {name: string, room: string}>>({});
   const [isTransitioning, setIsTransitioning] = useState(false);
 
