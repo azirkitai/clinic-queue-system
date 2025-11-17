@@ -37,6 +37,10 @@ Key entities: Users (auth/roles), Windows (rooms/stations), Patients (queue mana
 - **Real-time Queue Management**: Live status and position updates.
 - **Multi-window Support**: Flexible room/station assignment.
 - **TV Display Mode**: Full-screen display for calling, includes Islamic prayer times.
+  - **TV Mode Toggle**: Manual toggle in Settings page for Smart TV browsers (localStorage-based).
+  - **TV Optimizations**: Light theme with white background + dark text, 2-3x larger fonts using responsive clamp(), high contrast for TV visibility.
+  - **Cross-tab Sync**: Custom events + storage events for instant updates across browser tabs.
+  - **SSR-safe**: Browser guards prevent crashes in non-browser environments.
 - **Audio Integration**: Configurable sound alerts and text-to-speech.
 - **Theme Customization**: Medical blue color scheme, accessibility-focused.
 - **Auto-Complete Dispensary**: Prevents queue congestion by automatically completing inactive patients.
