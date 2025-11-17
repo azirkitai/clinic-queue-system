@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { TVDisplay } from "@/components/tv-display";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Monitor, Settings, Users, Clock } from "lucide-react";
+import { Monitor, Settings as SettingsIcon, Users, Clock } from "lucide-react";
 import { type Patient } from "@shared/schema";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useTvPatients } from "@/hooks/useTvPatients";
@@ -27,6 +28,7 @@ interface DashboardStats {
 }
 
 export default function Dashboard() {
+  const [, setLocation] = useLocation();
   const [fullscreen, setFullscreen] = useState(false);
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
   const [showExitButton, setShowExitButton] = useState(false);
@@ -283,14 +285,24 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground">Main dashboard for clinic calling system</p>
         </div>
-        <Button
-          onClick={toggleFullscreen}
-          data-testid="button-fullscreen-tv"
-          className="btn-gradient"
-        >
-          <Monitor className="h-4 w-4 mr-2" />
-          Fullscreen TV Display
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setLocation('/settings')}
+            variant="outline"
+            data-testid="button-goto-settings"
+          >
+            <SettingsIcon className="h-4 w-4 mr-2" />
+            Settings
+          </Button>
+          <Button
+            onClick={toggleFullscreen}
+            data-testid="button-fullscreen-tv"
+            className="btn-gradient"
+          >
+            <Monitor className="h-4 w-4 mr-2" />
+            Fullscreen TV Display
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -343,7 +355,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Rooms</CardTitle>
-            <Settings className="h-4 w-4 text-muted-foreground" />
+            <SettingsIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary" data-testid="text-active-windows">
