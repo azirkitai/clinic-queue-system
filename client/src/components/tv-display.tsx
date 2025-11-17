@@ -117,6 +117,7 @@ export function TVDisplay({
       try {
         if (typeof localStorage !== 'undefined') {
           const tvModeEnabled = localStorage.getItem('tvMode') === 'true';
+          console.log('📺 TV Mode changed:', tvModeEnabled);
           setIsTVMode(tvModeEnabled);
         }
       } catch (error) {
@@ -124,12 +125,19 @@ export function TVDisplay({
       }
     };
     
+    // Check immediately on mount (in case changed while component unmounted)
+    handleStorageChange();
+    
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('tvModeChanged', handleStorageChange);
+    
+    // Also check every 2 seconds as fallback
+    const interval = setInterval(handleStorageChange, 2000);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('tvModeChanged', handleStorageChange);
+      clearInterval(interval);
     };
   }, []);
   
