@@ -99,6 +99,23 @@ export default function Settings() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // TV Mode state (separate from Settings API - stored in localStorage)
+  const [tvMode, setTvMode] = useState(() => {
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      return localStorage.getItem('tvMode') === 'true';
+    }
+    return false;
+  });
+  
+  // Handle TV Mode toggle
+  const handleTvModeToggle = (checked: boolean) => {
+    setTvMode(checked);
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      localStorage.setItem('tvMode', String(checked));
+      window.dispatchEvent(new Event('tvModeChanged'));
+    }
+  };
+  
   // Gradient picker states
   const [gradientPickers, setGradientPickers] = useState<{
     header: boolean;
@@ -2108,6 +2125,19 @@ export default function Settings() {
                     }
                   }}
                   data-testid="switch-weather"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>TV Mode</Label>
+                  <div className="text-sm text-muted-foreground">
+                    Optimize display for Smart TV browsers (brighter colors, larger text)
+                  </div>
+                </div>
+                <Switch
+                  checked={tvMode}
+                  onCheckedChange={handleTvModeToggle}
+                  data-testid="switch-tv-mode"
                 />
               </div>
             </div>
