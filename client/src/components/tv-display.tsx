@@ -69,7 +69,7 @@ interface MediaItem {
 interface TVDisplayProps {
   currentPatient?: QueueItem;
   queueWaiting?: QueueItem[]; // ✅ Waiting patients (not currently rendered)
-  queueHistory?: QueueItem[]; // ✅ Completed patients shown in history section
+  queueHistory?: QueueItem[]; // ✅ Recent calling history (shows 2nd, 3rd, 4th most recent called patients)
   clinicName?: string;
   mediaItems?: MediaItem[];
   prayerTimes?: PrayerTime[];
@@ -84,7 +84,7 @@ interface TVDisplayProps {
 export function TVDisplay({ 
   currentPatient,
   queueWaiting = [], // Not currently rendered (reserved for future use)
-  queueHistory = [], // ✅ Recent completed patients (shown in TV history section)
+  queueHistory = [], // ✅ Recent calling history (2nd, 3rd, 4th most recent called patients)
   clinicName = "MAIN CLINIC 24 HOURS",
   mediaItems = [],
   prayerTimes = [],
@@ -1115,7 +1115,7 @@ export function TVDisplay({
           </div>
         )}
 
-        {/* History Section - Completed Patients */}
+        {/* History Section - Recent Calling History */}
         <div className="flex-1 mt-4">
           {/* Queue Header */}
           <div className="mb-4">
@@ -1133,7 +1133,7 @@ export function TVDisplay({
             </div>
           </div>
           
-          {/* Completed History Items (show recent 3 completed patients) */}
+          {/* Recent Calling History Items (show 2nd, 3rd, 4th most recently called patients) */}
           <div className="space-y-4 overflow-y-auto flex-1" data-testid="queue-list">
             {queueHistory.length > 0 ? (
               queueHistory.slice(0, 3).map((item) => (
