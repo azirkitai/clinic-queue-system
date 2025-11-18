@@ -6,6 +6,11 @@ This project is a comprehensive clinic patient calling system designed to enhanc
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+- **November 18, 2025**: Fixed TV Display bug - History section now correctly renders completed patients (queueHistory) instead of waiting patients. Previously, completed patient names were not displaying in the TV history section due to incorrect data binding.
+- **November 18, 2025**: Added Settings button to Dashboard header for easier TV accessibility (Smart TVs cannot scroll sidebar).
+- **November 18, 2025**: Implemented TV Mode manual toggle with 2-3x bigger fonts (patient name: 14rem, room name: 5rem) for Smart TV visibility. Cross-tab sync via custom events + localStorage.
+
 ## System Architecture
 
 ### Frontend
