@@ -667,8 +667,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Invalidate cache after status update
-      invalidateCache(req.session.userId);
+      // Invalidate cache immediately for status transitions (bypass 300ms debounce for real-time TV updates)
+      const isStatusTransition = status === "completed" || status === "requeue" || status === "dispensary";
+      invalidateCache(req.session.userId, undefined, isStatusTransition);
       
       // Emit WebSocket event for real-time updates
       if (globalIo) {
