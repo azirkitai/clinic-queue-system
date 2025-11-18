@@ -68,8 +68,8 @@ interface MediaItem {
 
 interface TVDisplayProps {
   currentPatient?: QueueItem;
-  queueWaiting?: QueueItem[]; // ✅ Waiting patients for queue list
-  queueHistory?: QueueItem[]; // Completed patients (history) - optional/unused for now
+  queueWaiting?: QueueItem[]; // ✅ Waiting patients (not currently rendered)
+  queueHistory?: QueueItem[]; // ✅ Completed patients shown in history section
   clinicName?: string;
   mediaItems?: MediaItem[];
   prayerTimes?: PrayerTime[];
@@ -83,8 +83,8 @@ interface TVDisplayProps {
 
 export function TVDisplay({ 
   currentPatient,
-  queueWaiting = [], // ✅ Waiting queue for TV display
-  queueHistory = [], // History (unused for now)
+  queueWaiting = [], // Not currently rendered (reserved for future use)
+  queueHistory = [], // ✅ Recent completed patients (shown in TV history section)
   clinicName = "MAIN CLINIC 24 HOURS",
   mediaItems = [],
   prayerTimes = [],
@@ -1115,7 +1115,7 @@ export function TVDisplay({
           </div>
         )}
 
-        {/* Waiting Queue Section (NOTE: misleadingly labeled "History Section" previously) */}
+        {/* History Section - Completed Patients */}
         <div className="flex-1 mt-4">
           {/* Queue Header */}
           <div className="mb-4">
@@ -1133,10 +1133,10 @@ export function TVDisplay({
             </div>
           </div>
           
-          {/* Waiting Queue Items (show first 3 waiting patients) */}
+          {/* Completed History Items (show recent 3 completed patients) */}
           <div className="space-y-4 overflow-y-auto flex-1" data-testid="queue-list">
-            {queueWaiting.length > 0 ? (
-              queueWaiting.slice(0, 3).map((item) => (
+            {queueHistory.length > 0 ? (
+              queueHistory.slice(0, 3).map((item) => (
                 <div key={item.id} className="grid grid-cols-2 gap-1 p-2 rounded-lg"
                      style={{
                        ...getBackgroundStyle(queueItemBackgroundMode, queueItemBackgroundColor, queueItemBackgroundGradient, '#2563eb')
