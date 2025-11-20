@@ -438,7 +438,10 @@ export class MemStorage implements IStorage {
   }
 
   async getNextPatientNumber(userId: string): Promise<number> {
-    const today = new Date().toISOString().split('T')[0];
+    // Use Malaysia timezone (UTC+8) for daily reset at local midnight
+    const malaysiaOffset = 8 * 60 * 60 * 1000;
+    const nowMalaysia = new Date(Date.now() + malaysiaOffset);
+    const today = nowMalaysia.toISOString().split('T')[0];
     const todayPatients = await this.getPatientsByDate(today, userId);
     return todayPatients.length + 1;
   }
@@ -615,7 +618,10 @@ export class MemStorage implements IStorage {
   }
 
   async deleteAllTodayPatients(userId: string): Promise<number> {
-    const today = new Date().toISOString().split('T')[0];
+    // Use Malaysia timezone (UTC+8) for daily reset at local midnight
+    const malaysiaOffset = 8 * 60 * 60 * 1000;
+    const nowMalaysia = new Date(Date.now() + malaysiaOffset);
+    const today = nowMalaysia.toISOString().split('T')[0];
     const todayPatients = await this.getPatientsByDate(today, userId);
     
     let deletedCount = 0;
@@ -847,13 +853,18 @@ export class MemStorage implements IStorage {
     activeWindows: number;
     totalWindows: number;
   }> {
-    const userPatients = Array.from(this.patients.values()).filter(p => p.userId === userId);
+    // Use Malaysia timezone (UTC+8) for daily reset at local midnight
+    const malaysiaOffset = 8 * 60 * 60 * 1000;
+    const nowMalaysia = new Date(Date.now() + malaysiaOffset);
+    const today = nowMalaysia.toISOString().split('T')[0];
+    
+    // Get today's patients only
+    const todayPatients = await this.getPatientsByDate(today, userId);
     const userWindows = Array.from(this.windows.values()).filter(w => w.userId === userId);
     
-    const totalWaiting = userPatients.filter(p => p.status === 'waiting').length;
-    const totalCalled = userPatients.filter(p => p.status === 'called').length;
-    // ✅ Count ALL completed patients regardless of date (persist until reset/requeue)
-    const totalCompleted = userPatients.filter(p => p.status === 'completed').length;
+    const totalWaiting = todayPatients.filter(p => p.status === 'waiting').length;
+    const totalCalled = todayPatients.filter(p => p.status === 'called').length;
+    const totalCompleted = todayPatients.filter(p => p.status === 'completed').length;
     const activeWindows = userWindows.filter(w => w.isActive).length;
     const totalWindows = userWindows.length;
 
@@ -1809,7 +1820,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getNextPatientNumber(userId: string): Promise<number> {
-    const today = new Date().toISOString().split('T')[0];
+    // Use Malaysia timezone (UTC+8) for daily reset at local midnight
+    const malaysiaOffset = 8 * 60 * 60 * 1000;
+    const nowMalaysia = new Date(Date.now() + malaysiaOffset);
+    const today = nowMalaysia.toISOString().split('T')[0];
+    
     const startOfDay = new Date(today);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(today);
@@ -2045,7 +2060,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAllTodayPatients(userId: string): Promise<number> {
-    const today = new Date().toISOString().split('T')[0];
+    // Use Malaysia timezone (UTC+8) for daily reset at local midnight
+    const malaysiaOffset = 8 * 60 * 60 * 1000;
+    const nowMalaysia = new Date(Date.now() + malaysiaOffset);
+    const today = nowMalaysia.toISOString().split('T')[0];
+    
     const startOfDay = new Date(today);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(today);
@@ -2290,7 +2309,11 @@ export class DatabaseStorage implements IStorage {
     activeWindows: number;
     totalWindows: number;
   }> {
-    const today = new Date().toISOString().split('T')[0];
+    // Use Malaysia timezone (UTC+8) for daily reset at local midnight
+    const malaysiaOffset = 8 * 60 * 60 * 1000;
+    const nowMalaysia = new Date(Date.now() + malaysiaOffset);
+    const today = nowMalaysia.toISOString().split('T')[0];
+    
     const startOfDay = new Date(today);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(today);
@@ -2362,7 +2385,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRecentHistory(userId: string, limit: number = 10): Promise<Patient[]> {
-    const today = new Date().toISOString().split('T')[0];
+    // Use Malaysia timezone (UTC+8) for daily reset at local midnight
+    const malaysiaOffset = 8 * 60 * 60 * 1000;
+    const nowMalaysia = new Date(Date.now() + malaysiaOffset);
+    const today = nowMalaysia.toISOString().split('T')[0];
+    
     const startOfDay = new Date(today);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(today);

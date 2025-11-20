@@ -7,7 +7,11 @@ This project is a comprehensive clinic patient calling system designed to enhanc
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
-- **November 18, 2025**: Fixed Dashboard stats daily reset - "Completed" count now resets at midnight (was counting all-time completed patients instead of today only).
+- **November 20, 2025**: Fixed timezone issue for daily reset - All date-based operations now use Malaysia timezone (UTC+8) instead of UTC. Daily reset at midnight Malaysia time now works correctly for:
+  - Dashboard stats (Waiting, Called, Completed counts)
+  - Next patient number (resets to #001)
+  - Recent history filtering
+  - Today's patient queries
 - **November 18, 2025**: Fixed TV Display history logic - History section now shows recent calling history (2nd, 3rd, 4th most recently called patients) instead of completed patients. Rolling list behavior with max 3 items.
 - **November 18, 2025**: Added Settings button to Dashboard header for easier TV accessibility (Smart TVs cannot scroll sidebar).
 - **November 18, 2025**: Implemented TV Mode manual toggle with 2-3x bigger fonts (patient name: 14rem, room name: 5rem) for Smart TV visibility. Cross-tab sync via custom events + localStorage.
