@@ -2296,7 +2296,7 @@ export class DatabaseStorage implements IStorage {
     const endOfDay = new Date(today);
     endOfDay.setHours(23, 59, 59, 999);
 
-    // Get today's active patients (waiting/called)
+    // Get today's patients (filter by registration date for daily reset)
     const todayPatients = await db.select().from(schema.patients)
       .where(
         and(
@@ -2306,21 +2306,12 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
-    // Get ALL completed patients regardless of registration date (persist until reset/requeue)
-    const allCompleted = await db.select().from(schema.patients)
-      .where(
-        and(
-          eq(schema.patients.userId, userId),
-          eq(schema.patients.status, "completed")
-        )
-      );
-
     const windows = await this.getWindows(userId);
 
     return {
       totalWaiting: todayPatients.filter(p => p.status === "waiting").length,
       totalCalled: todayPatients.filter(p => p.status === "called").length,
-      totalCompleted: allCompleted.length, // ✅ Count ALL completed (not just today)
+      totalCompleted: todayPatients.filter(p => p.status === "completed").length, // ✅ Count only today's completed
       activeWindows: windows.filter(w => w.isActive && w.currentPatientId).length,
       totalWindows: windows.filter(w => w.isActive).length
     };
