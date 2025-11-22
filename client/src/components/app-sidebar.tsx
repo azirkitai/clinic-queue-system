@@ -207,7 +207,7 @@ export function AppSidebar() {
             <SidebarMenuButton
               onClick={handleLogout}
               data-testid="button-logout"
-              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+              className="sidebar-nav-item text-red-400 hover:text-red-300"
             >
               <LogOut className="w-5 h-5" />
               <span>Logout</span>

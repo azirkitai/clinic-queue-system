@@ -691,3 +691,35 @@
 [class*="sidebar"][style*="background"] {
   background: linear-gradient(180deg, #0f1e3a 0%, #1a3a52 40%, #0d6b85 100%) !important;
 }
+
+/* Sidebar Navigation Items - Transparent background with hover & active mark */
+.sidebar-nav-item {
+  position: relative;
+  background: transparent !important;
+  transition: all 0.2s ease;
+}
+
+.sidebar-nav-item:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Active state - show left border mark */
+.sidebar-nav-item[data-active="true"]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #06b6d4;
+  border-radius: 0 2px 2px 0;
+}
+
+.sidebar-nav-item[data-active="true"] {
+  background: rgba(6, 182, 212, 0.15) !important;
+  font-weight: 600;
+}
+
+.sidebar-nav-item[data-active="true"]:hover {
+  background: rgba(6, 182, 212, 0.25) !important;
+}
