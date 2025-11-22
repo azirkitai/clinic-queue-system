@@ -97,8 +97,8 @@ export function AppSidebar() {
     <Sidebar 
       className="border-r-0 sidebar-gradient-bg" 
       style={{ 
-        background: 'linear-gradient(180deg, #001a33 0%, #0f3a4f 50%, #0d7490 100%) !important',
-        backgroundImage: 'linear-gradient(180deg, #001a33 0%, #0f3a4f 50%, #0d7490 100%) !important'
+        background: 'linear-gradient(180deg, #0a1e35 0%, #1a3d52 50%, #1a5f7a 100%) !important',
+        backgroundImage: 'linear-gradient(180deg, #0a1e35 0%, #1a3d52 50%, #1a5f7a 100%) !important'
       } as React.CSSProperties}
     >
       {/* Branding Header */}
