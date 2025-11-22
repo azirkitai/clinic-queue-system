@@ -397,7 +397,7 @@
 
   /* Gradient Button Styling */
   .btn-gradient {
-    background: linear-gradient(135deg, #1e5a7f 0%, #2a7fa8 50%, #1a9fb8 100%) !important;
+    background: linear-gradient(135deg, #2980b9 0%, #1f4e79 50%, #1a252f 100%) !important;
     border: 1px solid #1f4e79 !important;
     color: white !important;
     transition: all 0.3s ease !important;
@@ -626,5 +626,5 @@
 
 /* Override Sidebar background color with gradient */
 .bg-sidebar {
-  background: linear-gradient(135deg, #1e5a7f 0%, #2a7fa8 50%, #1a9fb8 100%) !important;
+  background: linear-gradient(180deg, #001a33 0%, #0f3a4f 50%, #0d7490 100%) !important;
 }
