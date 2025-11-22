@@ -412,11 +412,9 @@
   /* Enhanced Sidebar Navigation Styling */
   }
 
-  .sidebar-nav-item:hover .sidebar-nav-text {
     color: rgba(255, 255, 255, 1) !important;
   }
 
-  .sidebar-nav-item[data-active="true"] .sidebar-nav-text {
     color: rgba(255, 255, 255, 1) !important;
     font-weight: 600 !important;
   }
@@ -629,28 +627,47 @@
     gap: clamp(12px, 2vmin, 32px) !important;
 }
 
-.sidebar-nav-item[data-active="true"]:hover {
   background: transparent !important;
 }
 
 
 /* SIDEBAR BUTTONS - WITH GRADIENT FOR ACTIVE STATE */
-.sidebar-nav-item {
   background: transparent !important;
   transition: all 0.2s ease !important;
 }
 
 /* Active button - Cyan gradient background */
-.sidebar-nav-item[data-active="true"] {
   background: linear-gradient(135deg, rgba(13, 107, 144, 0.6) 0%, rgba(6, 182, 212, 0.5) 100%) !important;
   font-weight: 500 !important;
 }
 
-.sidebar-nav-item[data-active="true"]:hover {
   background: linear-gradient(135deg, rgba(13, 107, 144, 0.8) 0%, rgba(6, 182, 212, 0.7) 100%) !important;
 }
 
 /* Hover effect for non-active buttons */
-.sidebar-nav-item:not([data-active="true"]):hover {
   background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* ===== SIDEBAR BUTTONS FINAL STYLING ===== */
+
+/* Default state - transparent */
+.sidebar-nav-item { background: transparent; }
+
+/* ACTIVE STATE - FULL CYAN GRADIENT BACKGROUND */
+.sidebar-nav-item[data-active="true"],
+button[data-active="true"],
+a[data-active="true"],
+[data-active="true"] {
+  background: linear-gradient(135deg, #0d6b85 0%, #06b6d4 100%) !important;
+  background-color: #0d7490 !important;
+  color: white !important;
+}
+
+.sidebar-nav-item[data-active="true"]:hover {
+  background: linear-gradient(135deg, #0a5f73 0%, #0996b8 100%) !important;
+  background-color: #0a5f73 !important;
+}
+
+.sidebar-nav-item[data-active="true"] * {
+  color: white !important;
 }
