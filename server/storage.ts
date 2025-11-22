@@ -1825,18 +1825,21 @@ export class DatabaseStorage implements IStorage {
     const nowMalaysia = new Date(Date.now() + malaysiaOffset);
     const today = nowMalaysia.toISOString().split('T')[0];
     
-    const startOfDay = new Date(today);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(today);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Convert Malaysia day boundaries to UTC
+    // Malaysia 2025-11-20 00:00:00 = UTC 2025-11-19 16:00:00 (subtract 8 hours)
+    const startOfDayUTC = new Date(`${today}T00:00:00.000Z`);
+    startOfDayUTC.setTime(startOfDayUTC.getTime() - malaysiaOffset);
+    
+    const endOfDayUTC = new Date(`${today}T23:59:59.999Z`);
+    endOfDayUTC.setTime(endOfDayUTC.getTime() - malaysiaOffset);
 
     const result = await db.select({ maxNumber: sql`COALESCE(MAX(${schema.patients.number}), 0)` })
       .from(schema.patients)
       .where(
         and(
           eq(schema.patients.userId, userId),
-          sql`${schema.patients.registeredAt} >= ${startOfDay.toISOString()}`,
-          sql`${schema.patients.registeredAt} <= ${endOfDay.toISOString()}`
+          sql`${schema.patients.registeredAt} >= ${startOfDayUTC.toISOString()}`,
+          sql`${schema.patients.registeredAt} <= ${endOfDayUTC.toISOString()}`
         )
       );
 
@@ -2065,18 +2068,21 @@ export class DatabaseStorage implements IStorage {
     const nowMalaysia = new Date(Date.now() + malaysiaOffset);
     const today = nowMalaysia.toISOString().split('T')[0];
     
-    const startOfDay = new Date(today);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(today);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Convert Malaysia day boundaries to UTC
+    // Malaysia 2025-11-20 00:00:00 = UTC 2025-11-19 16:00:00 (subtract 8 hours)
+    const startOfDayUTC = new Date(`${today}T00:00:00.000Z`);
+    startOfDayUTC.setTime(startOfDayUTC.getTime() - malaysiaOffset);
+    
+    const endOfDayUTC = new Date(`${today}T23:59:59.999Z`);
+    endOfDayUTC.setTime(endOfDayUTC.getTime() - malaysiaOffset);
 
     // Delete all today's patients (hard delete)
     const result = await db.delete(schema.patients)
       .where(
         and(
           eq(schema.patients.userId, userId),
-          sql`${schema.patients.registeredAt} >= ${startOfDay.toISOString()}`,
-          sql`${schema.patients.registeredAt} <= ${endOfDay.toISOString()}`
+          sql`${schema.patients.registeredAt} >= ${startOfDayUTC.toISOString()}`,
+          sql`${schema.patients.registeredAt} <= ${endOfDayUTC.toISOString()}`
         )
       );
     
@@ -2314,18 +2320,21 @@ export class DatabaseStorage implements IStorage {
     const nowMalaysia = new Date(Date.now() + malaysiaOffset);
     const today = nowMalaysia.toISOString().split('T')[0];
     
-    const startOfDay = new Date(today);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(today);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Convert Malaysia day boundaries to UTC
+    // Malaysia 2025-11-20 00:00:00 = UTC 2025-11-19 16:00:00 (subtract 8 hours)
+    const startOfDayUTC = new Date(`${today}T00:00:00.000Z`);
+    startOfDayUTC.setTime(startOfDayUTC.getTime() - malaysiaOffset);
+    
+    const endOfDayUTC = new Date(`${today}T23:59:59.999Z`);
+    endOfDayUTC.setTime(endOfDayUTC.getTime() - malaysiaOffset);
 
     // Get today's patients (filter by registration date for daily reset)
     const todayPatients = await db.select().from(schema.patients)
       .where(
         and(
           eq(schema.patients.userId, userId),
-          sql`${schema.patients.registeredAt} >= ${startOfDay.toISOString()}`,
-          sql`${schema.patients.registeredAt} <= ${endOfDay.toISOString()}`
+          sql`${schema.patients.registeredAt} >= ${startOfDayUTC.toISOString()}`,
+          sql`${schema.patients.registeredAt} <= ${endOfDayUTC.toISOString()}`
         )
       );
 
@@ -2390,10 +2399,13 @@ export class DatabaseStorage implements IStorage {
     const nowMalaysia = new Date(Date.now() + malaysiaOffset);
     const today = nowMalaysia.toISOString().split('T')[0];
     
-    const startOfDay = new Date(today);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(today);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Convert Malaysia day boundaries to UTC
+    // Malaysia 2025-11-20 00:00:00 = UTC 2025-11-19 16:00:00 (subtract 8 hours)
+    const startOfDayUTC = new Date(`${today}T00:00:00.000Z`);
+    startOfDayUTC.setTime(startOfDayUTC.getTime() - malaysiaOffset);
+    
+    const endOfDayUTC = new Date(`${today}T23:59:59.999Z`);
+    endOfDayUTC.setTime(endOfDayUTC.getTime() - malaysiaOffset);
 
     // Get current call to exclude it from history
     const currentCall = await this.getCurrentCall(userId);
@@ -2422,8 +2434,8 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(schema.patients.userId, userId),
           sql`${schema.patients.calledAt} IS NOT NULL`,
-          sql`${schema.patients.calledAt} >= ${startOfDay.toISOString()}`,
-          sql`${schema.patients.calledAt} <= ${endOfDay.toISOString()}`,
+          sql`${schema.patients.calledAt} >= ${startOfDayUTC.toISOString()}`,
+          sql`${schema.patients.calledAt} <= ${endOfDayUTC.toISOString()}`,
           sql`${schema.patients.status} != 'dispensary'`, // Exclude dispensary patients from TV display
           sql`${schema.patients.status} != 'requeue'` // Exclude requeued patients from TV display - they go back to waiting
         )
