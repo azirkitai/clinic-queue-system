@@ -95,10 +95,10 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      className="border-r-0" 
+      className="border-r-0 sidebar-gradient-bg" 
       style={{ 
-        background: 'linear-gradient(180deg, #000000 0%, #1e40af 50%, #06b6d4 100%) !important',
-        backgroundImage: 'linear-gradient(180deg, #000000 0%, #1e40af 50%, #06b6d4 100%) !important'
+        background: 'var(--sidebar-gradient) !important',
+        backgroundImage: 'var(--sidebar-gradient) !important'
       }}
     >
       {/* Branding Header */}
