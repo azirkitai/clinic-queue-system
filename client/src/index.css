@@ -669,8 +669,25 @@
     color: hsl(220 15% 15%) !important;
   }
 }
-/* Sidebar gradient background override */
-.sidebar-gradient-bg {
+/* Sidebar gradient background override - STRONG */
+.sidebar-gradient-bg,
+.sidebar-gradient-bg.bg-sidebar,
+[class*="bg-sidebar"].sidebar-gradient-bg {
   background: linear-gradient(180deg, #000000 0%, #1e40af 50%, #06b6d4 100%) !important;
   background-image: linear-gradient(180deg, #000000 0%, #1e40af 50%, #06b6d4 100%) !important;
+}
+
+/* Override ALL sidebar backgrounds */
+[style*="sidebar-gradient"]:is([class*="bg-"]),
+[data-sidebar] {
+  background: linear-gradient(180deg, #000000 0%, #1e40af 50%, #06b6d4 100%) !important;
+}
+
+/* Additional aggressive Sidebar gradient - target all variants */
+.sidebar-gradient-bg ~ * {
+  background: inherit !important;
+}
+
+[class*="sidebar"][style*="background"] {
+  background: linear-gradient(180deg, #000000 0%, #1e40af 50%, #06b6d4 100%) !important;
 }
