@@ -118,8 +118,8 @@
   /* TV border radius - scales proportionally */
   --tv-radius: clamp(8px, 1.0vmin, 24px);
 
-  /* Sidebar gradient background - hitam → biru → turquoise */
-  --sidebar-gradient: linear-gradient(180deg, #000000 0%, #1e40af 50%, #06b6d4 100%);
+  /* Sidebar gradient background - Navy Blue to Cyan/Teal */
+  --sidebar-gradient: linear-gradient(180deg, #0f1e3a 0%, #1a3a52 40%, #0d6b85 100%);
 
   /* Automatically computed borders - intensity can be controlled by the user by the --opaque-button-border-intensity setting */
 
@@ -669,18 +669,18 @@
     color: hsl(220 15% 15%) !important;
   }
 }
-/* Sidebar gradient background override - STRONG */
+/* Sidebar gradient background - Navy Blue to Cyan/Teal */
 .sidebar-gradient-bg,
 .sidebar-gradient-bg.bg-sidebar,
 [class*="bg-sidebar"].sidebar-gradient-bg {
-  background: linear-gradient(180deg, #000000 0%, #1e40af 50%, #06b6d4 100%) !important;
-  background-image: linear-gradient(180deg, #000000 0%, #1e40af 50%, #06b6d4 100%) !important;
+  background: linear-gradient(180deg, #0f1e3a 0%, #1a3a52 40%, #0d6b85 100%) !important;
+  background-image: linear-gradient(180deg, #0f1e3a 0%, #1a3a52 40%, #0d6b85 100%) !important;
 }
 
 /* Override ALL sidebar backgrounds */
 [style*="sidebar-gradient"]:is([class*="bg-"]),
 [data-sidebar] {
-  background: linear-gradient(180deg, #000000 0%, #1e40af 50%, #06b6d4 100%) !important;
+  background: linear-gradient(180deg, #0f1e3a 0%, #1a3a52 40%, #0d6b85 100%) !important;
 }
 
 /* Additional aggressive Sidebar gradient - target all variants */
@@ -689,5 +689,5 @@
 }
 
 [class*="sidebar"][style*="background"] {
-  background: linear-gradient(180deg, #000000 0%, #1e40af 50%, #06b6d4 100%) !important;
+  background: linear-gradient(180deg, #0f1e3a 0%, #1a3a52 40%, #0d6b85 100%) !important;
 }
