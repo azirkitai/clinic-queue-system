@@ -104,10 +104,6 @@ export function AppSidebar() {
       {/* Branding Header */}
       <div 
         className="p-8 border-b border-sidebar-border/20"
-        style={{
-          background: 'transparent',
-          backgroundColor: 'transparent'
-        }}
       >
         <div className="flex justify-center items-center">
           <img 
@@ -121,9 +117,6 @@ export function AppSidebar() {
 
       <SidebarContent 
         className="px-4 py-6"
-        style={{ 
-          background: 'transparent' 
-        }}
       >
         {/* Main Navigation Section */}
         <div>
@@ -180,10 +173,6 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter 
         className="px-4 py-4 border-t border-sidebar-border/20"
-        style={{
-          background: 'transparent',
-          backgroundColor: 'transparent'
-        }}
       >
         {/* User Information */}
         {user && (
