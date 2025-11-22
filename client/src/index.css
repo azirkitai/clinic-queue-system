@@ -410,34 +410,6 @@
   }
 
   /* Enhanced Sidebar Navigation Styling */
-  .sidebar-nav-item {
-    transition: all 0.3s ease !important;
-    border-radius: 8px !important;
-    margin: 2px 0 !important;
-  }
-
-  .sidebar-nav-item:hover {
-    background: linear-gradient(90deg, rgba(52, 152, 219, 0.15) 0%, rgba(41, 128, 185, 0.1) 100%) !important;
-    transform: translateX(4px) !important;
-    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2) !important;
-    border-left: 3px solid #3498db !important;
-  }
-
-  .sidebar-nav-item[data-active="true"] {
-    background: linear-gradient(90deg, rgba(52, 152, 219, 0.25) 0%, rgba(41, 128, 185, 0.15) 100%) !important;
-    border-left: 3px solid #3498db !important;
-    box-shadow: 0 2px 12px rgba(52, 152, 219, 0.3) !important;
-  }
-
-  .sidebar-nav-item[data-active="true"]:hover {
-    background: linear-gradient(90deg, rgba(52, 152, 219, 0.3) 0%, rgba(41, 128, 185, 0.2) 100%) !important;
-    transform: translateX(6px) !important;
-  }
-
-  /* Sidebar text enhancements */
-  .sidebar-nav-item .sidebar-nav-text {
-    color: rgba(255, 255, 255, 0.9) !important;
-    transition: color 0.3s ease !important;
   }
 
   .sidebar-nav-item:hover .sidebar-nav-text {
@@ -655,59 +627,19 @@
   
   .tv-mode .gap-2 {
     gap: clamp(12px, 2vmin, 32px) !important;
-  }
-  
-  .tv-mode .gap-4 {
-    gap: clamp(16px, 3vmin, 48px) !important;
-  }
-  
-  /* TV Mode: Force remove any dark backgrounds */
-  .tv-mode .dark\:bg-gray-800,
-  .tv-mode .dark\:bg-gray-900,
-  .tv-mode .dark\:text-white {
-    background: hsl(0 0% 98%) !important;
-    color: hsl(220 15% 15%) !important;
-  }
-}
-/* Sidebar gradient background - Navy Blue to Cyan/Teal */
-.sidebar-gradient-bg,
-.sidebar-gradient-bg.bg-sidebar,
-[class*="bg-sidebar"].sidebar-gradient-bg {
-  background: linear-gradient(180deg, #0f1e3a 0%, #1a3a52 40%, #0d6b85 100%) !important;
-  background-image: linear-gradient(180deg, #0f1e3a 0%, #1a3a52 40%, #0d6b85 100%) !important;
-}
-
-/* Override ALL sidebar backgrounds */
-[style*="sidebar-gradient"]:is([class*="bg-"]),
-[data-sidebar] {
-  background: linear-gradient(180deg, #0f1e3a 0%, #1a3a52 40%, #0d6b85 100%) !important;
-}
-
-/* Additional aggressive Sidebar gradient - target all variants */
-.sidebar-gradient-bg ~ * {
-  background: inherit !important;
-}
-
-[class*="sidebar"][style*="background"] {
-  background: linear-gradient(180deg, #0f1e3a 0%, #1a3a52 40%, #0d6b85 100%) !important;
-}
-
-/* SIDEBAR NAV BUTTONS - NO BACKGROUND */
-.sidebar-nav-item {
-  background: transparent !important;
-  color: inherit;
-}
-
-.sidebar-nav-item:hover {
-  background: transparent !important;
-}
-
-.sidebar-nav-item[data-active="true"] {
-  background: transparent !important;
-  color: inherit;
-  font-weight: 500;
 }
 
 .sidebar-nav-item[data-active="true"]:hover {
   background: transparent !important;
 }
+
+/* FINAL SIDEBAR BUTTON RULE - ZERO BACKGROUND */
+.sidebar-nav-item {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: inherit !important;
+}
+.sidebar-nav-item:hover { background: transparent !important; background-color: transparent !important; }
+.sidebar-nav-item:active { background: transparent !important; background-color: transparent !important; }
+.sidebar-nav-item[data-active="true"] { background: transparent !important; background-color: transparent !important; }
+.sidebar-nav-item[data-active="true"]:hover { background: transparent !important; background-color: transparent !important; }
