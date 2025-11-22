@@ -692,9 +692,6 @@
   background: linear-gradient(180deg, #0f1e3a 0%, #1a3a52 40%, #0d6b85 100%) !important;
 }
 
-
-}
-
 /* SIDEBAR NAV BUTTONS - NO BACKGROUND */
 .sidebar-nav-item {
   background: transparent !important;
