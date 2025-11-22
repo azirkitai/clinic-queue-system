@@ -621,3 +621,13 @@
 .sidebar-nav-item[data-active="true"] * {
   color: white !important;
 }
+
+/* SIDEBAR BACKGROUND - FINAL GRADIENT OVERRIDE */
+.sidebar-gradient-bg {
+  background: linear-gradient(180deg, #001a33 0%, #0f3a4f 50%, #0d7490 100%) !important;
+}
+
+[class*="bg-sidebar"],
+.bg-sidebar {
+  background: linear-gradient(180deg, #001a33 0%, #0f3a4f 50%, #0d7490 100%) !important;
+}
