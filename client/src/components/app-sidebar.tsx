@@ -135,7 +135,7 @@ export function AppSidebar() {
                   asChild 
                   isActive={location === item.url}
                   data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
-                  className="sidebar-nav-item"
+                  className="sidebar-nav-item bg-transparent hover:bg-white/10"
                   data-active={location === item.url}
                 >
                   <Link href={item.url}>
@@ -164,7 +164,7 @@ export function AppSidebar() {
                     asChild 
                     isActive={location === item.url}
                     data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
-                    className="sidebar-nav-item"
+                    className="sidebar-nav-item bg-transparent hover:bg-white/10"
                     data-active={location === item.url}
                   >
                     <Link href={item.url}>

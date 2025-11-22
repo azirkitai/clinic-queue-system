@@ -723,3 +723,34 @@
 .sidebar-nav-item[data-active="true"]:hover {
   background: rgba(6, 182, 212, 0.25) !important;
 }
+
+/* MORE AGGRESSIVE - Override all sidebar menu button backgrounds */
+.sidebar-nav-item,
+[class*="sidebar-nav-item"] {
+  background: transparent !important;
+}
+
+.sidebar-nav-item:hover,
+[class*="sidebar-nav-item"]:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Active mark with left border - STRONGER */
+.sidebar-nav-item[data-active="true"],
+[class*="sidebar-nav-item"][data-active="true"],
+[data-active="true"].sidebar-nav-item {
+  background: rgba(6, 182, 212, 0.2) !important;
+  border-left: 4px solid #06b6d4 !important;
+  padding-left: calc(0.5rem - 4px) !important;
+  font-weight: 600 !important;
+}
+
+.sidebar-nav-item[data-active="true"]:hover,
+[data-active="true"].sidebar-nav-item:hover {
+  background: rgba(6, 182, 212, 0.3) !important;
+}
+
+/* Remove ::before approach - use direct border */
+.sidebar-nav-item[data-active="true"]::before {
+  display: none !important;
+}
