@@ -114,7 +114,6 @@ export function AppSidebar() {
           />
         </div>
       </div>
-
       <SidebarContent 
         className="px-4 py-6"
       >
@@ -206,9 +205,7 @@ export function AppSidebar() {
         
         {/* Footer Branding */}
         <div className="mt-4 text-center">
-          <p className="text-sidebar-foreground/40 text-xs">
-            KlinikHR Designed by Sir.S
-          </p>
+          <p className="text-sidebar-foreground/40 text-xs">Quetama Designed by Sir's Tech</p>
         </div>
       </SidebarFooter>
     </Sidebar>
