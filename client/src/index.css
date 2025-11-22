@@ -633,13 +633,24 @@
   background: transparent !important;
 }
 
-/* FINAL SIDEBAR BUTTON RULE - ZERO BACKGROUND */
+
+/* SIDEBAR BUTTONS - WITH GRADIENT FOR ACTIVE STATE */
 .sidebar-nav-item {
   background: transparent !important;
-  background-color: transparent !important;
-  color: inherit !important;
+  transition: all 0.2s ease !important;
 }
-.sidebar-nav-item:hover { background: transparent !important; background-color: transparent !important; }
-.sidebar-nav-item:active { background: transparent !important; background-color: transparent !important; }
-.sidebar-nav-item[data-active="true"] { background: transparent !important; background-color: transparent !important; }
-.sidebar-nav-item[data-active="true"]:hover { background: transparent !important; background-color: transparent !important; }
+
+/* Active button - Cyan gradient background */
+.sidebar-nav-item[data-active="true"] {
+  background: linear-gradient(135deg, rgba(13, 107, 144, 0.6) 0%, rgba(6, 182, 212, 0.5) 100%) !important;
+  font-weight: 500 !important;
+}
+
+.sidebar-nav-item[data-active="true"]:hover {
+  background: linear-gradient(135deg, rgba(13, 107, 144, 0.8) 0%, rgba(6, 182, 212, 0.7) 100%) !important;
+}
+
+/* Hover effect for non-active buttons */
+.sidebar-nav-item:not([data-active="true"]):hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
