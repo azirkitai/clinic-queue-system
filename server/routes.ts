@@ -154,6 +154,27 @@ const qrFinalizeSchema = z.object({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Middleware for traffic logging
+  app.use((req, res, next) => {
+    if (process.env.TRAFFIC_LOGGING !== 'true') {
+      return next();
+    }
+
+    const start = Date.now();
+    const { method, path } = req;
+
+    // Capture the original res.json to calculate size
+    const oldJson = res.json;
+    res.json = function (body) {
+      const duration = Date.now() - start;
+      const size = Buffer.byteLength(JSON.stringify(body));
+      console.log(`REQ ${method} ${path} ${res.statusCode} size=${size} bytes dur=${duration}ms`);
+      return oldJson.call(this, body);
+    };
+
+    next();
+  });
+
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
