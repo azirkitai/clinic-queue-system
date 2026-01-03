@@ -211,6 +211,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     // Settings/Theme events (already exist)
     socket.on('settings:updated', () => {
       queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/settings/tv'] });
     });
 
     socket.on('themes:updated', () => {

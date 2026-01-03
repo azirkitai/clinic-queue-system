@@ -234,16 +234,17 @@ export function TVDisplay({
   });
 
   // Fetch settings - use token-based endpoint if tvToken provided
+  // ✅ Use /api/settings/tv for 80% smaller payload (~2KB vs ~11KB)
   const { data: settings = [] } = useQuery<Array<{key: string; value: string}>>({
-    queryKey: tvToken ? [`/api/tv/${tvToken}/settings`, 'tv-settings'] : ['/api/settings'],
+    queryKey: tvToken ? [`/api/tv/${tvToken}/settings`, 'tv-settings'] : ['/api/settings/tv'],
     queryFn: async () => {
-      const endpoint = tvToken ? `/api/tv/${tvToken}/settings` : '/api/settings';
+      const endpoint = tvToken ? `/api/tv/${tvToken}/settings` : '/api/settings/tv';
       const response = await fetch(endpoint);
       if (!response.ok) throw new Error('Failed to fetch settings');
       return response.json();
     },
-    staleTime: 30000, // Cache for 30s - WebSocket provides instant updates
-    refetchInterval: 30000, // Poll every 30 seconds as fallback (10x bandwidth reduction!)
+    staleTime: 60000, // Cache for 60s - settings rarely change
+    refetchInterval: 60000, // Poll every 60 seconds (settings don't change often)
     refetchOnMount: false, // ❌ Disable - use cached data
     refetchOnWindowFocus: false, // ❌ Disable - prevents burst
   });

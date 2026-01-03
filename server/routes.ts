@@ -1545,6 +1545,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Settings routes
 
+  // ✅ TV-optimized settings endpoint (lightweight - ~2KB instead of ~11KB)
+  // Only returns settings keys that TV display actually uses
+  const TV_SETTINGS_KEYS = new Set([
+    // Marquee
+    'enableMarquee', 'marqueeText', 'marqueeColor', 'marqueeBackgroundColor',
+    'marqueeBackgroundMode', 'marqueeBackgroundGradient', 'marqueeTextMode', 'marqueeTextGradient',
+    // Modal
+    'modalBackgroundColor', 'modalBorderColor', 'modalTextColor',
+    // Clinic
+    'clinicLogo', 'showClinicLogo', 'clinicName',
+    // Header
+    'headerBackgroundMode', 'headerBackgroundColor', 'headerBackgroundGradient',
+    'headerTextMode', 'headerTextColor', 'headerTextGradient',
+    // Clinic name text
+    'clinicNameTextMode', 'clinicNameTextColor', 'clinicNameTextGradient',
+    // Call section
+    'callBackgroundMode', 'callBackgroundColor', 'callBackgroundGradient',
+    'callNameTextMode', 'callNameTextColor', 'callNameTextGradient',
+    // Window text
+    'windowTextMode', 'windowTextColor', 'windowTextGradient',
+    // Prayer times
+    'prayerTimesBackgroundMode', 'prayerTimesBackgroundColor', 'prayerTimesBackgroundGradient',
+    'prayerTimesTextMode', 'prayerTimesTextColor', 'prayerTimesTextGradient', 'prayerTimesHighlightColor',
+    // Weather
+    'weatherBackgroundMode', 'weatherBackgroundColor', 'weatherBackgroundGradient',
+    'weatherTextMode', 'weatherTextColor', 'weatherTextGradient',
+    // Queue
+    'queueBackgroundMode', 'queueBackgroundColor', 'queueBackgroundGradient',
+    'queueTextMode', 'queueTextColor', 'queueTextGradient',
+    'queueItemBackgroundMode', 'queueItemBackgroundColor', 'queueItemBackgroundGradient',
+    // History
+    'historyNameColor', 'historyNameMode', 'historyNameGradient',
+    // Sound
+    'enableSound', 'volume', 'presetKey',
+  ]);
+
+  app.get("/api/settings/tv", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Session inactive" });
+      }
+      
+      // Check cache (60s TTL - TV settings rarely change)
+      const cached = getCached('settings-tv', req.session.userId, 60000);
+      if (cached !== null) {
+        return res.json(cached);
+      }
+      
+      const allSettings = await storage.getSettings(req.session.userId);
+      
+      // Filter to only TV-needed settings (80% reduction!)
+      const tvSettings = allSettings.filter(s => TV_SETTINGS_KEYS.has(s.key));
+      
+      setCache('settings-tv', req.session.userId, tvSettings);
+      res.json(tvSettings);
+    } catch (error) {
+      console.error("Error fetching TV settings:", error);
+      res.status(500).json({ error: "Failed to fetch TV settings" });
+    }
+  });
+
   // Get all settings
   app.get("/api/settings", async (req, res) => {
     try {
