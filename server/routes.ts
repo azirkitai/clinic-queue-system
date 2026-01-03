@@ -192,6 +192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.path === '/api/themes/active') return true;
       if (req.path === '/api/text-groups/active') return true;
       if (req.path === '/api/settings') return true;
+      if (req.path === '/api/settings/tv') return true; // ✅ TV settings exempt
       return false;
     }
   });

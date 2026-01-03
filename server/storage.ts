@@ -1,7 +1,7 @@
 import { type User, type InsertUser, type Patient, type InsertPatient, type Setting, type InsertSetting, type Media, type InsertMedia, type TextGroup, type InsertTextGroup, type Theme, type InsertTheme, type QrSession, type InsertQrSession, users, settings, themes, textGroups, qrSessions } from "@shared/schema";
 import * as schema from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, gte } from "drizzle-orm";
 import * as bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 import { createHash } from "crypto";
@@ -1786,7 +1786,7 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(schema.patients.userId, userId),
           sql`${schema.patients.archivedAt} IS NULL`,
-          sql`${schema.patients.registeredAt} >= ${startOfDayUTC.toISOString()}` // ✅ TODAY ONLY!
+          gte(schema.patients.registeredAt, startOfDayUTC) // ✅ TODAY ONLY! Using gte() for proper timestamp comparison
         )
       )
       .orderBy(
