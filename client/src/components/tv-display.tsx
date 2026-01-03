@@ -213,7 +213,8 @@ export function TVDisplay({
     },
     staleTime: 30000, // Cache for 30s - WebSocket provides instant updates
     refetchInterval: 30000, // Poll every 30 seconds as fallback (10x bandwidth reduction!)
-    refetchOnMount: 'always',
+    refetchOnMount: false, // ❌ Disable - use cached data
+    refetchOnWindowFocus: false, // ❌ Disable - prevents burst
     retry: 1,
   });
 
@@ -228,7 +229,8 @@ export function TVDisplay({
     },
     staleTime: 30000, // Cache for 30s - WebSocket provides instant updates
     refetchInterval: 30000, // Poll every 30 seconds as fallback (10x bandwidth reduction!)
-    refetchOnMount: 'always',
+    refetchOnMount: false, // ❌ Disable - use cached data
+    refetchOnWindowFocus: false, // ❌ Disable - prevents burst
   });
 
   // Fetch settings - use token-based endpoint if tvToken provided
@@ -242,7 +244,8 @@ export function TVDisplay({
     },
     staleTime: 30000, // Cache for 30s - WebSocket provides instant updates
     refetchInterval: 30000, // Poll every 30 seconds as fallback (10x bandwidth reduction!)
-    refetchOnMount: 'always',
+    refetchOnMount: false, // ❌ Disable - use cached data
+    refetchOnWindowFocus: false, // ❌ Disable - prevents burst
   });
 
   // Convert settings array to object for easier access

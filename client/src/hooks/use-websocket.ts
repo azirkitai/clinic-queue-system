@@ -22,13 +22,14 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   }, [onConnect, onDisconnect]);
 
   useEffect(() => {
-    // Create socket connection with infinite reconnection attempts
+    // Create socket connection with exponential backoff reconnection
     const socket = io({
       path: '/socket.io',
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
+      reconnectionDelay: 2000, // Start at 2s (not 1s)
+      reconnectionDelayMax: 30000, // Max 30s between retries (not 5s)
+      randomizationFactor: 0.5, // Add jitter to prevent thundering herd
       reconnectionAttempts: Infinity, // ✅ Never give up reconnecting!
       timeout: 20000,
     });

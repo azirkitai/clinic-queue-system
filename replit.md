@@ -7,6 +7,12 @@ This project is a comprehensive clinic patient calling system designed to enhanc
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+- **January 3, 2026**: Major bandwidth optimization update:
+  - Added rate limiting (300 req/min general, 30 req/min for legacy endpoints)
+  - Disabled aggressive refetching (refetchOnWindowFocus, refetchOnMount) to prevent burst traffic
+  - WebSocket reconnection backoff increased from 1-5s to 2-30s with jitter
+  - Legacy endpoints now return lightweight payloads only
+  - Traffic logging middleware added (controlled by TRAFFIC_LOGGING env var)
 - **November 20, 2025**: Fixed timezone issue for daily reset - All date-based operations now use Malaysia timezone (UTC+8) instead of UTC. Daily reset at midnight Malaysia time now works correctly for:
   - Dashboard stats (Waiting, Called, Completed counts)
   - Next patient number (resets to #001)
@@ -79,6 +85,14 @@ Key entities: Users (auth/roles), Windows (rooms/stations), Patients (queue mana
   - Optimized SQL queries with LEFT JOIN for window names
   - Auto-Complete Dispensary Scheduler (every 5 minutes)
 - **Scalability**: Documented support for Neon read replicas for further CPU optimization.
+- **Rate Limiting**: 
+  - General API: 300 req/min per IP (supports 10+ TV devices)
+  - Legacy endpoints: 30 req/min with lightweight payloads only
+  - TV endpoints exempt from rate limiting for reliability
+- **Traffic Logging**: 
+  - Enable with `TRAFFIC_LOGGING=true` env var
+  - Logs: method, path, status, response size, duration
+  - Example: `REQ GET /api/patients/tv 200 size=842 bytes dur=12ms`
 
 ## External Dependencies
 

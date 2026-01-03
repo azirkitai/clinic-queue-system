@@ -125,9 +125,10 @@ export default function Dashboard() {
   // Fetch dashboard statistics (WebSocket updates automatically, polling as fallback)
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats & { totalWindows: number }>({
     queryKey: ['/api/dashboard/stats'],
-    staleTime: 5000, // ✅ Consider data stale after 5s to enable polling
+    staleTime: 30000, // ✅ Keep data fresh for 30s (matches polling)
     refetchInterval: 30000, // Fallback polling every 30s (WebSocket is primary)
-    refetchOnReconnect: true, // Refetch when network reconnects
+    refetchOnReconnect: true, // ✅ Enable - ensures stats refresh after network blips
+    refetchOnWindowFocus: false, // ❌ Disable - prevents burst on tab switch
   });
 
   // ✅ Use lightweight TV patients endpoint (85% bandwidth reduction: ~70KB → ~10KB!)
@@ -137,17 +138,19 @@ export default function Dashboard() {
   // Fetch windows data (WebSocket updates automatically, polling as fallback)
   const { data: windows = [] } = useQuery<any[]>({
     queryKey: ['/api/windows'],
-    staleTime: 5000, // ✅ Consider data stale after 5s to enable polling
+    staleTime: 30000, // ✅ Keep data fresh for 30s (matches polling)
     refetchInterval: 30000, // Fallback polling every 30s (WebSocket is primary)
-    refetchOnReconnect: true,
+    refetchOnReconnect: true, // ✅ Enable - ensures windows refresh after network blips
+    refetchOnWindowFocus: false, // ❌ Disable - prevents burst on tab switch
   });
 
   // Fetch active media for display (less critical, slower polling)
   const { data: activeMedia = [] } = useQuery<any[]>({
     queryKey: ['/api/display'],
-    staleTime: 30000, // Consider data stale after 30s
+    staleTime: 60000, // ✅ Keep data fresh for 60s (matches polling)
     refetchInterval: 60000, // Polling every 60s (rarely changes)
-    refetchOnReconnect: true,
+    refetchOnReconnect: false, // ❌ Disable - WebSocket handles updates
+    refetchOnWindowFocus: false, // ❌ Disable - prevents burst
   });
 
   // Fetch display settings

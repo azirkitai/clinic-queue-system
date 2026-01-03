@@ -177,29 +177,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rate limiting to prevent reconnection storms and spam
-  // 60 requests per minute per IP for high-frequency endpoints
+  // 300 requests per minute per IP (supports 10+ TVs with multiple polling queries)
   const apiLimiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 60, // 60 requests per minute
+    max: 300, // 300 requests per minute (10 TVs x 5 queries x 2 polls/min = 100 + buffer)
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: "Too many requests, please slow down" },
     skip: (req) => {
-      // Skip rate limiting for non-API routes
-      return !req.path.startsWith('/api/');
+      // Skip rate limiting for non-API routes and lightweight TV endpoints
+      if (!req.path.startsWith('/api/')) return true;
+      // Exempt high-frequency TV endpoints from general rate limit
+      if (req.path === '/api/patients/tv') return true;
+      if (req.path === '/api/themes/active') return true;
+      if (req.path === '/api/text-groups/active') return true;
+      if (req.path === '/api/settings') return true;
+      return false;
     }
   });
 
-  // Stricter rate limit for heavy endpoints (legacy dashboard endpoints)
+  // Stricter rate limit for heavy/legacy endpoints only
   const heavyEndpointLimiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute  
-    max: 20, // Only 20 requests per minute for heavy endpoints
+    max: 30, // 30 requests per minute for legacy endpoints
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: "Rate limit exceeded for this endpoint. Use /api/patients/tv instead." }
   });
 
-  // Apply general rate limiting to all API routes
+  // Apply general rate limiting to API routes (with exemptions above)
   app.use('/api/', apiLimiter);
 
   // Authentication routes
@@ -1459,23 +1465,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get current call (currently called patient)
-  app.get("/api/dashboard/current-call", async (req, res) => {
+  // ⚠️ LEGACY ENDPOINT - Use /api/patients/tv instead (85% smaller payload)
+  // Apply stricter rate limit to prevent bandwidth waste
+  app.get("/api/dashboard/current-call", heavyEndpointLimiter, async (req, res) => {
     try {
       // Check authentication
       if (!req.session.userId) {
         return res.status(401).json({ error: "Session inactive" });
       }
       
-      // Check server-side cache first (2.5s TTL)
-      const cached = getCached('current-call', req.session.userId);
+      // Check server-side cache first (5s TTL - longer for legacy endpoint)
+      const cached = getCached('current-call', req.session.userId, 5000);
       if (cached !== null) {
         return res.json(cached);
       }
       
-      // Fetch from database
+      // Fetch from database - return lightweight version only
       const currentCall = await storage.getCurrentCall(req.session.userId);
-      const result = currentCall || null;
+      
+      // Return lightweight payload (not full patient object)
+      const result = currentCall ? {
+        id: currentCall.id,
+        name: currentCall.name,
+        number: currentCall.number,
+        status: currentCall.status,
+        windowId: currentCall.windowId,
+        calledAt: currentCall.calledAt
+      } : null;
       
       // Cache the result
       setCache('current-call', req.session.userId, result);
@@ -1487,29 +1503,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get recent history (recently completed patients)
-  app.get("/api/dashboard/history", async (req, res) => {
+  // ⚠️ LEGACY ENDPOINT - Use /api/patients/tv instead (85% smaller payload)
+  // Apply stricter rate limit to prevent bandwidth waste
+  app.get("/api/dashboard/history", heavyEndpointLimiter, async (req, res) => {
     try {
       // Check authentication
       if (!req.session.userId) {
         return res.status(401).json({ error: "Session inactive" });
       }
       
-      const limit = parseInt(req.query.limit as string) || 10;
+      const limit = Math.min(parseInt(req.query.limit as string) || 5, 10); // Max 10 items
       
-      // Check server-side cache first (2.5s TTL)
+      // Check server-side cache first (5s TTL - longer for legacy endpoint)
       const cacheKey = `history-${limit}`;
-      const cached = getCached(cacheKey, req.session.userId);
+      const cached = getCached(cacheKey, req.session.userId, 5000);
       if (cached !== null) {
         return res.json(cached);
       }
       
       const history = await storage.getRecentHistory(req.session.userId, limit);
       
-      // Cache the result
-      setCache(cacheKey, req.session.userId, history);
+      // Return lightweight payload (not full patient objects)
+      const lightHistory = history.map(p => ({
+        id: p.id,
+        name: p.name,
+        number: p.number,
+        status: p.status,
+        windowId: p.windowId,
+        calledAt: p.calledAt
+      }));
       
-      res.json(history);
+      // Cache the result
+      setCache(cacheKey, req.session.userId, lightHistory);
+      
+      res.json(lightHistory);
     } catch (error) {
       console.error("Error fetching recent history:", error);
       res.status(500).json({ error: "Failed to fetch recent history" });

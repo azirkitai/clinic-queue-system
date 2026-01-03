@@ -24,9 +24,11 @@ interface UseTvPatientsResult {
 export function useTvPatients(): UseTvPatientsResult {
   const { data: tvPatients = [], isLoading, error } = useQuery<TvQueueItem[]>({
     queryKey: ['/api/patients/tv'],
-    staleTime: 5000,
+    staleTime: 30000, // Data stays fresh for 30s (matches polling interval)
     refetchInterval: 30000, // Poll every 30s (WebSocket is primary)
-    refetchOnReconnect: true,
+    refetchOnReconnect: false, // ❌ Disable - WebSocket handles reconnect updates
+    refetchOnWindowFocus: false, // ❌ Disable - prevents burst on tab switch
+    refetchOnMount: false, // ❌ Disable - use cached data on mount
   });
 
   // Memoize transformed patients to avoid re-creating Date objects on every render
