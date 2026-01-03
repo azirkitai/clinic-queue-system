@@ -1,0 +1,135 @@
+Ini cara FIX supaya penggunaan tak tinggi — langkah yang betul untuk sistem TV/queue (dan ini yang akan kekalkan bil rendah walaupun TV makin banyak). Aku bagi checklist yang kau boleh terus bagi pada agent / buat sendiri.
+
+1) Jadikan sistem “event-driven”, bukan polling
+
+✅ WebSocket/SSE mesti jadi cara utama update TV.
+❌ Jangan bergantung pada polling.
+
+Bila staff tekan Panggil → server “push” update ke semua TV
+
+TV tak perlu tanya server setiap masa
+
+Rule: polling hanya fallback (contoh 30–60 saat).
+
+2) Kunci polling minimum (hard limit)
+
+Kalau terpaksa polling:
+
+✅ 30 saat (macam sekarang) atau lebih
+
+❌ jangan bawah 10 saat
+
+Dan matikan benda yang suka “refetch” tanpa sedar:
+
+refetchOnWindowFocus: false
+
+refetchOnReconnect: false
+
+refetchOnMount: false (kalau sesuai)
+
+3) Kecilkan payload API TV (ini paling kritikal)
+
+Endpoint TV jangan hantar “semua benda”.
+
+✅ Hantar hanya:
+
+nama pesakit
+
+kaunter
+
+status
+
+masa panggil
+
+❌ Jangan hantar:
+
+history
+
+metadata berat
+
+JSON besar
+
+base64/gambar/video
+
+Rule: endpoint TV maksimum 1–10 item, dan ada LIMIT.
+
+4) Media/video mesti di-cache (tak boleh ikut polling)
+
+Kalau TV perlu video/imej:
+
+API TV hanya hantar media_id atau URL
+
+TV download file sekali dan simpan cache
+
+Pastikan response header media:
+
+Cache-Control: public, max-age=31536000, immutable
+Supaya browser/TV tak download ulang.
+
+5) Server-side cache 1–3 saat (anti “10 TV = 10x query”)
+
+Walaupun payload kecil, bila 10–30 TV request serentak:
+
+tanpa cache: DB kena hit banyak kali
+
+dengan cache: 1 query sahaja
+
+Rule: cache endpoint TV 1–3 saat cukup.
+
+6) Jangan “fan-out” data besar ke banyak client
+
+Kalau ada 20 TV:
+
+push event kecil (1–2KB)
+
+bukan push list besar
+
+7) Letak guardrail: rate limit + auth
+
+Supaya tak ada:
+
+bot
+
+refresh loop
+
+staff buka banyak tab
+
+✅ Buat:
+
+token untuk TV
+
+rate limit per IP / per token (contoh 60 req/min max)
+
+8) Pastikan Render logging jalan untuk verify (bukan agak-agak)
+
+On TRAFFIC_LOGGING=true, then check:
+
+endpoint apa paling kerap
+
+size= berapa
+
+ada tak endpoint besar berulang
+
+Target selamat:
+
+endpoint TV size < 10KB
+
+request interval 30s
+
+tiada endpoint media berulang
+
+Paling penting: apa kau buat SEKARANG (praktikal)
+
+ON TRAFFIC_LOGGING=true di Render
+
+Biarkan TV/kaunter berjalan 1–2 jam waktu peak
+
+Copy 30–80 line log yang ada REQ ... size=... dan paste sini
+
+Aku akan beritahu dengan tepat:
+
+endpoint mana yang masih “curi data”
+
+sama ada polling betul-betul 30s
+
+dan anggaran GB/bulan selepas fix.

@@ -2,6 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { Server as SocketIOServer } from "socket.io";
+import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
 import { insertPatientSchema, insertUserSchema, insertTextGroupSchema, insertThemeSchema, insertQrSessionSchema } from "@shared/schema";
 import { createHash, randomBytes } from "crypto";
@@ -174,6 +175,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     next();
   });
+
+  // Rate limiting to prevent reconnection storms and spam
+  // 60 requests per minute per IP for high-frequency endpoints
+  const apiLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 60, // 60 requests per minute
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many requests, please slow down" },
+    skip: (req) => {
+      // Skip rate limiting for non-API routes
+      return !req.path.startsWith('/api/');
+    }
+  });
+
+  // Stricter rate limit for heavy endpoints (legacy dashboard endpoints)
+  const heavyEndpointLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute  
+    max: 20, // Only 20 requests per minute for heavy endpoints
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Rate limit exceeded for this endpoint. Use /api/patients/tv instead." }
+  });
+
+  // Apply general rate limiting to all API routes
+  app.use('/api/', apiLimiter);
 
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
