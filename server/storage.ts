@@ -389,9 +389,16 @@ export class MemStorage implements IStorage {
       .filter(w => w.userId === userId);
     const windowMap = new Map(windows.map(w => [w.id, w.name]));
     
-    // Get ALL non-archived patients (include completed for handoff window!)
+    // Use Malaysia timezone (UTC+8) for daily boundary
+    const malaysiaOffset = 8 * 60 * 60 * 1000;
+    const nowMalaysia = new Date(Date.now() + malaysiaOffset);
+    const today = nowMalaysia.toISOString().split('T')[0];
+    const startOfDayUTC = new Date(`${today}T00:00:00.000Z`);
+    startOfDayUTC.setTime(startOfDayUTC.getTime() - malaysiaOffset);
+    
+    // ✅ BANDWIDTH FIX: Only return TODAY's patients (not all historical data!)
     const patients = Array.from(this.patients.values())
-      .filter(p => p.userId === userId && !p.archivedAt)
+      .filter(p => p.userId === userId && !p.archivedAt && p.registeredAt >= startOfDayUTC)
       // Sort by latest activity first: calledAt DESC (nulls last), then registeredAt DESC
       .sort((a, b) => {
         // Patients with calledAt come first, sorted DESC
@@ -1746,7 +1753,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTvPatients(userId: string): Promise<schema.TvQueueItem[]> {
+    // Use Malaysia timezone (UTC+8) for daily boundary
+    const malaysiaOffset = 8 * 60 * 60 * 1000;
+    const nowMalaysia = new Date(Date.now() + malaysiaOffset);
+    const today = nowMalaysia.toISOString().split('T')[0];
+    
+    // Convert Malaysia day boundaries to UTC
+    const startOfDayUTC = new Date(`${today}T00:00:00.000Z`);
+    startOfDayUTC.setTime(startOfDayUTC.getTime() - malaysiaOffset);
+    
     // Single SQL query with LEFT JOIN for window names + lightweight DTO
+    // ✅ BANDWIDTH FIX: Only return TODAY's patients (not all historical data!)
     const results = await db
       .select({
         id: schema.patients.id,
@@ -1768,8 +1785,8 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(schema.patients.userId, userId),
-          sql`${schema.patients.archivedAt} IS NULL`
-          // ✅ Include completed patients for handoff window (don't filter status)
+          sql`${schema.patients.archivedAt} IS NULL`,
+          sql`${schema.patients.registeredAt} >= ${startOfDayUTC.toISOString()}` // ✅ TODAY ONLY!
         )
       )
       .orderBy(
