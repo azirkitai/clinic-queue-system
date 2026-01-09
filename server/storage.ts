@@ -527,18 +527,12 @@ export class MemStorage implements IStorage {
       this.patients.set(patientId, updatedPatient);
       return updatedPatient;
     } else if (status === "dispensary") {
-      // Special handling for dispensary - find DISPENSARY window
-      const dispensaryWindow = Array.from(this.windows.values()).find(
-        w => w.name === 'DISPENSARY' && w.userId === userId
-      );
-      
-      if (dispensaryWindow) {
-        trackingHistory.push({
-          timestamp: now.toISOString(),
-          action: 'dispensary',
-          roomName: 'DISPENSARY'
-        });
-      }
+      // ✅ ALWAYS add dispensary event to tracking history (for auto-complete scheduler)
+      trackingHistory.push({
+        timestamp: now.toISOString(),
+        action: 'dispensary',
+        roomName: 'DISPENSARY'
+      });
       
       // For dispensary, keep status and window unchanged, just set readyForDispensary flag
       const updatedPatient = {
@@ -708,34 +702,44 @@ export class MemStorage implements IStorage {
         const trackingHistory = (patient.trackingHistory as any[]) || [];
         const dispensaryEvent = trackingHistory.find((event: any) => event.action === 'dispensary');
         
+        // ✅ FALLBACK: If no dispensary event, use last event timestamp or registeredAt
+        let dispensaryTime: number;
         if (dispensaryEvent && dispensaryEvent.timestamp) {
-          const dispensaryTime = new Date(dispensaryEvent.timestamp).getTime();
-          const timeDiff = now - dispensaryTime;
+          dispensaryTime = new Date(dispensaryEvent.timestamp).getTime();
+        } else if (trackingHistory.length > 0) {
+          // Use last event timestamp as fallback
+          const lastEvent = trackingHistory[trackingHistory.length - 1];
+          dispensaryTime = lastEvent?.timestamp ? new Date(lastEvent.timestamp).getTime() : patient.registeredAt.getTime();
+        } else {
+          // No tracking history - use registeredAt
+          dispensaryTime = patient.registeredAt.getTime();
+        }
+        
+        const timeDiff = now - dispensaryTime;
+        
+        // If patient > 60 minutes in dispensary, auto-complete
+        if (timeDiff > SIXTY_MINUTES_MS) {
+          console.log(`[AUTO-COMPLETE] Patient ${patient.id} (${patient.name || patient.number}) in dispensary for ${Math.round(timeDiff / 60000)} minutes - auto-completing`);
           
-          // If patient > 60 minutes in dispensary, auto-complete
-          if (timeDiff > SIXTY_MINUTES_MS) {
-            console.log(`[AUTO-COMPLETE] Patient ${patient.id} (${patient.name || patient.number}) in dispensary for ${Math.round(timeDiff / 60000)} minutes - auto-completing`);
-            
-            // Complete patient
-            await this.updatePatientStatus(patient.id, 'completed', patient.userId, null);
-            
-            // Clear from window if assigned
-            if (patient.windowId) {
-              const window = this.windows.get(patient.windowId);
-              if (window && window.currentPatientId === patient.id) {
-                this.windows.set(patient.windowId, {
-                  ...window,
-                  currentPatientId: undefined
-                });
-              }
+          // Complete patient
+          await this.updatePatientStatus(patient.id, 'completed', patient.userId, null);
+          
+          // Clear from window if assigned
+          if (patient.windowId) {
+            const window = this.windows.get(patient.windowId);
+            if (window && window.currentPatientId === patient.id) {
+              this.windows.set(patient.windowId, {
+                ...window,
+                currentPatientId: undefined
+              });
             }
-            
-            // Track result by userId
-            if (!resultsByUser.has(patient.userId)) {
-              resultsByUser.set(patient.userId, []);
-            }
-            resultsByUser.get(patient.userId)!.push(patient.id);
           }
+          
+          // Track result by userId
+          if (!resultsByUser.has(patient.userId)) {
+            resultsByUser.set(patient.userId, []);
+          }
+          resultsByUser.get(patient.userId)!.push(patient.id);
         }
       } catch (error) {
         // Isolate failures per patient
@@ -1916,21 +1920,12 @@ export class DatabaseStorage implements IStorage {
         });
       }
     } else if (status === "dispensary") {
-      // Special handling for dispensary - auto-find DISPENSARY window
-      const [dispensaryWindow] = await db.select()
-        .from(schema.windows)
-        .where(and(
-          eq(schema.windows.name, 'DISPENSARY'),
-          eq(schema.windows.userId, userId)
-        ));
-      
-      if (dispensaryWindow) {
-        trackingHistory.push({
-          timestamp: now.toISOString(),
-          action: 'dispensary',
-          roomName: 'DISPENSARY'
-        });
-      }
+      // ✅ ALWAYS add dispensary event to tracking history (for auto-complete scheduler)
+      trackingHistory.push({
+        timestamp: now.toISOString(),
+        action: 'dispensary',
+        roomName: 'DISPENSARY'
+      });
     } else if (status === "in-progress") {
       trackingHistory.push({
         timestamp: now.toISOString(),
@@ -2163,41 +2158,51 @@ export class DatabaseStorage implements IStorage {
         const trackingHistory = (patient.trackingHistory as any[]) || [];
         const dispensaryEvent = trackingHistory.find((event: any) => event.action === 'dispensary');
         
+        // ✅ FALLBACK: If no dispensary event, use last event timestamp or registeredAt
+        let dispensaryTime: number;
         if (dispensaryEvent && dispensaryEvent.timestamp) {
-          const dispensaryTime = new Date(dispensaryEvent.timestamp).getTime();
-          const timeDiff = now - dispensaryTime;
+          dispensaryTime = new Date(dispensaryEvent.timestamp).getTime();
+        } else if (trackingHistory.length > 0) {
+          // Use last event timestamp as fallback
+          const lastEvent = trackingHistory[trackingHistory.length - 1];
+          dispensaryTime = lastEvent?.timestamp ? new Date(lastEvent.timestamp).getTime() : patient.registeredAt.getTime();
+        } else {
+          // No tracking history - use registeredAt
+          dispensaryTime = patient.registeredAt.getTime();
+        }
+        
+        const timeDiff = now - dispensaryTime;
+        
+        // If patient > 60 minutes in dispensary, auto-complete
+        if (timeDiff > SIXTY_MINUTES_MS) {
+          console.log(`[AUTO-COMPLETE] Patient ${patient.id} (${patient.name || patient.number}) in dispensary for ${Math.round(timeDiff / 60000)} minutes - auto-completing`);
           
-          // If patient > 60 minutes in dispensary, auto-complete
-          if (timeDiff > SIXTY_MINUTES_MS) {
-            console.log(`[AUTO-COMPLETE] Patient ${patient.id} (${patient.name || patient.number}) in dispensary for ${Math.round(timeDiff / 60000)} minutes - auto-completing`);
-            
-            // Complete patient (no windowId needed for completed status)
-            await this.updatePatientStatus(patient.id, 'completed', patient.userId, null);
-            
-            // Clear from window if assigned
-            if (patient.windowId) {
-              const window = await db.select().from(schema.windows)
-                .where(
-                  and(
-                    eq(schema.windows.id, patient.windowId),
-                    eq(schema.windows.currentPatientId, patient.id)
-                  )
+          // Complete patient (no windowId needed for completed status)
+          await this.updatePatientStatus(patient.id, 'completed', patient.userId, null);
+          
+          // Clear from window if assigned
+          if (patient.windowId) {
+            const window = await db.select().from(schema.windows)
+              .where(
+                and(
+                  eq(schema.windows.id, patient.windowId),
+                  eq(schema.windows.currentPatientId, patient.id)
                 )
-                .limit(1);
-              
-              if (window.length > 0) {
-                await db.update(schema.windows)
-                  .set({ currentPatientId: null })
-                  .where(eq(schema.windows.id, patient.windowId));
-              }
-            }
+              )
+              .limit(1);
             
-            // Track result by userId
-            if (!resultsByUser.has(patient.userId)) {
-              resultsByUser.set(patient.userId, []);
+            if (window.length > 0) {
+              await db.update(schema.windows)
+                .set({ currentPatientId: null })
+                .where(eq(schema.windows.id, patient.windowId));
             }
-            resultsByUser.get(patient.userId)!.push(patient.id);
           }
+          
+          // Track result by userId
+          if (!resultsByUser.has(patient.userId)) {
+            resultsByUser.set(patient.userId, []);
+          }
+          resultsByUser.get(patient.userId)!.push(patient.id);
         }
       } catch (error) {
         // Isolate failures per patient
