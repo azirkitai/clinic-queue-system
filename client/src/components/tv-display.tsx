@@ -117,8 +117,14 @@ export function TVDisplay({
       try {
         if (typeof localStorage !== 'undefined') {
           const tvModeEnabled = localStorage.getItem('tvMode') === 'true';
-          console.log('📺 TV Mode changed:', tvModeEnabled);
-          setIsTVMode(tvModeEnabled);
+          // Only update state if value actually changed (prevents unnecessary re-renders)
+          setIsTVMode(prev => {
+            if (prev !== tvModeEnabled) {
+              console.log('📺 TV Mode changed:', tvModeEnabled);
+              return tvModeEnabled;
+            }
+            return prev;
+          });
         }
       } catch (error) {
         console.error('TV Mode: localStorage access failed', error);
@@ -131,8 +137,8 @@ export function TVDisplay({
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('tvModeChanged', handleStorageChange);
     
-    // Also check every 2 seconds as fallback
-    const interval = setInterval(handleStorageChange, 2000);
+    // ✅ Reduced from 2s to 30s - only needed as fallback, events handle real-time updates
+    const interval = setInterval(handleStorageChange, 30000);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
