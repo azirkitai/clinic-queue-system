@@ -258,10 +258,12 @@ export function TVDisplay({
 
   // ✅ Fetch clinicLogo SEPARATELY with very long cache (saves 211KB per regular settings fetch!)
   // Logo rarely changes, so cache for 1 hour and let HTTP cache handle it
+  // Use token-based endpoint for unauthenticated TV displays
   const { data: logoData } = useQuery<{ logo: string }>({
-    queryKey: ['/api/settings/logo'],
+    queryKey: tvToken ? [`/api/tv/${tvToken}/logo`] : ['/api/settings/logo'],
     queryFn: async () => {
-      const response = await fetch('/api/settings/logo');
+      const endpoint = tvToken ? `/api/tv/${tvToken}/logo` : '/api/settings/logo';
+      const response = await fetch(endpoint);
       if (!response.ok) throw new Error('Failed to fetch logo');
       return response.json();
     },

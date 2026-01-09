@@ -2924,6 +2924,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to get TV settings" });
     }
   });
+
+  // ✅ TV Logo endpoint - dedicated logo fetch with HTTP caching for unauthenticated TV displays
+  app.get("/api/tv/:token/logo", async (req, res) => {
+    try {
+      const { token } = req.params;
+      
+      const user = await storage.getUserByTvToken(token);
+      if (!user || !user.isActive) {
+        return res.status(404).json({ error: "Invalid TV token" });
+      }
+      
+      const logoSetting = await storage.getSetting('clinicLogo', user.id);
+      const logo = logoSetting?.value || '';
+      
+      // Set HTTP cache headers - cache for 1 hour
+      res.set('Cache-Control', 'public, max-age=3600');
+      res.json({ logo });
+    } catch (error) {
+      console.error("Error fetching TV logo:", error);
+      res.status(500).json({ error: "Failed to get TV logo" });
+    }
+  });
   
   // TV Active Theme endpoint
   app.get("/api/tv/:token/themes/active", async (req, res) => {
