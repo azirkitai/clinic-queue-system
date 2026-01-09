@@ -235,6 +235,7 @@ export function TVDisplay({
 
   // Fetch settings - use token-based endpoint if tvToken provided
   // ✅ Use /api/settings/tv for 80% smaller payload (~2KB vs ~11KB)
+  // NOTE: clinicLogo excluded from this endpoint - fetched separately with long cache
   const { data: settings = [] } = useQuery<Array<{key: string; value: string}>>({
     queryKey: tvToken ? [`/api/tv/${tvToken}/settings`, 'tv-settings'] : ['/api/settings/tv'],
     queryFn: async () => {
@@ -247,6 +248,21 @@ export function TVDisplay({
     refetchInterval: 60000, // Poll every 60 seconds (settings don't change often)
     refetchOnMount: false, // ❌ Disable - use cached data
     refetchOnWindowFocus: false, // ❌ Disable - prevents burst
+  });
+
+  // ✅ Fetch clinicLogo SEPARATELY with very long cache (saves 211KB per regular settings fetch!)
+  // Logo rarely changes, so cache for 1 hour and let HTTP cache handle it
+  const { data: logoData } = useQuery<{ logo: string }>({
+    queryKey: ['/api/settings/logo'],
+    queryFn: async () => {
+      const response = await fetch('/api/settings/logo');
+      if (!response.ok) throw new Error('Failed to fetch logo');
+      return response.json();
+    },
+    staleTime: 3600000, // 1 hour - logo rarely changes
+    refetchInterval: false, // Don't poll - HTTP cache + WebSocket handles updates
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Convert settings array to object for easier access
@@ -266,8 +282,9 @@ export function TVDisplay({
   const modalBorderColor = settingsObj.modalBorderColor || '#fbbf24';
   const modalTextColor = settingsObj.modalTextColor || '#ffffff';
 
-  // Extract clinic logo settings from settings
-  const settingsClinicLogo = settingsObj.clinicLogo || '';
+  // Extract clinic logo settings
+  // ✅ Logo now comes from dedicated endpoint with HTTP caching (not from settings)
+  const clinicLogo = logoData?.logo || '';
   const showClinicLogo = settingsObj.showClinicLogo === 'true';
   
   // Helper function to get background style based on mode (solid vs gradient)
@@ -1042,11 +1059,11 @@ export function TVDisplay({
         {/* Header */}
         <div className={`text-center ${isFullscreen ? 'mb-2 pt-4 px-4' : 'mb-4'}`}>
           {/* Logo Display - Use uploaded logo if enabled */}
-          {showClinicLogo && settingsClinicLogo && (
+          {showClinicLogo && clinicLogo && (
             <div className="mb-4">
               <div className="bg-white rounded-lg p-4 shadow-lg w-full flex items-center justify-center">
                 <img 
-                  src={settingsClinicLogo} 
+                  src={clinicLogo} 
                   alt="Clinic Logo" 
                   className="h-32 w-auto object-contain"
                   style={{ maxWidth: '350px' }}

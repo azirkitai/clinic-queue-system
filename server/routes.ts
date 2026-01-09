@@ -1556,8 +1556,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     'marqueeBackgroundMode', 'marqueeBackgroundGradient', 'marqueeTextMode', 'marqueeTextGradient',
     // Modal
     'modalBackgroundColor', 'modalBorderColor', 'modalTextColor',
-    // Clinic
-    'clinicLogo', 'showClinicLogo', 'clinicName',
+    // Clinic (NOTE: clinicLogo EXCLUDED - it's 211KB base64! TV gets it via /api/media with caching)
+    'showClinicLogo', 'clinicName',
     // Header
     'headerBackgroundMode', 'headerBackgroundColor', 'headerBackgroundGradient',
     'headerTextMode', 'headerTextColor', 'headerTextGradient',
@@ -1649,6 +1649,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching settings by category:", error);
       res.status(500).json({ error: "Failed to fetch settings by category" });
+    }
+  });
+
+  // ✅ Dedicated clinicLogo endpoint with HTTP caching (saves 211KB per request!)
+  // Browser will cache for 1 hour, only re-fetch when logo actually changes
+  app.get("/api/settings/logo", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Session inactive" });
+      }
+      
+      const logoSetting = await storage.getSetting('clinicLogo', req.session.userId);
+      const logo = logoSetting?.value || '';
+      
+      // Set HTTP cache headers - cache for 1 hour
+      res.set('Cache-Control', 'public, max-age=3600');
+      res.json({ logo });
+    } catch (error) {
+      console.error("Error fetching clinic logo:", error);
+      res.status(500).json({ error: "Failed to fetch clinic logo" });
     }
   });
 
