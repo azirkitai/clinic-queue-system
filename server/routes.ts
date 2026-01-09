@@ -809,7 +809,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Auto-complete dispensary patients older than 90 minutes
+  // Auto-complete dispensary patients older than 60 minutes (1 hour)
   app.post("/api/patients/auto-complete-dispensary", async (req, res) => {
     try {
       // Check authentication
@@ -822,7 +822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dispensaryPatients = allPatients.filter(p => p.readyForDispensary && p.status !== 'completed');
       
       const autoCompletedPatients: string[] = [];
-      const NINETY_MINUTES_MS = 90 * 60 * 1000; // 90 minutes in milliseconds
+      const SIXTY_MINUTES_MS = 60 * 60 * 1000; // 60 minutes (1 hour) in milliseconds
       
       for (const patient of dispensaryPatients) {
         // Find when patient entered dispensary from trackingHistory
@@ -834,8 +834,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const currentTime = Date.now();
           const timeDiff = currentTime - dispensaryTime;
           
-          // If patient has been in dispensary for more than 90 minutes, auto-complete
-          if (timeDiff > NINETY_MINUTES_MS) {
+          // If patient has been in dispensary for more than 60 minutes, auto-complete
+          if (timeDiff > SIXTY_MINUTES_MS) {
             console.log(`[AUTO-COMPLETE] Patient ${patient.id} (${patient.name || patient.number}) in dispensary for ${Math.round(timeDiff / 60000)} minutes - auto-completing`);
             
             // Complete the patient (windowId null, no requeueReason)

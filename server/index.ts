@@ -150,7 +150,7 @@ app.use((req, res, next) => {
     // Don't crash server if cleanup fails
   }
 
-  // AUTO-COMPLETE SCHEDULER: Auto-complete dispensary patients older than 90 minutes
+  // AUTO-COMPLETE SCHEDULER: Auto-complete dispensary patients older than 60 minutes (1 hour)
   // Runs every 5 minutes with mutex to prevent overlapping runs
   let isAutoCompleteRunning = false;
   const AUTO_COMPLETE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes

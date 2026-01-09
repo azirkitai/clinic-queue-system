@@ -71,7 +71,7 @@ export interface IStorage {
   deleteAllTodayPatients(userId: string): Promise<number>; // Delete ALL today's patients for complete queue reset
   deleteOldCompletedPatients(userId: string, hoursOld: number): Promise<number>; // Delete completed patients older than X hours
   deleteAllCompletedPatients(userId: string): Promise<number>; // Delete ALL completed patients regardless of time
-  autoCompleteOldDispensaryPatients(): Promise<{ userId: string; patientIds: string[]; count: number }[]>; // Auto-complete dispensary patients older than 90 minutes (all tenants)
+  autoCompleteOldDispensaryPatients(): Promise<{ userId: string; patientIds: string[]; count: number }[]>; // Auto-complete dispensary patients older than 60 minutes (all tenants)
   
   // Window methods
   getWindows(userId: string): Promise<Window[]>;
@@ -692,7 +692,7 @@ export class MemStorage implements IStorage {
   }
 
   async autoCompleteOldDispensaryPatients(): Promise<{ userId: string; patientIds: string[]; count: number }[]> {
-    const NINETY_MINUTES_MS = 90 * 60 * 1000; // 90 minutes
+    const SIXTY_MINUTES_MS = 60 * 60 * 1000; // 60 minutes (1 hour)
     const now = Date.now();
     
     // Get all dispensary patients across all tenants
@@ -712,8 +712,8 @@ export class MemStorage implements IStorage {
           const dispensaryTime = new Date(dispensaryEvent.timestamp).getTime();
           const timeDiff = now - dispensaryTime;
           
-          // If patient > 90 minutes in dispensary, auto-complete
-          if (timeDiff > NINETY_MINUTES_MS) {
+          // If patient > 60 minutes in dispensary, auto-complete
+          if (timeDiff > SIXTY_MINUTES_MS) {
             console.log(`[AUTO-COMPLETE] Patient ${patient.id} (${patient.name || patient.number}) in dispensary for ${Math.round(timeDiff / 60000)} minutes - auto-completing`);
             
             // Complete patient
@@ -2142,7 +2142,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async autoCompleteOldDispensaryPatients(): Promise<{ userId: string; patientIds: string[]; count: number }[]> {
-    const NINETY_MINUTES_MS = 90 * 60 * 1000; // 90 minutes
+    const SIXTY_MINUTES_MS = 60 * 60 * 1000; // 60 minutes (1 hour)
     const now = Date.now();
     
     // Query all dispensary patients across all tenants
@@ -2167,8 +2167,8 @@ export class DatabaseStorage implements IStorage {
           const dispensaryTime = new Date(dispensaryEvent.timestamp).getTime();
           const timeDiff = now - dispensaryTime;
           
-          // If patient > 90 minutes in dispensary, auto-complete
-          if (timeDiff > NINETY_MINUTES_MS) {
+          // If patient > 60 minutes in dispensary, auto-complete
+          if (timeDiff > SIXTY_MINUTES_MS) {
             console.log(`[AUTO-COMPLETE] Patient ${patient.id} (${patient.name || patient.number}) in dispensary for ${Math.round(timeDiff / 60000)} minutes - auto-completing`);
             
             // Complete patient (no windowId needed for completed status)
