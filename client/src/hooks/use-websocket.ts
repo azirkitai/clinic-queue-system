@@ -212,6 +212,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     socket.on('settings:updated', () => {
       queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
       queryClient.invalidateQueries({ queryKey: ['/api/settings/tv'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/settings/logo'] }); // ✅ Also invalidate logo cache
     });
 
     socket.on('themes:updated', () => {

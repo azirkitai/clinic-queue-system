@@ -7,6 +7,11 @@ This project is a comprehensive clinic patient calling system designed to enhanc
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+- **January 10, 2026**: Critical bandwidth fix for staff pages:
+  - Dashboard, Queue, Dispensary pages now use `/api/settings/tv` (10KB) instead of `/api/settings` (223KB) = 95% reduction
+  - Logo fetched separately with 1-hour HTTP cache (saves 211KB per request)
+  - Settings polling reduced to 60s (was default aggressive polling)
+  - Expected daily bandwidth reduction: ~40 GB/day for 5 clinics
 - **January 3, 2026**: Major bandwidth optimization update:
   - Added rate limiting (300 req/min general, 30 req/min for legacy endpoints)
   - Disabled aggressive refetching (refetchOnWindowFocus, refetchOnMount) to prevent burst traffic

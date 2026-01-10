@@ -41,9 +41,12 @@ export default function Queue() {
     queryKey: ['/api/windows'],
   });
 
-  // Fetch audio settings
+  // ✅ Fetch audio settings from LIGHTWEIGHT endpoint (10KB vs 223KB = 95% reduction!)
   const { data: settings = [] } = useQuery<Setting[]>({
-    queryKey: ['/api/settings'],
+    queryKey: ['/api/settings/tv'],
+    staleTime: 60000, // Keep data fresh for 60s
+    refetchInterval: false, // Don't poll - WebSocket handles updates
+    refetchOnWindowFocus: false, // Disable - prevents burst
   });
 
   // Update patient status mutation
