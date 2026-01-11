@@ -2,6 +2,9 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { queryClient } from '@/lib/queryClient';
 
+// Store the initial server version when page loads
+let initialServerVersion: string | null = null;
+
 interface UseWebSocketOptions {
   onConnect?: () => void;
   onDisconnect?: () => void;
@@ -20,6 +23,73 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     onConnectRef.current = onConnect;
     onDisconnectRef.current = onDisconnect;
   }, [onConnect, onDisconnect]);
+
+  // Auto-refresh on deploy: check server version periodically
+  useEffect(() => {
+    const STORAGE_KEY = 'clinic-last-known-version';
+    
+    const checkVersion = async () => {
+      try {
+        const response = await fetch('/api/version');
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        const currentVersion = data.version;
+        
+        // Get stored version from localStorage (persists across page loads)
+        const storedVersion = localStorage.getItem(STORAGE_KEY);
+        
+        if (initialServerVersion === null) {
+          // First check in this session - store the version
+          initialServerVersion = currentVersion;
+          
+          // Check if we already reloaded for this version
+          if (storedVersion === currentVersion) {
+            console.log('[VERSION] Already on latest version:', currentVersion);
+            return;
+          }
+          
+          // Store the version we're running
+          localStorage.setItem(STORAGE_KEY, currentVersion);
+          console.log('[VERSION] Initial server version:', currentVersion);
+        } else if (initialServerVersion !== currentVersion) {
+          // Version changed - new deploy detected!
+          // Check if we already reloaded for this version (prevents reload loop)
+          if (storedVersion === currentVersion) {
+            console.log('[VERSION] Already reloaded for version:', currentVersion);
+            initialServerVersion = currentVersion; // Update to prevent future checks
+            return;
+          }
+          
+          console.log('[VERSION] New deploy detected! Reloading...', {
+            old: initialServerVersion,
+            new: currentVersion
+          });
+          
+          // Store the new version BEFORE reloading (prevents reload loop)
+          localStorage.setItem(STORAGE_KEY, currentVersion);
+          
+          // Add jitter to prevent all clients reloading at once
+          const jitter = Math.random() * 3000;
+          setTimeout(() => {
+            window.location.reload();
+          }, jitter);
+        }
+      } catch (error) {
+        // Silently ignore version check errors
+      }
+    };
+
+    // Check version on mount
+    checkVersion();
+
+    // Check version every 2 minutes
+    const intervalId = setInterval(checkVersion, 2 * 60 * 1000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
 
   useEffect(() => {
     // Create socket connection with exponential backoff reconnection

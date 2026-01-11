@@ -14,6 +14,13 @@ let globalIo: SocketIOServer | null = null;
 export function setGlobalIo(io: SocketIOServer) {
   globalIo = io;
 }
+
+// Server build version - changes on every new deploy
+// Uses RENDER_GIT_COMMIT (Render's env var) for consistency across instances
+// Falls back to startup timestamp for development
+const SERVER_VERSION = process.env.RENDER_GIT_COMMIT || 
+                       process.env.GIT_COMMIT || 
+                       Date.now().toString();
 import multer from "multer";
 import fs from "fs/promises";
 import path from "path";
@@ -210,6 +217,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Apply general rate limiting to API routes (with exemptions above)
   app.use('/api/', apiLimiter);
+
+  // Server version endpoint for auto-refresh
+  // Clients check this periodically and reload if version changed (new deploy)
+  app.get("/api/version", (req, res) => {
+    // Prevent caching to ensure clients always get fresh version
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.json({ version: SERVER_VERSION });
+  });
 
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
