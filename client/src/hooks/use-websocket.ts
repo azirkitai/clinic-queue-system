@@ -223,6 +223,16 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       queryClient.invalidateQueries({ queryKey: ['/api/text-groups/active'] });
     });
 
+    // Force refresh - admin can trigger all connected browsers to reload
+    socket.on('system:force-refresh', () => {
+      console.log('[WS] Force refresh triggered by admin - reloading page...');
+      // Small delay to ensure all clients don't hit server at exact same time
+      const jitter = Math.random() * 2000; // 0-2 seconds random delay
+      setTimeout(() => {
+        window.location.reload();
+      }, jitter);
+    });
+
     // Cleanup on unmount
     return () => {
       socket.off('connect');
@@ -241,6 +251,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       socket.off('settings:updated');
       socket.off('themes:updated');
       socket.off('text-groups:updated');
+      socket.off('system:force-refresh');
       socket.disconnect();
     };
   }, []); // ✅ Empty deps - only run once on mount

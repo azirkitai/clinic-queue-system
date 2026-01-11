@@ -2396,6 +2396,67 @@ export default function Settings() {
         </Card>
         
       </div>
+
+      {/* SECTION 5: SYSTEM TOOLS */}
+      <div className="space-y-4">
+        <div className="border-b pb-2">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <RefreshCw className="h-5 w-5" />
+            System Tools
+          </h2>
+          <p className="text-sm text-muted-foreground">Admin tools for system maintenance</p>
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <RefreshCw className="h-5 w-5 mr-2" />
+              Force Refresh All Clients
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Force all connected browsers (staff PC & TV displays) to reload. 
+              Use this after deploying updates to ensure all clients get the latest version.
+            </p>
+            <Button 
+              variant="destructive"
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/system/force-refresh', {
+                    method: 'POST',
+                    credentials: 'include'
+                  });
+                  const data = await response.json();
+                  if (response.ok) {
+                    toast({
+                      title: "Success",
+                      description: data.message,
+                    });
+                  } else {
+                    toast({
+                      title: "Error",
+                      description: data.error || "Failed to send force refresh",
+                      variant: "destructive",
+                    });
+                  }
+                } catch (error) {
+                  toast({
+                    title: "Error",
+                    description: "Failed to send force refresh signal",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              className="w-full"
+              data-testid="button-force-refresh-clients"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Force Refresh All Clients
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
       </div>
       
       {/* Gradient Picker Modals */}

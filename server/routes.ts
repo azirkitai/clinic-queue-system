@@ -928,6 +928,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Force refresh all connected clients (admin only)
+  // This broadcasts a WebSocket event that triggers page reload on all browsers
+  app.post("/api/system/force-refresh", async (req, res) => {
+    try {
+      // Check authentication
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Session inactive" });
+      }
+      
+      // Broadcast force-refresh to ALL clients in this clinic
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('system:force-refresh', {
+          timestamp: Date.now(),
+          triggeredBy: req.session.userId
+        });
+        console.log(`[FORCE REFRESH] Triggered by user ${req.session.userId} - broadcasting to all clinic clients`);
+      }
+      
+      res.json({ 
+        success: true, 
+        message: "Force refresh signal sent to all connected clients. They will reload within 2 seconds." 
+      });
+    } catch (error) {
+      console.error("[FORCE REFRESH] Error:", error);
+      res.status(500).json({ error: "Failed to send force refresh signal" });
+    }
+  });
+
   // Clear completed patients (manual cleanup to reduce database size)
   app.post("/api/patients/clear-completed", async (req, res) => {
     try {
