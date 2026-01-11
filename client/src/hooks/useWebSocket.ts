@@ -61,10 +61,9 @@ export function useWebSocket(): UseWebSocketReturn {
       console.log('📞 Patient called:', data);
       setLastEvent({ event: 'patient:called', data, timestamp: new Date() });
       
-      // Invalidate patient-related queries to refresh UI
+      // Invalidate lightweight patient queries only
       queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/current-call'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/history'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] });
     });
 
     // Patient status updates
@@ -72,10 +71,10 @@ export function useWebSocket(): UseWebSocketReturn {
       console.log('📋 Patient updated:', data);
       setLastEvent({ event: 'patient:updated', data, timestamp: new Date() });
       
-      // Refresh relevant queries
+      // Refresh lightweight queries only
       queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/history'] });
     });
 
     // Queue updates
@@ -83,9 +82,10 @@ export function useWebSocket(): UseWebSocketReturn {
       console.log('🎯 Queue updated:', data);
       setLastEvent({ event: 'queue:updated', data, timestamp: new Date() });
       
-      // Refresh queue-related data
+      // Refresh lightweight queries only (avoid heavy /api/dashboard)
       queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] });
     });
 
     // TV display events (for TV screens)

@@ -114,8 +114,7 @@ export default function Queue() {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] });
       queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/current-call'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/history'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] });
       
       // Display appropriate message based on status
       let description = "Patient successfully updated";
@@ -178,8 +177,7 @@ export default function Queue() {
       queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       queryClient.invalidateQueries({ queryKey: ['/api/patients/next-number'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/current-call'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/history'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] });
       toast({
         title: "Queue Reset Complete",
         description: `${data.deletedCount || 0} patient(s) deleted. Next number reset to 1.`,

@@ -154,9 +154,12 @@ export default function Settings() {
   });
   
   // Fetch current settings from database
+  // Settings page is admin-only, use longer staleTime to reduce bandwidth
   const { data: settings = [], isLoading, refetch } = useQuery<Setting[]>({
     queryKey: ['/api/settings'],
-    staleTime: 0, // Always fetch fresh data
+    staleTime: 5 * 60 * 1000, // 5 minutes - admin page doesn't need real-time updates
+    refetchOnWindowFocus: false, // Disable aggressive refetching
+    refetchOnMount: false, // Don't refetch on every mount
   });
 
   // Convert settings array to object for easier access

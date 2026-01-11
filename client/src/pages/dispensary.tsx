@@ -166,7 +166,7 @@ export default function Dispensary() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] }),
         queryClient.invalidateQueries({ queryKey: ['/api/windows'] }),
-        queryClient.invalidateQueries({ queryKey: ['/api/settings'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/settings/tv'] }), // Lightweight endpoint (10KB vs 223KB)
       ]);
       toast({
         title: "Refreshed",
