@@ -3,6 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>Sistem Panggilan Klinik - Clinic Calling System</title>
     <meta name="description" content="Sistem panggilan pesakit untuk klinik dengan paparan TV real-time, pengurusan queue, dan pentadbiran berbilang pengguna." />
     <link rel="icon" type="image/png" href="/favicon.png" />
@@ -14,5 +17,36 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- Standalone version check - runs independently of React -->
+    <script>
+      (function() {
+        var STORAGE_KEY = 'clinic-html-version';
+        var CHECK_INTERVAL = 60000; // Check every 1 minute
+        var storedVersion = localStorage.getItem(STORAGE_KEY);
+        
+        function checkVersion() {
+          fetch('/api/version', { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+              var currentVersion = data.version;
+              if (storedVersion && storedVersion !== currentVersion) {
+                console.log('[HTML] New version detected, reloading...');
+                localStorage.setItem(STORAGE_KEY, currentVersion);
+                setTimeout(function() {
+                  window.location.reload(true);
+                }, Math.random() * 5000);
+              } else if (!storedVersion) {
+                localStorage.setItem(STORAGE_KEY, currentVersion);
+              }
+              storedVersion = currentVersion;
+            })
+            .catch(function() {});
+        }
+        
+        // Check immediately and then every minute
+        setTimeout(checkVersion, 3000);
+        setInterval(checkVersion, CHECK_INTERVAL);
+      })();
+    </script>
   </body>
 </html>
