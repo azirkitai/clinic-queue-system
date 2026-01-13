@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Monitor, Volume2, Palette, Upload, Save, RefreshCw, CheckCircle, Plus, ChevronLeft, ChevronRight, Eye, Trash2, Edit, Star, Upload as UploadIcon, Brush, X } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Monitor, Volume2, Palette, Upload, Save, RefreshCw, CheckCircle, Plus, ChevronLeft, ChevronRight, Eye, Trash2, Edit, Star, Upload as UploadIcon, Brush, X, Image, Type, LayoutGrid, Clock, Cloud, List, MessageSquare } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -685,6 +686,9 @@ export default function Settings() {
     }
   }, [currentSettings.enableSound, currentSettings.presetKey, currentSettings.volume, toast]);
 
+  // Active settings tab state
+  const [activeTab, setActiveTab] = useState("media");
+
   if (isLoading || mediaLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -731,7 +735,33 @@ export default function Settings() {
         </Button>
       </div>
 
-      {/* SECTION 1: MEDIA MANAGEMENT */}
+      {/* SETTINGS TABS - Simplified */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-5 h-auto gap-1">
+          <TabsTrigger value="media" className="flex items-center gap-1 text-xs" data-testid="tab-media">
+            <Image className="h-3 w-3" />
+            <span className="hidden sm:inline">Media</span>
+          </TabsTrigger>
+          <TabsTrigger value="display" className="flex items-center gap-1 text-xs" data-testid="tab-display">
+            <Palette className="h-3 w-3" />
+            <span className="hidden sm:inline">Display</span>
+          </TabsTrigger>
+          <TabsTrigger value="info" className="flex items-center gap-1 text-xs" data-testid="tab-info">
+            <Monitor className="h-3 w-3" />
+            <span className="hidden sm:inline">Info</span>
+          </TabsTrigger>
+          <TabsTrigger value="sound" className="flex items-center gap-1 text-xs" data-testid="tab-sound">
+            <Volume2 className="h-3 w-3" />
+            <span className="hidden sm:inline">Sound</span>
+          </TabsTrigger>
+          <TabsTrigger value="system" className="flex items-center gap-1 text-xs" data-testid="tab-system">
+            <RefreshCw className="h-3 w-3" />
+            <span className="hidden sm:inline">System</span>
+          </TabsTrigger>
+        </TabsList>
+
+        {/* TAB: MEDIA MANAGEMENT */}
+        <TabsContent value="media" className="mt-4">
       <div className="space-y-4">
         <div className="border-b pb-2">
           <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -1016,7 +1046,10 @@ export default function Settings() {
           </CardContent>
         </Card>
       </div>
+        </TabsContent>
 
+        {/* TAB: DISPLAY SETTINGS (Theme & Colors) */}
+        <TabsContent value="display" className="mt-4">
       {/* SECTION 2: THEME & COLOR SETTINGS */}
       <div className="space-y-3">
         <div className="border-b pb-2">
@@ -2075,8 +2108,12 @@ export default function Settings() {
             </Button>
           </CardContent>
         </Card>
+        </div>
       </div>
+        </TabsContent>
 
+        {/* TAB: INFO SETTINGS (Prayer, Weather, Marquee) */}
+        <TabsContent value="info" className="mt-4">
       {/* SECTION 3: INFORMATION DISPLAY SETTINGS */}
       <div className="space-y-4">
         <div className="border-b pb-2">
@@ -2294,7 +2331,10 @@ export default function Settings() {
           </CardContent>
         </Card>
       </div>
+        </TabsContent>
 
+        {/* TAB: SOUND SETTINGS */}
+        <TabsContent value="sound" className="mt-4">
       {/* SECTION 4: AUDIO SETTINGS */}
       <div className="space-y-4">
         <div className="border-b pb-2">
@@ -2399,7 +2439,10 @@ export default function Settings() {
         </Card>
         
       </div>
+        </TabsContent>
 
+        {/* TAB: SYSTEM TOOLS */}
+        <TabsContent value="system" className="mt-4">
       {/* SECTION 5: SYSTEM TOOLS */}
       <div className="space-y-4">
         <div className="border-b pb-2">
@@ -2460,7 +2503,8 @@ export default function Settings() {
           </CardContent>
         </Card>
       </div>
-      </div>
+        </TabsContent>
+      </Tabs>
       
       {/* Gradient Picker Modals */}
       <GradientPicker
