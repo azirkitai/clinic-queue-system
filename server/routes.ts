@@ -1640,10 +1640,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(cached);
       }
       
-      const allSettings = await storage.getSettings(req.session.userId);
-      
-      // Filter to only TV-needed settings (80% reduction!)
-      const tvSettings = allSettings.filter(s => TV_SETTINGS_KEYS.has(s.key));
+      // ✅ CRITICAL FIX: Use getTvSettings() to fetch ONLY needed keys at DATABASE level
+      // This prevents 200KB clinicLogo from being transferred from Neon on every request
+      // Previous: getSettings() fetched ALL settings (~220KB), then filtered client-side
+      // Now: getTvSettings() fetches only ~40 keys (~10KB) directly from database
+      const tvSettingsKeys = Array.from(TV_SETTINGS_KEYS);
+      const tvSettings = await storage.getTvSettings(req.session.userId, tvSettingsKeys);
       
       setCache('settings-tv', req.session.userId, tvSettings);
       res.json(tvSettings);
@@ -2254,15 +2256,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
       
-      // Get current settings to determine media type
-      const settings = await storage.getSettings(req.session.userId);
-      const settingsObj = settings.reduce((acc: Record<string, string>, setting) => {
-        acc[setting.key] = setting.value;
-        return acc;
-      }, {});
+      // ✅ OPTIMIZED: Fetch only the 2 specific settings needed instead of ALL settings (~220KB)
+      // This reduces Neon data transfer by ~95% per request
+      const [mediaTypeSetting, youtubeUrlSetting] = await Promise.all([
+        storage.getSetting('dashboardMediaType', req.session.userId),
+        storage.getSetting('youtubeUrl', req.session.userId)
+      ]);
 
-      const dashboardMediaType = settingsObj.dashboardMediaType || "own";
-      const youtubeUrl = settingsObj.youtubeUrl || "";
+      const dashboardMediaType = mediaTypeSetting?.value || "own";
+      const youtubeUrl = youtubeUrlSetting?.value || "";
 
       // If YouTube is selected and URL is provided, return YouTube media
       if (dashboardMediaType === "youtube" && youtubeUrl) {
@@ -2952,6 +2954,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // TV Settings endpoint - get settings for specific clinic token
+  // ✅ OPTIMIZED: Uses getTvSettings() to avoid fetching 200KB clinicLogo from database
   app.get("/api/tv/:token/settings", async (req, res) => {
     try {
       const { token } = req.params;
@@ -2961,7 +2964,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Invalid TV token" });
       }
       
-      const settings = await storage.getSettings(user.id);
+      // ✅ CRITICAL FIX: Fetch only TV-needed keys from database (excludes clinicLogo)
+      const tvSettingsKeys = Array.from(TV_SETTINGS_KEYS);
+      const settings = await storage.getTvSettings(user.id, tvSettingsKeys);
       res.json(settings);
     } catch (error) {
       console.error("Error fetching TV settings:", error);
