@@ -563,6 +563,84 @@ export default function Settings() {
     setUnsavedChanges(prev => prev.filter(item => item !== 'sound'));
   };
 
+  // Save ALL settings at once (display + sound)
+  const handleSaveAll = async () => {
+    const allSettingsToSave = [
+      // Display settings
+      { key: 'theme', value: currentSettings.theme, category: 'display' },
+      { key: 'showPrayerTimes', value: currentSettings.showPrayerTimes.toString(), category: 'display' },
+      { key: 'showWeather', value: currentSettings.showWeather.toString(), category: 'display' },
+      { key: 'enableMarquee', value: currentSettings.enableMarquee.toString(), category: 'display' },
+      { key: 'marqueeText', value: currentSettings.marqueeText, category: 'display' },
+      { key: 'clinicLogo', value: currentSettings.clinicLogo, category: 'display' },
+      { key: 'showClinicLogo', value: currentSettings.showClinicLogo, category: 'display' },
+      { key: 'marqueeColor', value: currentSettings.marqueeColor, category: 'display' },
+      { key: 'marqueeBackgroundColor', value: currentSettings.marqueeBackgroundColor, category: 'display' },
+      { key: 'clinicName', value: currentSettings.clinicName, category: 'display' },
+      { key: 'dashboardMediaType', value: currentSettings.dashboardMediaType, category: 'display' },
+      { key: 'youtubeUrl', value: currentSettings.youtubeUrl, category: 'display' },
+      { key: 'headerTextColor', value: currentSettings.headerTextColor, category: 'display' },
+      { key: 'headerTextMode', value: currentSettings.headerTextMode, category: 'display' },
+      { key: 'headerTextGradient', value: currentSettings.headerTextGradient, category: 'display' },
+      { key: 'clinicNameTextColor', value: currentSettings.clinicNameTextColor, category: 'display' },
+      { key: 'clinicNameTextMode', value: currentSettings.clinicNameTextMode, category: 'display' },
+      { key: 'clinicNameTextGradient', value: currentSettings.clinicNameTextGradient, category: 'display' },
+      { key: 'headerBackgroundColor', value: currentSettings.headerBackgroundColor, category: 'display' },
+      { key: 'headerBackgroundMode', value: currentSettings.headerBackgroundMode, category: 'display' },
+      { key: 'headerBackgroundGradient', value: currentSettings.headerBackgroundGradient, category: 'display' },
+      { key: 'callNameTextColor', value: currentSettings.callNameTextColor, category: 'display' },
+      { key: 'callNameTextMode', value: currentSettings.callNameTextMode, category: 'display' },
+      { key: 'callNameTextGradient', value: currentSettings.callNameTextGradient, category: 'display' },
+      { key: 'callBackgroundColor', value: currentSettings.callBackgroundColor, category: 'display' },
+      { key: 'callBackgroundMode', value: currentSettings.callBackgroundMode, category: 'display' },
+      { key: 'callBackgroundGradient', value: currentSettings.callBackgroundGradient, category: 'display' },
+      { key: 'windowTextColor', value: currentSettings.windowTextColor, category: 'display' },
+      { key: 'windowTextMode', value: currentSettings.windowTextMode, category: 'display' },
+      { key: 'windowTextGradient', value: currentSettings.windowTextGradient, category: 'display' },
+      { key: 'callBorderColor', value: currentSettings.callBorderColor, category: 'display' },
+      { key: 'modalBackgroundColor', value: currentSettings.modalBackgroundColor, category: 'display' },
+      { key: 'modalBorderColor', value: currentSettings.modalBorderColor, category: 'display' },
+      { key: 'modalTextColor', value: currentSettings.modalTextColor, category: 'display' },
+      { key: 'prayerTimesTextColor', value: currentSettings.prayerTimesTextColor, category: 'display' },
+      { key: 'prayerTimesTextMode', value: currentSettings.prayerTimesTextMode, category: 'display' },
+      { key: 'prayerTimesTextGradient', value: currentSettings.prayerTimesTextGradient, category: 'display' },
+      { key: 'prayerTimesBackgroundColor', value: currentSettings.prayerTimesBackgroundColor, category: 'display' },
+      { key: 'prayerTimesBackgroundMode', value: currentSettings.prayerTimesBackgroundMode, category: 'display' },
+      { key: 'prayerTimesBackgroundGradient', value: currentSettings.prayerTimesBackgroundGradient, category: 'display' },
+      { key: 'weatherTextColor', value: currentSettings.weatherTextColor, category: 'display' },
+      { key: 'weatherTextMode', value: currentSettings.weatherTextMode, category: 'display' },
+      { key: 'weatherTextGradient', value: currentSettings.weatherTextGradient, category: 'display' },
+      { key: 'weatherBackgroundColor', value: currentSettings.weatherBackgroundColor, category: 'display' },
+      { key: 'weatherBackgroundMode', value: currentSettings.weatherBackgroundMode, category: 'display' },
+      { key: 'weatherBackgroundGradient', value: currentSettings.weatherBackgroundGradient, category: 'display' },
+      { key: 'queueTextColor', value: currentSettings.queueTextColor, category: 'display' },
+      { key: 'queueTextMode', value: currentSettings.queueTextMode, category: 'display' },
+      { key: 'queueTextGradient', value: currentSettings.queueTextGradient, category: 'display' },
+      { key: 'queueBackgroundColor', value: currentSettings.queueBackgroundColor, category: 'display' },
+      { key: 'queueBackgroundMode', value: currentSettings.queueBackgroundMode, category: 'display' },
+      { key: 'queueBackgroundGradient', value: currentSettings.queueBackgroundGradient, category: 'display' },
+      { key: 'queueItemBackgroundColor', value: currentSettings.queueItemBackgroundColor, category: 'display' },
+      { key: 'queueItemBackgroundMode', value: currentSettings.queueItemBackgroundMode, category: 'display' },
+      { key: 'queueItemBackgroundGradient', value: currentSettings.queueItemBackgroundGradient, category: 'display' },
+      { key: 'queueHighlightColor', value: currentSettings.queueHighlightColor, category: 'display' },
+      { key: 'queueBorderColor', value: currentSettings.queueBorderColor, category: 'display' },
+      { key: 'marqueeBackgroundMode', value: currentSettings.marqueeBackgroundMode, category: 'display' },
+      { key: 'marqueeBackgroundGradient', value: currentSettings.marqueeBackgroundGradient, category: 'display' },
+      { key: 'marqueeTextMode', value: currentSettings.marqueeTextMode, category: 'display' },
+      { key: 'marqueeTextGradient', value: currentSettings.marqueeTextGradient, category: 'display' },
+      { key: 'historyNameColor', value: currentSettings.historyNameColor, category: 'display' },
+      { key: 'historyNameMode', value: currentSettings.historyNameMode, category: 'display' },
+      { key: 'historyNameGradient', value: currentSettings.historyNameGradient, category: 'display' },
+      // Sound settings
+      { key: 'enableSound', value: currentSettings.enableSound.toString(), category: 'audio' },
+      { key: 'volume', value: currentSettings.volume.toString(), category: 'audio' },
+      { key: 'presetKey', value: currentSettings.presetKey, category: 'audio' },
+    ];
+    
+    await saveSettingsMutation.mutateAsync(allSettingsToSave);
+    setUnsavedChanges([]);
+  };
+
   // Handle file selection
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -724,15 +802,29 @@ export default function Settings() {
           </div>
         </div>
         
-        <Button
-          variant="outline"
-          onClick={handleRefresh}
-          disabled={isLoading}
-          data-testid="button-refresh-settings"
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleSaveAll}
+            disabled={saveSettingsMutation.isPending}
+            data-testid="button-save-all-settings"
+          >
+            {saveSettingsMutation.isPending ? (
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4 mr-2" />
+            )}
+            Save All
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            data-testid="button-refresh-settings"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* SETTINGS TABS - Simplified */}
