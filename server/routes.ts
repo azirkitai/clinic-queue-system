@@ -40,8 +40,9 @@ const apiCache = new Map<string, CacheEntry>();
 // Tiered cache TTLs - optimize for different update frequencies
 // ✅ NEON BANDWIDTH FIX: Increase cache TTL to reduce database queries
 // WebSocket provides instant updates on mutations, so longer cache is safe
-const CACHE_TTL_SHORT = 10000; // 10s for patient data (was 2.5s - 4x reduction in DB queries!)
-const CACHE_TTL_LONG = 60000;  // 60s for rarely changing data (themes, settings, text-groups)
+// Cache is invalidated on mutations, so longer TTL = less Neon data transfer
+const CACHE_TTL_SHORT = 60000;  // ✅ 60s for patient data (was 10s - 6x reduction in DB queries!)
+const CACHE_TTL_LONG = 300000;  // ✅ 5 min for rarely changing data (was 60s - 5x reduction!)
 
 // Cache helper with tenant isolation and configurable TTL
 function getCached(key: string, userId: string, ttl: number = CACHE_TTL_SHORT): any | null {
