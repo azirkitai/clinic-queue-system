@@ -58,9 +58,6 @@ if (PUBLIC_OBJECT_SEARCH_PATHS) {
   }
 }
 
-// Trust proxy for Replit (required for secure cookies behind proxy)
-app.set('trust proxy', 1);
-
 // Session configuration
 const PgSession = connectPgSimple(session);
 app.use(session({
@@ -73,10 +70,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false,
+    secure: false, // Set to false to work with both HTTP and HTTPS
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax',
+    sameSite: 'lax', // CSRF protection
   },
 }));
 

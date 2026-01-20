@@ -108,10 +108,6 @@ export interface IStorage {
   updateMedia(id: string, updates: Partial<Media>, userId: string): Promise<Media | undefined>;
   deleteMedia(id: string, userId: string): Promise<boolean>;
   getActiveMedia(userId: string): Promise<Media[]>;
-  deactivateAllMedia(userId: string): Promise<number>; // ✅ Optimized: Update directly without fetching base64 data
-  // ✅ CRITICAL: Metadata-only methods that exclude base64 'data' column at SQL level
-  getMediaMetadata(userId: string): Promise<Omit<Media, 'data'>[]>;
-  getActiveMediaMetadata(userId: string): Promise<Omit<Media, 'data'>[]>;
   
   // Theme methods
   getThemes(userId: string): Promise<Theme[]>;
@@ -1039,31 +1035,6 @@ export class MemStorage implements IStorage {
 
   async getActiveMedia(userId: string): Promise<Media[]> {
     return Array.from(this.media.values()).filter(media => media.userId === userId && media.isActive);
-  }
-
-  async deactivateAllMedia(userId: string): Promise<number> {
-    let count = 0;
-    const entries = Array.from(this.media.entries());
-    for (const [id, media] of entries) {
-      if (media.userId === userId && media.isActive) {
-        this.media.set(id, { ...media, isActive: false });
-        count++;
-      }
-    }
-    return count;
-  }
-
-  // ✅ CRITICAL: Metadata-only methods that exclude base64 'data' at source
-  async getMediaMetadata(userId: string): Promise<Omit<Media, 'data'>[]> {
-    return Array.from(this.media.values())
-      .filter(m => m.userId === userId)
-      .map(({ data, ...rest }) => rest);
-  }
-
-  async getActiveMediaMetadata(userId: string): Promise<Omit<Media, 'data'>[]> {
-    return Array.from(this.media.values())
-      .filter(m => m.userId === userId && m.isActive)
-      .map(({ data, ...rest }) => rest);
   }
   
   // Theme methods implementation
@@ -2315,46 +2286,6 @@ export class DatabaseStorage implements IStorage {
   async getActiveMedia(userId: string): Promise<Media[]> {
     return await db.select().from(schema.media)
       .where(and(eq(schema.media.isActive, true), eq(schema.media.userId, userId)));
-  }
-
-  // ✅ OPTIMIZED: Deactivate all media without fetching base64 data
-  async deactivateAllMedia(userId: string): Promise<number> {
-    const result = await db.update(schema.media)
-      .set({ isActive: false })
-      .where(and(eq(schema.media.isActive, true), eq(schema.media.userId, userId)));
-    return result.rowCount ?? 0;
-  }
-
-  // ✅ CRITICAL: Metadata-only methods - SELECT specific columns, EXCLUDE base64 'data' at SQL level
-  // This prevents Neon from transferring MB of base64 data on every request
-  async getMediaMetadata(userId: string): Promise<Omit<Media, 'data'>[]> {
-    return await db.select({
-      id: schema.media.id,
-      name: schema.media.name,
-      filename: schema.media.filename,
-      url: schema.media.url,
-      type: schema.media.type,
-      mimeType: schema.media.mimeType,
-      size: schema.media.size,
-      uploadedAt: schema.media.uploadedAt,
-      isActive: schema.media.isActive,
-      userId: schema.media.userId,
-    }).from(schema.media).where(eq(schema.media.userId, userId));
-  }
-
-  async getActiveMediaMetadata(userId: string): Promise<Omit<Media, 'data'>[]> {
-    return await db.select({
-      id: schema.media.id,
-      name: schema.media.name,
-      filename: schema.media.filename,
-      url: schema.media.url,
-      type: schema.media.type,
-      mimeType: schema.media.mimeType,
-      size: schema.media.size,
-      uploadedAt: schema.media.uploadedAt,
-      isActive: schema.media.isActive,
-      userId: schema.media.userId,
-    }).from(schema.media).where(and(eq(schema.media.isActive, true), eq(schema.media.userId, userId)));
   }
 
   // Theme methods

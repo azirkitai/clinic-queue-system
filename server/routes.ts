@@ -242,17 +242,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Invalid username or password" });
       }
       
-      // Store user info in session (skip regenerate to maintain session ID)
-      req.session.userId = user.id;
-      req.session.username = user.username;
-      req.session.role = user.role;
-      
-      // Save session and send response
-      req.session.save((saveErr) => {
-        if (saveErr) {
-          console.error("Session save error:", saveErr);
-          return res.status(500).json({ error: "Failed to save session" });
+      // Regenerate session ID to prevent session fixation attacks
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error("Session regeneration error:", err);
+          return res.status(500).json({ error: "Internal server error" });
         }
+        
+        // Store user info in session
+        req.session.userId = user.id;
+        req.session.username = user.username;
+        req.session.role = user.role;
         
         res.json({
           success: true,
@@ -1267,12 +1267,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get all user-specific display configuration data using proper userId filtering
-      // ✅ CRITICAL: Use getMediaMetadata() to exclude base64 at SQL level (not just response)
-      const tvSettingsKeys = Array.from(TV_SETTINGS_KEYS);
       const [settings, themes, media, textGroups] = await Promise.all([
-        storage.getTvSettings(id, tvSettingsKeys),
+        storage.getSettings(id),
         storage.getThemes(id), 
-        storage.getMediaMetadata(id), // ✅ SQL-level exclusion of base64 data
+        storage.getMedia(id),
         storage.getTextGroups(id)
       ]);
 
@@ -1855,7 +1853,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Media management routes
   
-  // Get all media files (metadata only - excludes base64 data at SQL level)
+  // Get all media files
   app.get("/api/media", async (req, res) => {
     try {
       // Check authentication
@@ -1863,9 +1861,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
       
-      // ✅ CRITICAL: Use getActiveMediaMetadata() to exclude base64 at SQL level
-      // This prevents Neon from transferring MB of base64 data on every request
-      const media = await storage.getActiveMediaMetadata(req.session.userId);
+      const media = await storage.getActiveMedia(req.session.userId);
       res.json(media);
     } catch (error) {
       console.error("Error fetching media:", error);
@@ -2286,9 +2282,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(youtubeMedia);
       } else {
         // Otherwise return regular uploaded media
-        // ✅ CRITICAL: Use getActiveMediaMetadata() to exclude base64 at SQL level
-        const activeMedia = await storage.getActiveMediaMetadata(req.session.userId);
-        res.json(activeMedia);
+        const activeMedia = await storage.getActiveMedia(req.session.userId);
+        // ✅ BANDWIDTH OPTIMIZATION: Exclude base64 data field (frontend loads via /api/media/:id/file)
+        const lightweightMedia = activeMedia.map(({ data, ...rest }) => rest);
+        res.json(lightweightMedia);
       }
     } catch (error) {
       console.error("Error fetching display media:", error);
@@ -2310,18 +2307,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "mediaIds must be an array" });
       }
 
-      // ✅ OPTIMIZED: Deactivate all media directly without fetching base64 data
-      // Previous: fetched ALL media (~MBs of base64) just to toggle isActive
-      await storage.deactivateAllMedia(req.session.userId);
+      // First, deactivate all current media
+      const allMedia = await storage.getMedia(req.session.userId);
+      for (const media of allMedia) {
+        if (media.isActive) {
+          await storage.updateMedia(media.id, { isActive: false }, req.session.userId);
+        }
+      }
 
       // Then activate the selected media
       const updatedMedia = [];
       for (const mediaId of mediaIds) {
         const updated = await storage.updateMedia(mediaId, { isActive: true }, req.session.userId);
         if (updated) {
-          // Exclude base64 data from response
-          const { data, ...rest } = updated;
-          updatedMedia.push(rest);
+          updatedMedia.push(updated);
         }
       }
 
@@ -3043,8 +3042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Invalid TV token" });
       }
       
-      // ✅ CRITICAL: Use getActiveMediaMetadata() to exclude base64 at SQL level
-      const activeMedia = await storage.getActiveMediaMetadata(user.id);
+      const activeMedia = await storage.getActiveMedia(user.id);
       res.json(activeMedia);
     } catch (error) {
       console.error("Error fetching TV active media:", error);
