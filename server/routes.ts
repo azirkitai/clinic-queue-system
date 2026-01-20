@@ -1267,12 +1267,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get all user-specific display configuration data using proper userId filtering
-      const [settings, themes, media, textGroups] = await Promise.all([
-        storage.getSettings(id),
+      // ✅ OPTIMIZED: Use getTvSettings to exclude clinicLogo, exclude base64 from media
+      const tvSettingsKeys = Array.from(TV_SETTINGS_KEYS);
+      const [settings, themes, mediaRaw, textGroups] = await Promise.all([
+        storage.getTvSettings(id, tvSettingsKeys),
         storage.getThemes(id), 
         storage.getMedia(id),
         storage.getTextGroups(id)
       ]);
+      
+      // Exclude base64 data from media
+      const media = mediaRaw.map(({ data, ...rest }) => rest);
 
       const displayConfig = {
         user: {
@@ -3044,7 +3049,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const activeMedia = await storage.getActiveMedia(user.id);
-      res.json(activeMedia);
+      // ✅ OPTIMIZED: Exclude base64 data - frontend loads via /api/media/:id/file
+      const lightweightMedia = activeMedia.map(({ data, ...rest }) => rest);
+      res.json(lightweightMedia);
     } catch (error) {
       console.error("Error fetching TV active media:", error);
       res.status(500).json({ error: "Failed to get active TV media" });
