@@ -242,35 +242,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Invalid username or password" });
       }
       
-      // Regenerate session ID to prevent session fixation attacks
-      req.session.regenerate((err) => {
-        if (err) {
-          console.error("Session regeneration error:", err);
-          return res.status(500).json({ error: "Internal server error" });
+      // Store user info in session (skip regenerate to maintain session ID)
+      req.session.userId = user.id;
+      req.session.username = user.username;
+      req.session.role = user.role;
+      
+      // Save session and send response
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error("Session save error:", saveErr);
+          return res.status(500).json({ error: "Failed to save session" });
         }
         
-        // Store user info in session
-        req.session.userId = user.id;
-        req.session.username = user.username;
-        req.session.role = user.role;
-        
-        // Explicitly save session to ensure it's persisted before response
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            console.error("Session save error:", saveErr);
-            return res.status(500).json({ error: "Failed to save session" });
+        res.json({
+          success: true,
+          user: {
+            id: user.id,
+            username: user.username,
+            role: user.role,
+            clinicName: "",
+            clinicLocation: ""
           }
-          
-          res.json({
-            success: true,
-            user: {
-              id: user.id,
-              username: user.username,
-              role: user.role,
-              clinicName: "",
-              clinicLocation: ""
-            }
-          });
         });
       });
       
