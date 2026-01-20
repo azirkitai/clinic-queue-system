@@ -73,10 +73,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, // Set to false to work with both HTTP and HTTPS
+    secure: true, // Required for sameSite: 'none'
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax', // CSRF protection
+    sameSite: 'none', // Required for cross-origin cookies in Replit webview
   },
 }));
 
