@@ -44,7 +44,7 @@ export default function Queue() {
   // ✅ Fetch audio settings from LIGHTWEIGHT endpoint (10KB vs 223KB = 95% reduction!)
   const { data: settings = [] } = useQuery<Setting[]>({
     queryKey: ['/api/settings/tv'],
-    staleTime: 60000, // Keep data fresh for 60s
+    staleTime: 180000, // ✅ BANDWIDTH SAVE: Keep data fresh for 3 min
     refetchInterval: false, // Don't poll - WebSocket handles updates
     refetchOnWindowFocus: false, // Disable - prevents burst
   });

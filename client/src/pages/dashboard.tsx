@@ -125,8 +125,8 @@ export default function Dashboard() {
   // Fetch dashboard statistics (WebSocket updates automatically, polling as fallback)
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats & { totalWindows: number }>({
     queryKey: ['/api/dashboard/stats'],
-    staleTime: 30000, // ✅ Keep data fresh for 30s (matches polling)
-    refetchInterval: 30000, // Fallback polling every 30s (WebSocket is primary)
+    staleTime: 120000, // ✅ BANDWIDTH SAVE: Keep data fresh for 2 min (WebSocket is primary!)
+    refetchInterval: 120000, // ✅ BANDWIDTH SAVE: Poll every 2 min as fallback (was 30s = 4x reduction!)
     refetchOnReconnect: true, // ✅ Enable - ensures stats refresh after network blips
     refetchOnWindowFocus: false, // ❌ Disable - prevents burst on tab switch
   });
@@ -138,8 +138,8 @@ export default function Dashboard() {
   // Fetch windows data (WebSocket updates automatically, polling as fallback)
   const { data: windows = [] } = useQuery<any[]>({
     queryKey: ['/api/windows'],
-    staleTime: 30000, // ✅ Keep data fresh for 30s (matches polling)
-    refetchInterval: 30000, // Fallback polling every 30s (WebSocket is primary)
+    staleTime: 120000, // ✅ BANDWIDTH SAVE: Keep data fresh for 2 min (WebSocket is primary!)
+    refetchInterval: 120000, // ✅ BANDWIDTH SAVE: Poll every 2 min as fallback (was 30s = 4x reduction!)
     refetchOnReconnect: true, // ✅ Enable - ensures windows refresh after network blips
     refetchOnWindowFocus: false, // ❌ Disable - prevents burst on tab switch
   });
@@ -147,8 +147,8 @@ export default function Dashboard() {
   // Fetch active media for display (less critical, slower polling)
   const { data: activeMedia = [] } = useQuery<any[]>({
     queryKey: ['/api/display'],
-    staleTime: 60000, // ✅ Keep data fresh for 60s (matches polling)
-    refetchInterval: 60000, // Polling every 60s (rarely changes)
+    staleTime: 180000, // ✅ BANDWIDTH SAVE: Keep data fresh for 3 min (rarely changes)
+    refetchInterval: 180000, // ✅ BANDWIDTH SAVE: Poll every 3 min (was 60s = 3x reduction!)
     refetchOnReconnect: false, // ❌ Disable - WebSocket handles updates
     refetchOnWindowFocus: false, // ❌ Disable - prevents burst
   });
@@ -157,8 +157,8 @@ export default function Dashboard() {
   // Excludes clinicLogo - fetched separately below with long cache
   const { data: settingsData = [] } = useQuery<Array<{key: string; value: string}>>({
     queryKey: ['/api/settings/tv'],
-    staleTime: 60000, // Keep data fresh for 60s
-    refetchInterval: 60000, // Poll every 60s (settings don't change often)
+    staleTime: 180000, // ✅ BANDWIDTH SAVE: Keep data fresh for 3 min
+    refetchInterval: 180000, // ✅ BANDWIDTH SAVE: Poll every 3 min (was 60s = 3x reduction!)
     refetchOnWindowFocus: false, // Disable - prevents burst
   });
 

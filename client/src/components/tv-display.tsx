@@ -217,8 +217,8 @@ export function TVDisplay({
       if (!response.ok) throw new Error('Failed to fetch theme');
       return response.json();
     },
-    staleTime: 30000, // Cache for 30s - WebSocket provides instant updates
-    refetchInterval: 30000, // Poll every 30 seconds as fallback (10x bandwidth reduction!)
+    staleTime: 120000, // ✅ BANDWIDTH SAVE: Cache for 2 min - WebSocket is primary!
+    refetchInterval: 120000, // ✅ BANDWIDTH SAVE: Poll every 2 min as fallback (was 30s = 4x reduction!)
     refetchOnMount: false, // ❌ Disable - use cached data
     refetchOnWindowFocus: false, // ❌ Disable - prevents burst
     retry: 1,
@@ -233,8 +233,8 @@ export function TVDisplay({
       if (!response.ok) throw new Error('Failed to fetch text groups');
       return response.json();
     },
-    staleTime: 30000, // Cache for 30s - WebSocket provides instant updates
-    refetchInterval: 30000, // Poll every 30 seconds as fallback (10x bandwidth reduction!)
+    staleTime: 120000, // ✅ BANDWIDTH SAVE: Cache for 2 min - WebSocket is primary!
+    refetchInterval: 120000, // ✅ BANDWIDTH SAVE: Poll every 2 min as fallback (was 30s = 4x reduction!)
     refetchOnMount: false, // ❌ Disable - use cached data
     refetchOnWindowFocus: false, // ❌ Disable - prevents burst
   });
@@ -250,8 +250,8 @@ export function TVDisplay({
       if (!response.ok) throw new Error('Failed to fetch settings');
       return response.json();
     },
-    staleTime: 60000, // Cache for 60s - settings rarely change
-    refetchInterval: 60000, // Poll every 60 seconds (settings don't change often)
+    staleTime: 180000, // ✅ BANDWIDTH SAVE: Cache for 3 min - settings rarely change
+    refetchInterval: 180000, // ✅ BANDWIDTH SAVE: Poll every 3 min (was 60s = 3x reduction!)
     refetchOnMount: false, // ❌ Disable - use cached data
     refetchOnWindowFocus: false, // ❌ Disable - prevents burst
   });

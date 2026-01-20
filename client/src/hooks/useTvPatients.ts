@@ -24,8 +24,8 @@ interface UseTvPatientsResult {
 export function useTvPatients(): UseTvPatientsResult {
   const { data: tvPatients = [], isLoading, error } = useQuery<TvQueueItem[]>({
     queryKey: ['/api/patients/tv'],
-    staleTime: 30000, // Data stays fresh for 30s (matches polling interval)
-    refetchInterval: 30000, // Poll every 30s (WebSocket is primary)
+    staleTime: 120000, // ✅ BANDWIDTH SAVE: Data stays fresh for 2 min (WebSocket is primary!)
+    refetchInterval: 120000, // ✅ BANDWIDTH SAVE: Poll every 2 min as fallback only (was 30s = 4x reduction!)
     refetchOnReconnect: false, // ❌ Disable - WebSocket handles reconnect updates
     refetchOnWindowFocus: false, // ❌ Disable - prevents burst on tab switch
     refetchOnMount: false, // ❌ Disable - use cached data on mount
