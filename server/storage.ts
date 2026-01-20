@@ -2246,8 +2246,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Media methods
+  // ✅ OPTIMIZED: Exclude base64 data field to reduce Neon data transfer (~3-4MB per media item!)
   async getMedia(userId: string): Promise<Media[]> {
-    return await db.select().from(schema.media).where(eq(schema.media.userId, userId));
+    return await db.select({
+      id: schema.media.id,
+      name: schema.media.name,
+      filename: schema.media.filename,
+      url: schema.media.url,
+      type: schema.media.type,
+      mimeType: schema.media.mimeType,
+      size: schema.media.size,
+      uploadedAt: schema.media.uploadedAt,
+      isActive: schema.media.isActive,
+      userId: schema.media.userId,
+      data: sql<string | null>`NULL`.as('data'), // Exclude actual data, return NULL placeholder
+    }).from(schema.media).where(eq(schema.media.userId, userId));
   }
 
   async getMediaById(id: string, userId?: string): Promise<Media | undefined> {
@@ -2283,8 +2296,21 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount !== null && result.rowCount > 0;
   }
 
+  // ✅ OPTIMIZED: Exclude base64 data field to reduce Neon data transfer (~3-4MB per media item!)
   async getActiveMedia(userId: string): Promise<Media[]> {
-    return await db.select().from(schema.media)
+    return await db.select({
+      id: schema.media.id,
+      name: schema.media.name,
+      filename: schema.media.filename,
+      url: schema.media.url,
+      type: schema.media.type,
+      mimeType: schema.media.mimeType,
+      size: schema.media.size,
+      uploadedAt: schema.media.uploadedAt,
+      isActive: schema.media.isActive,
+      userId: schema.media.userId,
+      data: sql<string | null>`NULL`.as('data'), // Exclude actual data, return NULL placeholder
+    }).from(schema.media)
       .where(and(eq(schema.media.isActive, true), eq(schema.media.userId, userId)));
   }
 
