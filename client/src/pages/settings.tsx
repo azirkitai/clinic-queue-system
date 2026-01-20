@@ -914,22 +914,6 @@ export default function Settings() {
                     placeholder="https://www.youtube.com/watch?v=..."
                     data-testid="input-youtube-url"
                   />
-                  <div className="flex space-x-2 mt-2">
-                    <Button 
-                      onClick={handleSaveDisplay} 
-                      className="w-full" 
-                      data-testid="button-save-youtube"
-                      disabled={saveSettingsMutation.isPending}
-                    >
-                      {saveSettingsMutation.isPending ? (
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Save className="h-4 w-4 mr-2" />
-                      )}
-                      Save YouTube URL
-                    </Button>
-                  </div>
-
                   {currentSettings.youtubeUrl && (
                     <div className="mt-4 p-4 border-2 border-green-200 rounded-lg bg-green-50">
                       <div className="flex items-start space-x-4">
@@ -1175,20 +1159,6 @@ export default function Settings() {
                   className="text-sm"
                 />
               </div>
-              <Button 
-                onClick={handleSaveDisplay} 
-                className="w-full" 
-                size="sm"
-                data-testid="button-save-clinic-name-settings"
-                disabled={saveSettingsMutation.isPending}
-              >
-                {saveSettingsMutation.isPending ? (
-                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                ) : (
-                  <Save className="h-3 w-3 mr-1" />
-                )}
-                Save
-              </Button>
             </CardContent>
           </Card>
 
@@ -1282,21 +1252,6 @@ export default function Settings() {
                   data-testid="switch-show-clinic-logo"
                 />
               </div>
-
-              <Button 
-                onClick={handleSaveDisplay} 
-                className="w-full" 
-                size="sm"
-                data-testid="button-save-clinic-logo"
-                disabled={saveSettingsMutation.isPending}
-              >
-                {saveSettingsMutation.isPending ? (
-                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                ) : (
-                  <Save className="h-3 w-3 mr-1" />
-                )}
-                Save Logo
-              </Button>
             </CardContent>
           </Card>
         
@@ -1362,19 +1317,6 @@ export default function Settings() {
                   </div>
                 )}
               </div>
-            <Button 
-              onClick={handleSaveDisplay} 
-              className="w-full" 
-              data-testid="button-save-header-colors"
-              disabled={saveSettingsMutation.isPending}
-            >
-              {saveSettingsMutation.isPending ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Save Header Colors
-            </Button>
           </CardContent>
         </Card>
 
@@ -1435,20 +1377,6 @@ export default function Settings() {
                 )}
               </div>
             </div>
-            
-            <Button 
-              onClick={handleSaveDisplay} 
-              className="w-full" 
-              data-testid="button-save-clinic-name-text"
-              disabled={saveSettingsMutation.isPending}
-            >
-              {saveSettingsMutation.isPending ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Save Clinic Name Text
-            </Button>
           </CardContent>
         </Card>
 
@@ -1618,19 +1546,6 @@ export default function Settings() {
                 )}
               </div>
             </div>
-            <Button 
-              onClick={handleSaveDisplay} 
-              className="w-full" 
-              data-testid="button-save-call-colors"
-              disabled={saveSettingsMutation.isPending}
-            >
-              {saveSettingsMutation.isPending ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Save Call Colors
-            </Button>
           </CardContent>
         </Card>
 
@@ -1672,19 +1587,6 @@ export default function Settings() {
                 />
               </div>
             </div>
-            <Button 
-              onClick={handleSaveDisplay} 
-              className="w-full" 
-              data-testid="button-save-highlight-colors"
-              disabled={saveSettingsMutation.isPending}
-            >
-              {saveSettingsMutation.isPending ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Save Highlight Box Colors
-            </Button>
           </CardContent>
         </Card>
 
@@ -1814,20 +1716,6 @@ export default function Settings() {
                 data-testid="input-prayer-highlight-color"
               />
             </div>
-            
-            <Button 
-              onClick={handleSaveDisplay} 
-              className="w-full" 
-              data-testid="button-save-prayer-colors"
-              disabled={saveSettingsMutation.isPending}
-            >
-              {saveSettingsMutation.isPending ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Save Prayer Times Colors
-            </Button>
           </CardContent>
         </Card>
 
@@ -1945,19 +1833,6 @@ export default function Settings() {
                 )}
               </div>
             </div>
-            <Button 
-              onClick={handleSaveDisplay} 
-              className="w-full" 
-              data-testid="button-save-weather-colors"
-              disabled={saveSettingsMutation.isPending}
-            >
-              {saveSettingsMutation.isPending ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Save Weather Colors
-            </Button>
           </CardContent>
         </Card>
 
@@ -2185,19 +2060,6 @@ export default function Settings() {
                 </div>
               </div>
             </div>
-            <Button 
-              onClick={handleSaveDisplay} 
-              className="w-full" 
-              data-testid="button-save-queue-colors"
-              disabled={saveSettingsMutation.isPending}
-            >
-              {saveSettingsMutation.isPending ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Save Queue List Colors
-            </Button>
           </CardContent>
         </Card>
         </div>
@@ -2406,20 +2268,6 @@ export default function Settings() {
                 </div>
               )}
             </div>
-
-            <Button 
-              onClick={handleSaveDisplay} 
-              className="w-full" 
-              data-testid="button-save-display"
-              disabled={saveSettingsMutation.isPending}
-            >
-              {saveSettingsMutation.isPending ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Save Display Settings
-            </Button>
           </CardContent>
         </Card>
       </div>
@@ -2513,20 +2361,6 @@ export default function Settings() {
                 </div>
               </div>
             )}
-
-            <Button 
-              onClick={handleSaveSound} 
-              className="w-full" 
-              data-testid="button-save-sound"
-              disabled={saveSettingsMutation.isPending}
-            >
-              {saveSettingsMutation.isPending ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Save Sound Settings
-            </Button>
           </CardContent>
         </Card>
         
