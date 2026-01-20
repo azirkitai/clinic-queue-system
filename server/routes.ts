@@ -1853,7 +1853,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Media management routes
   
-  // Get all media files
+  // Get all media files (metadata only - excludes base64 data)
   app.get("/api/media", async (req, res) => {
     try {
       // Check authentication
@@ -1862,7 +1862,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const media = await storage.getActiveMedia(req.session.userId);
-      res.json(media);
+      // ✅ BANDWIDTH OPTIMIZATION: Exclude base64 data field
+      // Frontend loads actual file via /api/media/:id/file with HTTP caching
+      const lightweightMedia = media.map(({ data, ...rest }) => rest);
+      res.json(lightweightMedia);
     } catch (error) {
       console.error("Error fetching media:", error);
       res.status(500).json({ error: "Failed to fetch media" });
@@ -2307,20 +2310,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "mediaIds must be an array" });
       }
 
-      // First, deactivate all current media
-      const allMedia = await storage.getMedia(req.session.userId);
-      for (const media of allMedia) {
-        if (media.isActive) {
-          await storage.updateMedia(media.id, { isActive: false }, req.session.userId);
-        }
-      }
+      // ✅ OPTIMIZED: Deactivate all media directly without fetching base64 data
+      // Previous: fetched ALL media (~MBs of base64) just to toggle isActive
+      await storage.deactivateAllMedia(req.session.userId);
 
       // Then activate the selected media
       const updatedMedia = [];
       for (const mediaId of mediaIds) {
         const updated = await storage.updateMedia(mediaId, { isActive: true }, req.session.userId);
         if (updated) {
-          updatedMedia.push(updated);
+          // Exclude base64 data from response
+          const { data, ...rest } = updated;
+          updatedMedia.push(rest);
         }
       }
 

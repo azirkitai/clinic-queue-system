@@ -108,6 +108,7 @@ export interface IStorage {
   updateMedia(id: string, updates: Partial<Media>, userId: string): Promise<Media | undefined>;
   deleteMedia(id: string, userId: string): Promise<boolean>;
   getActiveMedia(userId: string): Promise<Media[]>;
+  deactivateAllMedia(userId: string): Promise<number>; // ✅ Optimized: Update directly without fetching base64 data
   
   // Theme methods
   getThemes(userId: string): Promise<Theme[]>;
@@ -1035,6 +1036,18 @@ export class MemStorage implements IStorage {
 
   async getActiveMedia(userId: string): Promise<Media[]> {
     return Array.from(this.media.values()).filter(media => media.userId === userId && media.isActive);
+  }
+
+  async deactivateAllMedia(userId: string): Promise<number> {
+    let count = 0;
+    const entries = Array.from(this.media.entries());
+    for (const [id, media] of entries) {
+      if (media.userId === userId && media.isActive) {
+        this.media.set(id, { ...media, isActive: false });
+        count++;
+      }
+    }
+    return count;
   }
   
   // Theme methods implementation
@@ -2286,6 +2299,14 @@ export class DatabaseStorage implements IStorage {
   async getActiveMedia(userId: string): Promise<Media[]> {
     return await db.select().from(schema.media)
       .where(and(eq(schema.media.isActive, true), eq(schema.media.userId, userId)));
+  }
+
+  // ✅ OPTIMIZED: Deactivate all media without fetching base64 data
+  async deactivateAllMedia(userId: string): Promise<number> {
+    const result = await db.update(schema.media)
+      .set({ isActive: false })
+      .where(and(eq(schema.media.isActive, true), eq(schema.media.userId, userId)));
+    return result.rowCount ?? 0;
   }
 
   // Theme methods
