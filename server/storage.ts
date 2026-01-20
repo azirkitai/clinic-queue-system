@@ -104,6 +104,7 @@ export interface IStorage {
   // Media methods
   getMedia(userId: string): Promise<Media[]>;
   getMediaById(id: string, userId?: string): Promise<Media | undefined>;
+  getMediaMetadataById(id: string, userId: string): Promise<Media | undefined>; // ✅ Excludes base64 data field
   createMedia(media: InsertMedia): Promise<Media>;
   updateMedia(id: string, updates: Partial<Media>, userId: string): Promise<Media | undefined>;
   deleteMedia(id: string, userId: string): Promise<boolean>;
@@ -1002,6 +1003,13 @@ export class MemStorage implements IStorage {
     // If userId is provided, check ownership
     if (userId && media.userId !== userId) return undefined;
     return media;
+  }
+
+  async getMediaMetadataById(id: string, userId: string): Promise<Media | undefined> {
+    const media = this.media.get(id);
+    if (!media || media.userId !== userId) return undefined;
+    // Return media without data field (set to null)
+    return { ...media, data: null };
   }
 
   async createMedia(insertMedia: InsertMedia): Promise<Media> {
@@ -2275,6 +2283,25 @@ export class DatabaseStorage implements IStorage {
         .where(eq(schema.media.id, id));
       return media;
     }
+  }
+
+  // ✅ OPTIMIZED: Get media metadata WITHOUT base64 data field (~3-4MB savings per request!)
+  async getMediaMetadataById(id: string, userId: string): Promise<Media | undefined> {
+    const [media] = await db.select({
+      id: schema.media.id,
+      name: schema.media.name,
+      filename: schema.media.filename,
+      url: schema.media.url,
+      type: schema.media.type,
+      mimeType: schema.media.mimeType,
+      size: schema.media.size,
+      uploadedAt: schema.media.uploadedAt,
+      isActive: schema.media.isActive,
+      userId: schema.media.userId,
+      data: sql<string | null>`NULL`.as('data'), // Exclude actual data, return NULL
+    }).from(schema.media)
+      .where(and(eq(schema.media.id, id), eq(schema.media.userId, userId)));
+    return media;
   }
 
   async createMedia(insertMedia: InsertMedia): Promise<Media> {

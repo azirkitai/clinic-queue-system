@@ -1870,6 +1870,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get media by ID (metadata only)
+  // ✅ OPTIMIZED: Uses getMediaMetadataById() to avoid fetching 3-4MB base64 data from Neon
   app.get("/api/media/:id", async (req, res) => {
     try {
       // Check authentication
@@ -1878,13 +1879,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const { id } = req.params;
-      const media = await storage.getMediaById(id, req.session.userId);
+      // ✅ Use optimized method that excludes base64 data at DATABASE level
+      const media = await storage.getMediaMetadataById(id, req.session.userId);
       
       if (!media) {
         return res.status(404).json({ error: "Media not found" });
       }
       
-      // Return metadata only (no binary data)
+      // Return metadata (data is already NULL from optimized query)
       const { data, ...metadata } = media;
       res.json(metadata);
     } catch (error) {
