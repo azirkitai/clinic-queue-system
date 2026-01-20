@@ -1267,17 +1267,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get all user-specific display configuration data using proper userId filtering
-      // ✅ OPTIMIZED: Use getTvSettings to exclude clinicLogo, exclude base64 from media
+      // ✅ CRITICAL: Use getMediaMetadata() to exclude base64 at SQL level (not just response)
       const tvSettingsKeys = Array.from(TV_SETTINGS_KEYS);
-      const [settings, themes, mediaRaw, textGroups] = await Promise.all([
+      const [settings, themes, media, textGroups] = await Promise.all([
         storage.getTvSettings(id, tvSettingsKeys),
         storage.getThemes(id), 
-        storage.getMedia(id),
+        storage.getMediaMetadata(id), // ✅ SQL-level exclusion of base64 data
         storage.getTextGroups(id)
       ]);
-      
-      // Exclude base64 data from media
-      const media = mediaRaw.map(({ data, ...rest }) => rest);
 
       const displayConfig = {
         user: {
@@ -1858,7 +1855,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Media management routes
   
-  // Get all media files (metadata only - excludes base64 data)
+  // Get all media files (metadata only - excludes base64 data at SQL level)
   app.get("/api/media", async (req, res) => {
     try {
       // Check authentication
@@ -1866,11 +1863,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
       
-      const media = await storage.getActiveMedia(req.session.userId);
-      // ✅ BANDWIDTH OPTIMIZATION: Exclude base64 data field
-      // Frontend loads actual file via /api/media/:id/file with HTTP caching
-      const lightweightMedia = media.map(({ data, ...rest }) => rest);
-      res.json(lightweightMedia);
+      // ✅ CRITICAL: Use getActiveMediaMetadata() to exclude base64 at SQL level
+      // This prevents Neon from transferring MB of base64 data on every request
+      const media = await storage.getActiveMediaMetadata(req.session.userId);
+      res.json(media);
     } catch (error) {
       console.error("Error fetching media:", error);
       res.status(500).json({ error: "Failed to fetch media" });
@@ -2290,10 +2286,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(youtubeMedia);
       } else {
         // Otherwise return regular uploaded media
-        const activeMedia = await storage.getActiveMedia(req.session.userId);
-        // ✅ BANDWIDTH OPTIMIZATION: Exclude base64 data field (frontend loads via /api/media/:id/file)
-        const lightweightMedia = activeMedia.map(({ data, ...rest }) => rest);
-        res.json(lightweightMedia);
+        // ✅ CRITICAL: Use getActiveMediaMetadata() to exclude base64 at SQL level
+        const activeMedia = await storage.getActiveMediaMetadata(req.session.userId);
+        res.json(activeMedia);
       }
     } catch (error) {
       console.error("Error fetching display media:", error);
@@ -3048,10 +3043,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Invalid TV token" });
       }
       
-      const activeMedia = await storage.getActiveMedia(user.id);
-      // ✅ OPTIMIZED: Exclude base64 data - frontend loads via /api/media/:id/file
-      const lightweightMedia = activeMedia.map(({ data, ...rest }) => rest);
-      res.json(lightweightMedia);
+      // ✅ CRITICAL: Use getActiveMediaMetadata() to exclude base64 at SQL level
+      const activeMedia = await storage.getActiveMediaMetadata(user.id);
+      res.json(activeMedia);
     } catch (error) {
       console.error("Error fetching TV active media:", error);
       res.status(500).json({ error: "Failed to get active TV media" });
