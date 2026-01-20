@@ -111,12 +111,15 @@ app.use((req, res, next) => {
   // Create HTTP server and attach Express app
   const httpServer = createServer(app);
   
-  // Setup Socket.IO with tenant isolation
+  // Setup Socket.IO with tenant isolation and heartbeat to detect zombie connections
   const io = new Server(httpServer, {
     cors: {
       origin: process.env.NODE_ENV === "production" ? false : "*",
       methods: ["GET", "POST"]
-    }
+    },
+    // Heartbeat config to detect dead connections and force reconnect
+    pingInterval: 25000,  // Send ping every 25 seconds
+    pingTimeout: 10000,   // Wait 10 seconds for pong before considering dead
   });
   
   // Make Socket.IO server globally available for server-authoritative events
