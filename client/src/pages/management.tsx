@@ -24,10 +24,16 @@ export default function Management() {
   const { toast } = useToast();
 
   // Fetch windows data
-  const { data: windows = [], isLoading, refetch } = useQuery({
+  const { data: windowsData, isLoading, refetch } = useQuery({
     queryKey: ["/api/windows"],
-    queryFn: () => fetch("/api/windows").then(res => res.json()) as Promise<Window[]>
+    queryFn: async () => {
+      const res = await fetch("/api/windows", { credentials: 'include' });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
   });
+  const windows = windowsData ?? [];
 
   // Create window mutation
   const createWindowMutation = useMutation({
