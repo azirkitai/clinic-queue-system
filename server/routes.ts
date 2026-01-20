@@ -254,15 +254,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.session.username = user.username;
         req.session.role = user.role;
         
-        res.json({
-          success: true,
-          user: {
-            id: user.id,
-            username: user.username,
-            role: user.role,
-            clinicName: "",
-            clinicLocation: ""
+        // Force save session before sending response
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("Session save error:", saveErr);
+            return res.status(500).json({ error: "Internal server error" });
           }
+          
+          res.json({
+            success: true,
+            user: {
+              id: user.id,
+              username: user.username,
+              role: user.role,
+              clinicName: "",
+              clinicLocation: ""
+            }
+          });
         });
       });
       
