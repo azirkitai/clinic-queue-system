@@ -26,13 +26,7 @@ export default function Management() {
   // Fetch windows data
   const { data: windows = [], isLoading, refetch } = useQuery({
     queryKey: ["/api/windows"],
-    queryFn: async () => {
-      const res = await fetch("/api/windows");
-      const data = await res.json();
-      // Handle auth errors - return empty array if not authenticated
-      if (!res.ok || data?.error) return [];
-      return data as Window[];
-    }
+    queryFn: () => fetch("/api/windows").then(res => res.json()) as Promise<Window[]>
   });
 
   // Create window mutation

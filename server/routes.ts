@@ -254,23 +254,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.session.username = user.username;
         req.session.role = user.role;
         
-        // Force save session before sending response
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            console.error("Session save error:", saveErr);
-            return res.status(500).json({ error: "Internal server error" });
+        res.json({
+          success: true,
+          user: {
+            id: user.id,
+            username: user.username,
+            role: user.role,
+            clinicName: "",
+            clinicLocation: ""
           }
-          
-          res.json({
-            success: true,
-            user: {
-              id: user.id,
-              username: user.username,
-              role: user.role,
-              clinicName: "",
-              clinicLocation: ""
-            }
-          });
         });
       });
       
@@ -1862,7 +1854,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Media management routes
   
   // Get all media files
-  // ✅ OPTIMIZED: Uses getActiveMediaMetadata() to exclude base64 data at DB level
   app.get("/api/media", async (req, res) => {
     try {
       // Check authentication
@@ -1870,9 +1861,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
       
-      // ✅ CRITICAL FIX: Fetch metadata only (excludes base64 data from database transfer)
-      // Reduces Neon data transfer by 90-99% per request!
-      const media = await storage.getActiveMediaMetadata(req.session.userId);
+      const media = await storage.getActiveMedia(req.session.userId);
       res.json(media);
     } catch (error) {
       console.error("Error fetching media:", error);
@@ -2293,10 +2282,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(youtubeMedia);
       } else {
         // Otherwise return regular uploaded media
-        // ✅ CRITICAL FIX: Use getActiveMediaMetadata() to exclude base64 at DATABASE level
-        // Previous code fetched all data including base64, then filtered - database still transferred MB!
-        const activeMedia = await storage.getActiveMediaMetadata(req.session.userId);
-        res.json(activeMedia);
+        const activeMedia = await storage.getActiveMedia(req.session.userId);
+        // ✅ BANDWIDTH OPTIMIZATION: Exclude base64 data field (frontend loads via /api/media/:id/file)
+        const lightweightMedia = activeMedia.map(({ data, ...rest }) => rest);
+        res.json(lightweightMedia);
       }
     } catch (error) {
       console.error("Error fetching display media:", error);
@@ -3044,7 +3033,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // TV Active Media endpoint
-  // ✅ OPTIMIZED: Uses getActiveMediaMetadata() to exclude base64 data at DB level
   app.get("/api/tv/:token/media/active", async (req, res) => {
     try {
       const { token } = req.params;
@@ -3054,8 +3042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Invalid TV token" });
       }
       
-      // ✅ CRITICAL FIX: Fetch metadata only (excludes base64 from database transfer)
-      const activeMedia = await storage.getActiveMediaMetadata(user.id);
+      const activeMedia = await storage.getActiveMedia(user.id);
       res.json(activeMedia);
     } catch (error) {
       console.error("Error fetching TV active media:", error);

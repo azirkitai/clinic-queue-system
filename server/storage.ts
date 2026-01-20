@@ -103,8 +103,6 @@ export interface IStorage {
   
   // Media methods
   getMedia(userId: string): Promise<Media[]>;
-  getMediaMetadata(userId: string): Promise<Omit<Media, 'data'>[]>; // ✅ Optimized: Excludes base64 data at DB level
-  getActiveMediaMetadata(userId: string): Promise<Omit<Media, 'data'>[]>; // ✅ Optimized: Excludes base64 data at DB level
   getMediaById(id: string, userId?: string): Promise<Media | undefined>;
   createMedia(media: InsertMedia): Promise<Media>;
   updateMedia(id: string, updates: Partial<Media>, userId: string): Promise<Media | undefined>;
@@ -996,20 +994,6 @@ export class MemStorage implements IStorage {
   // Media methods implementation
   async getMedia(userId: string): Promise<Media[]> {
     return Array.from(this.media.values()).filter(m => m.userId === userId);
-  }
-
-  async getMediaMetadata(userId: string): Promise<Omit<Media, 'data'>[]> {
-    // ✅ Return media without base64 data field (memory storage - filter out data)
-    return Array.from(this.media.values())
-      .filter(m => m.userId === userId)
-      .map(({ data, ...metadata }) => metadata);
-  }
-
-  async getActiveMediaMetadata(userId: string): Promise<Omit<Media, 'data'>[]> {
-    // ✅ Return active media without base64 data field
-    return Array.from(this.media.values())
-      .filter(m => m.userId === userId && m.isActive)
-      .map(({ data, ...metadata }) => metadata);
   }
 
   async getMediaById(id: string, userId?: string): Promise<Media | undefined> {
@@ -2264,40 +2248,6 @@ export class DatabaseStorage implements IStorage {
   // Media methods
   async getMedia(userId: string): Promise<Media[]> {
     return await db.select().from(schema.media).where(eq(schema.media.userId, userId));
-  }
-
-  async getMediaMetadata(userId: string): Promise<Omit<Media, 'data'>[]> {
-    // ✅ CRITICAL OPTIMIZATION: Exclude base64 data at SQL level
-    // This reduces database transfer by 90-99% (100KB-1MB per image saved!)
-    return await db.select({
-      id: schema.media.id,
-      name: schema.media.name,
-      filename: schema.media.filename,
-      url: schema.media.url,
-      type: schema.media.type,
-      mimeType: schema.media.mimeType,
-      size: schema.media.size,
-      uploadedAt: schema.media.uploadedAt,
-      isActive: schema.media.isActive,
-      userId: schema.media.userId,
-    }).from(schema.media).where(eq(schema.media.userId, userId));
-  }
-
-  async getActiveMediaMetadata(userId: string): Promise<Omit<Media, 'data'>[]> {
-    // ✅ CRITICAL OPTIMIZATION: Exclude base64 data at SQL level for active media
-    return await db.select({
-      id: schema.media.id,
-      name: schema.media.name,
-      filename: schema.media.filename,
-      url: schema.media.url,
-      type: schema.media.type,
-      mimeType: schema.media.mimeType,
-      size: schema.media.size,
-      uploadedAt: schema.media.uploadedAt,
-      isActive: schema.media.isActive,
-      userId: schema.media.userId,
-    }).from(schema.media)
-      .where(and(eq(schema.media.isActive, true), eq(schema.media.userId, userId)));
   }
 
   async getMediaById(id: string, userId?: string): Promise<Media | undefined> {
