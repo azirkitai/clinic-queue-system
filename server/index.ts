@@ -12,6 +12,9 @@ import fs from "fs";
 
 const app = express();
 
+// Trust proxy for Replit environment (required for secure cookies behind proxy)
+app.set('trust proxy', 1);
+
 // Enable gzip compression for all responses (reduces bandwidth by 70%)
 app.use(compression({
   level: 6, // Balance between speed and compression
