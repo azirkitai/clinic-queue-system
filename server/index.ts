@@ -69,11 +69,12 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'clinic-management-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
+  rolling: true,
   cookie: {
-    secure: false, // Set to false to work with both HTTP and HTTPS
+    secure: false,
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax', // CSRF protection
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    sameSite: 'lax',
   },
 }));
 

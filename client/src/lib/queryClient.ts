@@ -1,6 +1,14 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
+  if (res.status === 401) {
+    const currentPath = window.location.pathname;
+    if (currentPath !== '/' && currentPath !== '/login') {
+      console.log('[AUTH] Session expired - redirecting to login');
+      window.location.href = '/';
+      throw new Error('Session expired');
+    }
+  }
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);

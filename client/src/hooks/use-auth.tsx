@@ -41,6 +41,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
     checkAuth();
   }, []);
 
+  // Periodic session check - detect expired sessions on Smart TVs
+  useEffect(() => {
+    if (!user) return;
+
+    const checkSession = async () => {
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'include' });
+        if (res.status === 401) {
+          console.log('[AUTH] Session expired - detected by periodic check');
+          setUser(null);
+        }
+      } catch (error) {
+        // Network error - don't clear user, might be temporary
+      }
+    };
+
+    const intervalId = setInterval(checkSession, 5 * 60 * 1000); // Check every 5 minutes
+    return () => clearInterval(intervalId);
+  }, [user]);
+
   const checkAuth = async () => {
     try {
       const response = await apiRequest("GET", "/api/auth/me");
