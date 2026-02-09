@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { TVDisplay } from "@/components/tv-display";
@@ -8,6 +8,7 @@ import { Monitor, Settings as SettingsIcon, Users, Clock } from "lucide-react";
 import { type Patient } from "@shared/schema";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useTvPatients } from "@/hooks/useTvPatients";
+import { useTheme } from "@/components/theme-provider";
 
 interface QueueItem {
   id: string;
@@ -32,6 +33,8 @@ export default function Dashboard() {
   const [fullscreen, setFullscreen] = useState(false);
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
   const [showExitButton, setShowExitButton] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const prevThemeRef = useRef<string | null>(null);
   
   // WebSocket connection for real-time updates
   const { connected: wsConnected } = useWebSocket({
@@ -42,12 +45,29 @@ export default function Dashboard() {
   // Listen for browser fullscreen changes
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setFullscreen(document.fullscreenElement !== null);
+      const isFs = document.fullscreenElement !== null;
+      setFullscreen(isFs);
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
+
+  // Force light theme when TV fullscreen is active (Smart TVs often default to dark)
+  useEffect(() => {
+    if (fullscreen) {
+      prevThemeRef.current = theme;
+      if (theme !== 'light') {
+        setTheme('light');
+      }
+    } else if (prevThemeRef.current !== null) {
+      const restore = prevThemeRef.current as "dark" | "light" | "system";
+      prevThemeRef.current = null;
+      if (restore !== 'light') {
+        setTheme(restore);
+      }
+    }
+  }, [fullscreen]);
 
   // JS fallback for dvh support (for older TV browsers)
   useEffect(() => {
