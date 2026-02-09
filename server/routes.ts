@@ -1614,9 +1614,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Window text
     'windowTextMode', 'windowTextColor', 'windowTextGradient',
     // Prayer times
+    'showPrayerTimes',
     'prayerTimesBackgroundMode', 'prayerTimesBackgroundColor', 'prayerTimesBackgroundGradient',
     'prayerTimesTextMode', 'prayerTimesTextColor', 'prayerTimesTextGradient', 'prayerTimesHighlightColor',
     // Weather
+    'showWeather',
     'weatherBackgroundMode', 'weatherBackgroundColor', 'weatherBackgroundGradient',
     'weatherTextMode', 'weatherTextColor', 'weatherTextGradient',
     // Queue
