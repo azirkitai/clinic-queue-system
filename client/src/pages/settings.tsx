@@ -115,10 +115,10 @@ function TvLinkCard() {
     try {
       await navigator.clipboard.writeText(shortLink);
       setCopiedPin(true);
-      toast({ title: "Berjaya!", description: "Link pendek TV telah disalin." });
+      toast({ title: "Copied!", description: "TV short link copied to clipboard." });
       setTimeout(() => setCopiedPin(false), 2000);
     } catch {
-      toast({ title: "Gagal", description: "Tidak dapat menyalin.", variant: "destructive" });
+      toast({ title: "Failed", description: "Unable to copy link.", variant: "destructive" });
     }
   };
 
@@ -126,10 +126,10 @@ function TvLinkCard() {
     try {
       await navigator.clipboard.writeText(fullLink);
       setCopiedLink(true);
-      toast({ title: "Berjaya!", description: "Link penuh TV telah disalin." });
+      toast({ title: "Copied!", description: "TV full link copied to clipboard." });
       setTimeout(() => setCopiedLink(false), 2000);
     } catch {
-      toast({ title: "Gagal", description: "Tidak dapat menyalin.", variant: "destructive" });
+      toast({ title: "Failed", description: "Unable to copy link.", variant: "destructive" });
     }
   };
 
@@ -138,19 +138,19 @@ function TvLinkCard() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Monitor className="h-5 w-5" />
-          Pautan TV Display
+          TV Display Link
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Taip alamat ini di browser Smart TV - tak perlu login!
+          Type this address in your Smart TV browser - no login required!
         </p>
         {isLoading ? (
           <div className="h-20 bg-muted rounded-md animate-pulse" />
         ) : tvData ? (
           <>
             <div className="rounded-md border p-4 space-y-2">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Taip di TV Browser:</p>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Type in TV Browser:</p>
               <div className="flex items-center gap-3 flex-wrap">
                 <code className="text-lg font-bold tracking-wider" data-testid="text-tv-short-url">
                   {baseUrl.replace(/^https?:\/\//, '')}/tv/{tvData.tvPin}
@@ -162,11 +162,11 @@ function TvLinkCard() {
                   data-testid="button-copy-tv-pin"
                 >
                   {copiedPin ? <Check className="h-4 w-4 text-green-500 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
-                  {copiedPin ? "Disalin" : "Salin"}
+                  {copiedPin ? "Copied" : "Copy"}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                PIN klinik anda: <span className="font-mono font-bold text-sm">{tvData.tvPin}</span>
+                Your clinic PIN: <span className="font-mono font-bold text-sm">{tvData.tvPin}</span>
               </p>
             </div>
 
@@ -177,7 +177,7 @@ function TvLinkCard() {
               onClick={() => setShowFullLink(!showFullLink)}
               data-testid="button-toggle-full-link"
             >
-              {showFullLink ? "Sembunyi link penuh" : "Tunjuk link penuh (untuk bookmark)"}
+              {showFullLink ? "Hide full link" : "Show full link (for bookmarking)"}
             </Button>
 
             {showFullLink && (
@@ -201,7 +201,7 @@ function TvLinkCard() {
             )}
           </>
         ) : (
-          <p className="text-sm text-red-500">Tidak dapat menjana pautan TV.</p>
+          <p className="text-sm text-red-500">Unable to generate TV link.</p>
         )}
       </CardContent>
     </Card>
