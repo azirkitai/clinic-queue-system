@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Edit, Trash2, User, UserCheck } from "lucide-react";
+import { Edit, Trash2, User, UserCheck, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,13 +20,15 @@ interface WindowCardProps {
   onEdit: (windowId: string, newName: string) => void;
   onDelete: (windowId: string) => void;
   onToggleStatus: (windowId: string) => void;
+  onForceClear?: (windowId: string) => void;
 }
 
 export function WindowCard({ 
   window, 
   onEdit, 
   onDelete, 
-  onToggleStatus 
+  onToggleStatus,
+  onForceClear
 }: WindowCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(window.name);
@@ -188,8 +190,22 @@ export function WindowCard({
         </div>
 
         {window.currentPatientId && (
-          <div className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-            Cannot delete while serving a patient
+          <div className="mt-2 flex items-center justify-between">
+            <div className="text-xs text-amber-600 dark:text-amber-400">
+              Cannot delete while serving a patient
+            </div>
+            {onForceClear && (
+              <Button
+                onClick={() => onForceClear(window.id)}
+                size="sm"
+                variant="outline"
+                className="text-xs text-red-600 border-red-300 dark:text-red-400 dark:border-red-700"
+                data-testid={`button-force-clear-${window.id}`}
+              >
+                <XCircle className="h-3 w-3 mr-1" />
+                Force Clear
+              </Button>
+            )}
           </div>
         )}
         

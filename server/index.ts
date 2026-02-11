@@ -144,6 +144,20 @@ app.use((req, res, next) => {
     for (const user of users) {
       const cleaned = await storage.deleteOldCompletedPatients(user.id, 24);
       totalCleaned += cleaned;
+      
+      // CRITICAL FIX: Clear any windows that reference deleted/non-existent patients
+      if (cleaned > 0) {
+        const windows = await storage.getWindows(user.id);
+        for (const window of windows) {
+          if (window.currentPatientId) {
+            const patient = await storage.getPatient(window.currentPatientId);
+            if (!patient) {
+              await storage.updateWindowPatient(window.id, user.id, undefined);
+              console.log(`[STARTUP CLEANUP] Cleared stuck window ${window.name} (patient ${window.currentPatientId} no longer exists)`);
+            }
+          }
+        }
+      }
     }
     
     if (totalCleaned > 0) {

@@ -802,6 +802,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const { id } = req.params;
+      
+      // CRITICAL FIX: Clear window BEFORE deleting patient to prevent stuck rooms
+      const windows = await storage.getWindows(req.session.userId);
+      const assignedWindow = windows.find(w => w.currentPatientId === id);
+      if (assignedWindow) {
+        await storage.updateWindowPatient(assignedWindow.id, req.session.userId, undefined);
+        console.log(`[DELETE] Cleared window ${assignedWindow.name} (was assigned to patient ${id})`);
+      }
+      
       const deleted = await storage.deletePatient(id, req.session.userId);
       
       if (!deleted) {
@@ -1317,6 +1326,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const windows = await storage.getWindows(req.session.userId);
+      
+      // SELF-HEALING: Auto-clear windows that reference non-existent patients
+      // This prevents rooms from getting "stuck" when patients are deleted/cleaned up
+      let healed = false;
+      for (const window of windows) {
+        if (window.currentPatientId) {
+          const patient = await storage.getPatient(window.currentPatientId);
+          if (!patient) {
+            await storage.updateWindowPatient(window.id, req.session.userId, undefined);
+            window.currentPatientId = undefined;
+            healed = true;
+            console.log(`[SELF-HEAL] Cleared stuck window ${window.name} (patient ${window.currentPatientId} no longer exists)`);
+          }
+        }
+      }
+      
+      if (healed) {
+        invalidateCache(req.session.userId);
+      }
       
       // Cache the result
       setCache('windows', req.session.userId, windows);

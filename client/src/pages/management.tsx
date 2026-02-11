@@ -133,6 +133,32 @@ export default function Management() {
     toggleStatusMutation.mutate(windowId);
   };
 
+  // Force clear window patient mutation
+  const forceClearMutation = useMutation({
+    mutationFn: async (windowId: string) => {
+      return await apiRequest("PATCH", `/api/windows/${windowId}/patient`, { patientId: null });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/windows"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients/active"] });
+      toast({
+        title: "Room cleared",
+        description: "Room has been force cleared and is now available."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to clear room.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleForceClear = async (windowId: string) => {
+    forceClearMutation.mutate(windowId);
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -208,6 +234,7 @@ export default function Management() {
                 onEdit={handleEditWindow}
                 onDelete={handleDeleteWindow}
                 onToggleStatus={handleToggleStatus}
+                onForceClear={handleForceClear}
               />
             ))}
           </div>
