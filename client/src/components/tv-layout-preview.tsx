@@ -77,24 +77,26 @@ export function TvLayoutPreview({ highlight }: TvLayoutPreviewProps) {
               </div>
             </div>
 
-            <div className="mx-0.5 mt-1 flex-1 overflow-hidden">
+            <div className={`mx-0.5 mt-1 flex-1 overflow-hidden rounded-sm p-0.5 ${
+              is('queue') ? `${pulse} ${ring} bg-red-500/30` : ''
+            }`}>
               <div className="grid grid-cols-2 gap-px mb-0.5">
                 <div className={`text-center text-[5px] font-bold ${
-                  is('queueHistory') ? `text-yellow-300 ${pulse}` : 'text-white/70'
+                  is(['queueHistory', 'queue']) ? `text-yellow-300 ${pulse}` : 'text-white/70'
                 }`}>NAME</div>
                 <div className={`text-center text-[5px] font-bold ${
-                  is('queueHistory') ? `text-yellow-300 ${pulse}` : 'text-white/70'
+                  is(['queueHistory', 'queue']) ? `text-yellow-300 ${pulse}` : 'text-white/70'
                 }`}>ROOM</div>
               </div>
               {[1, 2, 3].map(i => (
                 <div key={i} className={`grid grid-cols-2 gap-px rounded-sm mb-px py-px ${
-                  is('queueItem') ? `${pulse} ${ring}` : ''
-                }`} style={{ backgroundColor: is('queueItem') ? '#3b82f6' : '#2563eb' }}>
+                  is(['queueItem', 'queue']) ? `${pulse} ${ring}` : ''
+                }`} style={{ backgroundColor: is(['queueItem', 'queue']) ? '#3b82f6' : '#2563eb' }}>
                   <div className={`text-center text-[5px] ${
-                    is('queueHistory') ? `text-yellow-300 font-bold ${pulse}` : 'text-white/90'
+                    is(['queueHistory', 'queue']) ? `text-yellow-300 font-bold ${pulse}` : 'text-white/90'
                   }`}>Patient {i}</div>
                   <div className={`text-center text-[5px] ${
-                    is('queueHistory') ? `text-yellow-300 ${pulse}` : 'text-white/70'
+                    is(['queueHistory', 'queue']) ? `text-yellow-300 ${pulse}` : 'text-white/70'
                   }`}>Bilik {i}</div>
                 </div>
               ))}
