@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Monitor, Volume2, Palette, Upload, Save, RefreshCw, CheckCircle, Plus, ChevronLeft, ChevronRight, Eye, Trash2, Edit, Star, Upload as UploadIcon, Brush, X, Image, Type, LayoutGrid, Clock, Cloud, List, MessageSquare } from "lucide-react";
+import { Monitor, Volume2, Palette, Upload, Save, RefreshCw, CheckCircle, Plus, ChevronLeft, ChevronRight, Eye, Trash2, Edit, Star, Upload as UploadIcon, Brush, X, Image, Type, LayoutGrid, Clock, Cloud, List, MessageSquare, Copy, Check } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -93,6 +93,73 @@ interface SettingsState {
   queueBorderColor: string;
   marqueeBackgroundMode: 'solid' | 'gradient';
   marqueeBackgroundGradient: string;
+}
+
+function TvLinkCard() {
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
+
+  const { data: tvData, isLoading } = useQuery<{ tvToken: string; tvUrl: string }>({
+    queryKey: ['/api/users/me/tv-token'],
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+
+  const tvLink = tvData ? `${window.location.origin}/tv/${tvData.tvToken}` : '';
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(tvLink);
+      setCopied(true);
+      toast({ title: "Berjaya!", description: "Link TV telah disalin." });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: "Gagal", description: "Tidak dapat menyalin link.", variant: "destructive" });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Monitor className="h-5 w-5" />
+          Pautan TV Display
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Buka pautan ini dari browser Smart TV untuk paparan klinik tanpa perlu login. 
+          Setiap akaun mempunyai pautan unik sendiri.
+        </p>
+        {isLoading ? (
+          <div className="h-9 bg-muted rounded-md animate-pulse" />
+        ) : tvLink ? (
+          <div className="flex gap-2">
+            <Input
+              value={tvLink}
+              readOnly
+              className="font-mono text-xs"
+              onClick={(e) => (e.target as HTMLInputElement).select()}
+              data-testid="input-tv-link"
+            />
+            <Button
+              onClick={copyLink}
+              variant="outline"
+              size="icon"
+              data-testid="button-copy-tv-link"
+            >
+              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </div>
+        ) : (
+          <p className="text-sm text-red-500">Tidak dapat menjana pautan TV.</p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          Pautan ini tidak memerlukan login dan selamat digunakan untuk Smart TV.
+        </p>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function Settings() {
@@ -2390,6 +2457,8 @@ export default function Settings() {
           <p className="text-sm text-muted-foreground">Admin tools for system maintenance</p>
         </div>
         
+        <TvLinkCard />
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">

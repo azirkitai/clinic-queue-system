@@ -21,6 +21,7 @@ import Account from "@/pages/account";
 import Administration from "@/pages/administration";
 import LoginPage from "@/pages/login";
 import QrAuthPage from "@/pages/qr-auth";
+import TvStandalone from "@/pages/tv-standalone";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -119,6 +120,14 @@ function AppContent() {
     const sessionId = location.replace('/qr-auth/', '').replace(/\/$/, '');
     console.log('QR Auth detected from PATH! SessionId:', sessionId);
     return <QrAuthPage sessionId={sessionId} />;
+  }
+
+  // Standalone TV display - no login required, uses token-based API
+  if (location.startsWith('/tv/')) {
+    const tvToken = location.replace('/tv/', '').replace(/\/$/, '');
+    if (tvToken) {
+      return <TvStandalone token={tvToken} />;
+    }
   }
 
   // Regular authentication flow

@@ -199,10 +199,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.path.startsWith('/api/')) return true;
       // Exempt high-frequency TV endpoints from general rate limit
       if (req.path === '/api/patients/tv') return true;
+      if (req.path.startsWith('/api/tv/')) return true;
       if (req.path === '/api/themes/active') return true;
       if (req.path === '/api/text-groups/active') return true;
       if (req.path === '/api/settings') return true;
-      if (req.path === '/api/settings/tv') return true; // ✅ TV settings exempt
+      if (req.path === '/api/settings/tv') return true;
       return false;
     }
   });
@@ -3065,6 +3066,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // TV Patients endpoint - get patient queue data for specific clinic token
+  app.get("/api/tv/:token/patients", async (req, res) => {
+    try {
+      const { token } = req.params;
+      
+      const user = await storage.getUserByTvToken(token);
+      if (!user || !user.isActive) {
+        return res.status(404).json({ error: "Invalid TV token" });
+      }
+      
+      const cached = getCached('tv-patients', user.id);
+      if (cached !== null) {
+        return res.json(cached);
+      }
+      
+      const tvPatients = await storage.getTvPatients(user.id);
+      setCache('tv-patients', user.id, tvPatients);
+      
+      res.json(tvPatients);
+    } catch (error) {
+      console.error("Error fetching TV patients:", error);
+      res.status(500).json({ error: "Failed to get TV patients" });
+    }
+  });
+
   // TV Active Media endpoint
   app.get("/api/tv/:token/media/active", async (req, res) => {
     try {
@@ -3080,6 +3106,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching TV active media:", error);
       res.status(500).json({ error: "Failed to get active TV media" });
+    }
+  });
+
+  // TV Media file endpoint - serve media binary data for token-based TV displays
+  app.get("/api/tv/:token/media/:id/file", async (req, res) => {
+    try {
+      const { token, id } = req.params;
+      
+      const user = await storage.getUserByTvToken(token);
+      if (!user || !user.isActive) {
+        return res.status(404).json({ error: "Invalid TV token" });
+      }
+      
+      const media = await storage.getMediaById(id);
+      if (!media || media.userId !== user.id) {
+        return res.status(404).json({ error: "Media not found" });
+      }
+      
+      if (media.url && !media.data) {
+        return res.redirect(media.url);
+      }
+      
+      if (!media.data) {
+        return res.status(404).json({ error: "Media file not found" });
+      }
+      
+      const base64Data = media.data.replace(/^data:[^;]+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+      
+      res.set('Content-Type', media.mimeType);
+      res.set('Content-Length', buffer.length.toString());
+      res.set('Cache-Control', 'public, max-age=86400');
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error serving TV media file:", error);
+      res.status(500).json({ error: "Failed to serve media file" });
     }
   });
 
