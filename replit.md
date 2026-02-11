@@ -9,11 +9,13 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 - **February 11, 2026**: Standalone TV Display page (`/tv/:token`):
   - No login required - Smart TV opens URL directly via unique token
+  - **Short PIN system**: 6-digit PIN (e.g., `/tv/482916`) easy to type on TV remote
+  - Both short PIN and long token accepted on all TV endpoints
   - Token-based API endpoints for all data (patients, settings, media, themes)
   - Lightweight polling: 30s patients, 2min settings, 3min media
   - Landing page with fullscreen button, auto-updates
-  - TV Link generator in Settings > System tab for admin to copy link
-  - Rate limit exempt for all `/api/tv/*` endpoints
+  - TV Link generator in Settings > System tab shows short PIN prominently
+  - Rate limit exempt for long token only; PIN-based access rate-limited for security
   - Token-based media file serving with 24-hour cache
 - **January 10, 2026**: Critical bandwidth fix for staff pages:
   - Dashboard, Queue, Dispensary pages now use `/api/settings/tv` (10KB) instead of `/api/settings` (223KB) = 95% reduction

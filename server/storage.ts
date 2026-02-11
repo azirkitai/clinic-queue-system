@@ -29,6 +29,19 @@ function generateTvToken(userId: string): string {
   return hash.substring(0, 32); // First 32 chars for security
 }
 
+// Generate a random 6-digit PIN
+function generateRandomPin(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Resolve a TV identifier (either long token or short 6-digit PIN)
+async function resolveUserByTvIdentifier(identifier: string, storageInstance: IStorage): Promise<User | undefined> {
+  if (/^\d{6}$/.test(identifier)) {
+    return storageInstance.getUserByTvPin(identifier);
+  }
+  return storageInstance.getUserByTvToken(identifier);
+}
+
 // Token resolution - extract userId from token
 function resolveUserIdFromToken(token: string, allUsers: User[]): string | undefined {
   for (const user of allUsers) {
@@ -55,7 +68,10 @@ export interface IStorage {
   authenticateUser(username: string, password: string): Promise<User | null>;
   // TV Token methods
   getUserByTvToken(token: string): Promise<User | undefined>;
+  getUserByTvPin(pin: string): Promise<User | undefined>;
+  resolveByTvIdentifier(identifier: string): Promise<User | undefined>;
   generateTvToken(userId: string): string;
+  getOrCreateTvPin(userId: string): Promise<string>;
   
   // Patient methods
   createPatient(patient: InsertPatient): Promise<Patient>;
@@ -339,10 +355,37 @@ export class MemStorage implements IStorage {
   }
 
   async getUserByTvToken(token: string): Promise<User | undefined> {
-    // Get all users from database and check token match
     const allUsers = await this.getUsers();
     const userId = resolveUserIdFromToken(token, allUsers);
     return userId ? this.getUser(userId) : undefined;
+  }
+
+  async getUserByTvPin(pin: string): Promise<User | undefined> {
+    const allUsers = await this.getUsers();
+    return allUsers.find(u => u.tvPin === pin);
+  }
+
+  async resolveByTvIdentifier(identifier: string): Promise<User | undefined> {
+    if (/^\d{6}$/.test(identifier)) {
+      return this.getUserByTvPin(identifier);
+    }
+    return this.getUserByTvToken(identifier);
+  }
+
+  async getOrCreateTvPin(userId: string): Promise<string> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+    if (user.tvPin) return user.tvPin;
+    
+    const allUsers = await this.getUsers();
+    const existingPins = new Set(allUsers.map(u => u.tvPin).filter(Boolean));
+    let pin: string;
+    do {
+      pin = generateRandomPin();
+    } while (existingPins.has(pin));
+    
+    (user as any).tvPin = pin;
+    return pin;
   }
 
   async createPatient(insertPatient: InsertPatient): Promise<Patient> {
@@ -1613,10 +1656,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByTvToken(token: string): Promise<User | undefined> {
-    // Get all users from database and check token match
     const allUsers = await this.getUsers();
     const userId = resolveUserIdFromToken(token, allUsers);
     return userId ? this.getUser(userId) : undefined;
+  }
+
+  async getUserByTvPin(pin: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.tvPin, pin));
+    return result[0];
+  }
+
+  async resolveByTvIdentifier(identifier: string): Promise<User | undefined> {
+    if (/^\d{6}$/.test(identifier)) {
+      return this.getUserByTvPin(identifier);
+    }
+    return this.getUserByTvToken(identifier);
+  }
+
+  async getOrCreateTvPin(userId: string): Promise<string> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+    if (user.tvPin) return user.tvPin;
+    
+    const allUsers = await this.getUsers();
+    const existingPins = new Set(allUsers.map(u => u.tvPin).filter(Boolean));
+    let pin: string;
+    do {
+      pin = generateRandomPin();
+    } while (existingPins.has(pin));
+    
+    await db.update(users).set({ tvPin: pin }).where(eq(users.id, userId));
+    return pin;
   }
 
   // Window methods  

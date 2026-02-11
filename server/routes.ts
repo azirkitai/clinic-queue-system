@@ -199,7 +199,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.path.startsWith('/api/')) return true;
       // Exempt high-frequency TV endpoints from general rate limit
       if (req.path === '/api/patients/tv') return true;
-      if (req.path.startsWith('/api/tv/')) return true;
+      // Only exempt TV endpoints using long token (32+ chars), not short PIN (6 digits)
+      const tvMatch = req.path.match(/^\/api\/tv\/([^/]+)/);
+      if (tvMatch && tvMatch[1].length >= 20) return true;
       if (req.path === '/api/themes/active') return true;
       if (req.path === '/api/text-groups/active') return true;
       if (req.path === '/api/settings') return true;
@@ -2945,10 +2947,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const tvToken = storage.generateTvToken(req.session.userId);
+      const tvPin = await storage.getOrCreateTvPin(req.session.userId);
       
       res.json({
         tvToken: tvToken,
-        tvUrl: `/tv?token=${tvToken}`,
+        tvPin: tvPin,
+        tvUrl: `/tv/${tvPin}`,
         message: "TV Token for your clinic display"
       });
     } catch (error) {
@@ -2965,7 +2969,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { token } = req.params;
       
-      const user = await storage.getUserByTvToken(token);
+      const user = await storage.resolveByTvIdentifier(token);
       if (!user) {
         return res.status(404).json({ error: "Invalid TV token or clinic not found" });
       }
@@ -2993,7 +2997,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { token } = req.params;
       
-      const user = await storage.getUserByTvToken(token);
+      const user = await storage.resolveByTvIdentifier(token);
       if (!user || !user.isActive) {
         return res.status(404).json({ error: "Invalid TV token" });
       }
@@ -3013,7 +3017,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { token } = req.params;
       
-      const user = await storage.getUserByTvToken(token);
+      const user = await storage.resolveByTvIdentifier(token);
       if (!user || !user.isActive) {
         return res.status(404).json({ error: "Invalid TV token" });
       }
@@ -3035,7 +3039,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { token } = req.params;
       
-      const user = await storage.getUserByTvToken(token);
+      const user = await storage.resolveByTvIdentifier(token);
       if (!user || !user.isActive) {
         return res.status(404).json({ error: "Invalid TV token" });
       }
@@ -3053,7 +3057,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { token } = req.params;
       
-      const user = await storage.getUserByTvToken(token);
+      const user = await storage.resolveByTvIdentifier(token);
       if (!user || !user.isActive) {
         return res.status(404).json({ error: "Invalid TV token" });
       }
@@ -3071,7 +3075,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { token } = req.params;
       
-      const user = await storage.getUserByTvToken(token);
+      const user = await storage.resolveByTvIdentifier(token);
       if (!user || !user.isActive) {
         return res.status(404).json({ error: "Invalid TV token" });
       }
@@ -3096,7 +3100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { token } = req.params;
       
-      const user = await storage.getUserByTvToken(token);
+      const user = await storage.resolveByTvIdentifier(token);
       if (!user || !user.isActive) {
         return res.status(404).json({ error: "Invalid TV token" });
       }
@@ -3114,7 +3118,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { token, id } = req.params;
       
-      const user = await storage.getUserByTvToken(token);
+      const user = await storage.resolveByTvIdentifier(token);
       if (!user || !user.isActive) {
         return res.status(404).json({ error: "Invalid TV token" });
       }

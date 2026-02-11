@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   role: text("role").notNull().default("user"), // 'admin' or 'user'
   isActive: boolean("is_active").notNull().default(true),
+  tvPin: varchar("tv_pin", { length: 6 }).unique(),
 });
 
 // User sessions table (legacy - preserved to avoid data loss)

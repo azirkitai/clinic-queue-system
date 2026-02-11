@@ -97,24 +97,39 @@ interface SettingsState {
 
 function TvLinkCard() {
   const { toast } = useToast();
-  const [copied, setCopied] = useState(false);
+  const [copiedPin, setCopiedPin] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [showFullLink, setShowFullLink] = useState(false);
 
-  const { data: tvData, isLoading } = useQuery<{ tvToken: string; tvUrl: string }>({
+  const { data: tvData, isLoading } = useQuery<{ tvToken: string; tvPin: string; tvUrl: string }>({
     queryKey: ['/api/users/me/tv-token'],
     staleTime: Infinity,
     refetchOnWindowFocus: false,
   });
 
-  const tvLink = tvData ? `${window.location.origin}/tv/${tvData.tvToken}` : '';
+  const baseUrl = window.location.origin;
+  const shortLink = tvData ? `${baseUrl}/tv/${tvData.tvPin}` : '';
+  const fullLink = tvData ? `${baseUrl}/tv/${tvData.tvToken}` : '';
 
-  const copyLink = async () => {
+  const copyShortLink = async () => {
     try {
-      await navigator.clipboard.writeText(tvLink);
-      setCopied(true);
-      toast({ title: "Berjaya!", description: "Link TV telah disalin." });
-      setTimeout(() => setCopied(false), 2000);
+      await navigator.clipboard.writeText(shortLink);
+      setCopiedPin(true);
+      toast({ title: "Berjaya!", description: "Link pendek TV telah disalin." });
+      setTimeout(() => setCopiedPin(false), 2000);
     } catch {
-      toast({ title: "Gagal", description: "Tidak dapat menyalin link.", variant: "destructive" });
+      toast({ title: "Gagal", description: "Tidak dapat menyalin.", variant: "destructive" });
+    }
+  };
+
+  const copyFullLink = async () => {
+    try {
+      await navigator.clipboard.writeText(fullLink);
+      setCopiedLink(true);
+      toast({ title: "Berjaya!", description: "Link penuh TV telah disalin." });
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch {
+      toast({ title: "Gagal", description: "Tidak dapat menyalin.", variant: "destructive" });
     }
   };
 
@@ -126,37 +141,68 @@ function TvLinkCard() {
           Pautan TV Display
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Buka pautan ini dari browser Smart TV untuk paparan klinik tanpa perlu login. 
-          Setiap akaun mempunyai pautan unik sendiri.
+          Taip alamat ini di browser Smart TV - tak perlu login!
         </p>
         {isLoading ? (
-          <div className="h-9 bg-muted rounded-md animate-pulse" />
-        ) : tvLink ? (
-          <div className="flex gap-2">
-            <Input
-              value={tvLink}
-              readOnly
-              className="font-mono text-xs"
-              onClick={(e) => (e.target as HTMLInputElement).select()}
-              data-testid="input-tv-link"
-            />
+          <div className="h-20 bg-muted rounded-md animate-pulse" />
+        ) : tvData ? (
+          <>
+            <div className="rounded-md border p-4 space-y-2">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Taip di TV Browser:</p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <code className="text-lg font-bold tracking-wider" data-testid="text-tv-short-url">
+                  {baseUrl.replace(/^https?:\/\//, '')}/tv/{tvData.tvPin}
+                </code>
+                <Button
+                  onClick={copyShortLink}
+                  variant="outline"
+                  size="sm"
+                  data-testid="button-copy-tv-pin"
+                >
+                  {copiedPin ? <Check className="h-4 w-4 text-green-500 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                  {copiedPin ? "Disalin" : "Salin"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                PIN klinik anda: <span className="font-mono font-bold text-sm">{tvData.tvPin}</span>
+              </p>
+            </div>
+
             <Button
-              onClick={copyLink}
-              variant="outline"
-              size="icon"
-              data-testid="button-copy-tv-link"
+              variant="ghost"
+              size="sm"
+              className="text-xs"
+              onClick={() => setShowFullLink(!showFullLink)}
+              data-testid="button-toggle-full-link"
             >
-              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              {showFullLink ? "Sembunyi link penuh" : "Tunjuk link penuh (untuk bookmark)"}
             </Button>
-          </div>
+
+            {showFullLink && (
+              <div className="flex gap-2">
+                <Input
+                  value={fullLink}
+                  readOnly
+                  className="font-mono text-xs"
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                  data-testid="input-tv-link"
+                />
+                <Button
+                  onClick={copyFullLink}
+                  variant="outline"
+                  size="icon"
+                  data-testid="button-copy-tv-link"
+                >
+                  {copiedLink ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <p className="text-sm text-red-500">Tidak dapat menjana pautan TV.</p>
         )}
-        <p className="text-xs text-muted-foreground">
-          Pautan ini tidak memerlukan login dan selamat digunakan untuk Smart TV.
-        </p>
       </CardContent>
     </Card>
   );
