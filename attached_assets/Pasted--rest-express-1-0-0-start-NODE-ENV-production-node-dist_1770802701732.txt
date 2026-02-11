@@ -1,0 +1,94 @@
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[WEBSOCKET] WebSocket server initialized with multi-tenant room isolation
+[STARTUP CLEANUP] Error during cleanup: error: column "tv_pin" does not exist
+    at file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+    at async DatabaseStorage.getUsers (file:///opt/render/project/src/dist/index.js:1435:24)
+    at async file:///opt/render/project/src/dist/index.js:5324:20 {
+  length: 106,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '59',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+[AUTO-COMPLETE] Scheduler started - running every 5 minutes
+9:26:46 AM [express] serving on port 10000
+9:26:46 AM [express] WebSocket server ready with tenant isolation
+file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345
+o?t(o):n(u)},"cb"),s=new r(function(o,u){n=o,t=u}).catch(o=>{throw Error.captureStackTrace(
+                                                                         ^
+error: column "tv_pin" does not exist
+    at file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+    at async DatabaseStorage.initializeDefaultWindows (file:///opt/render/project/src/dist/index.js:1363:26) {
+  length: 106,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '59',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+Menu
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+Node.js v22.16.0
+==> Using Erlang version 28.0.2 (default)
+==> Exited with status 1
+==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
+==> Using Elixir version 1.18.4 (default)
+==> Docs on specifying Elixir and Erlang versions: https://render.com/docs/elixir-erlang-versions
+==> Running 'npm run start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[WEBSOCKET] WebSocket server initialized with multi-tenant room isolation
+file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345
+o?t(o):n(u)},"cb"),s=new r(function(o,u){n=o,t=u}).catch(o=>{throw Error.captureStackTrace(
+                                                                         ^
+error: column "tv_pin" does not exist
+    at file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+    at async DatabaseStorage.initializeDefaultAdmin (file:///opt/render/project/src/dist/index.js:1382:31) {
+  length: 106,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '59',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+Node.js v22.16.0

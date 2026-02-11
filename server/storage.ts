@@ -1372,11 +1372,90 @@ export class DatabaseStorage implements IStorage {
 
   constructor() {
     this.systemUserId = "system";
-    this.initializeDefaultSettings();
-    this.initializeDefaultTheme();
-    this.initializeDefaultTextGroups();
-    this.initializeDefaultWindows();
-    this.initializeDefaultAdmin();
+    this.runMigrations().then(() => {
+      this.initializeDefaultSettings();
+      this.initializeDefaultTheme();
+      this.initializeDefaultTextGroups();
+      this.initializeDefaultWindows();
+      this.initializeDefaultAdmin();
+    });
+  }
+
+  private async runMigrations() {
+    try {
+      await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS tv_pin VARCHAR(6) UNIQUE`);
+      await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true`);
+      await db.execute(sql`ALTER TABLE settings ADD COLUMN IF NOT EXISTS category TEXT`);
+      await db.execute(sql`ALTER TABLE patients ADD COLUMN IF NOT EXISTS is_priority BOOLEAN NOT NULL DEFAULT false`);
+      await db.execute(sql`ALTER TABLE patients ADD COLUMN IF NOT EXISTS priority_reason TEXT`);
+      await db.execute(sql`ALTER TABLE patients ADD COLUMN IF NOT EXISTS ready_for_dispensary BOOLEAN NOT NULL DEFAULT false`);
+      await db.execute(sql`ALTER TABLE patients ADD COLUMN IF NOT EXISTS last_window_id VARCHAR`);
+      await db.execute(sql`ALTER TABLE patients ADD COLUMN IF NOT EXISTS requeue_reason TEXT`);
+      await db.execute(sql`ALTER TABLE patients ADD COLUMN IF NOT EXISTS tracking_history JSON DEFAULT '[]'::json`);
+      await db.execute(sql`ALTER TABLE patients ADD COLUMN IF NOT EXISTS archived_at TIMESTAMP`);
+      await db.execute(sql`ALTER TABLE windows ADD COLUMN IF NOT EXISTS is_permanent BOOLEAN NOT NULL DEFAULT false`);
+      await db.execute(sql`ALTER TABLE media ADD COLUMN IF NOT EXISTS data TEXT`);
+      await db.execute(sql`ALTER TABLE media ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true`);
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS qr_sessions (
+          id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+          tv_verifier_hash TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'pending',
+          authorized_user_id VARCHAR,
+          created_at TIMESTAMP NOT NULL DEFAULT now(),
+          expires_at TIMESTAMP NOT NULL,
+          used_at TIMESTAMP,
+          metadata JSON DEFAULT '{}'::json
+        )
+      `);
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS text_groups (
+          id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+          group_name TEXT NOT NULL,
+          display_name TEXT NOT NULL,
+          description TEXT,
+          color TEXT NOT NULL DEFAULT '#ffffff',
+          background_color TEXT,
+          font_size TEXT,
+          font_weight TEXT,
+          text_align TEXT,
+          gradient TEXT,
+          is_active BOOLEAN NOT NULL DEFAULT true,
+          created_at TIMESTAMP NOT NULL DEFAULT now(),
+          updated_at TIMESTAMP NOT NULL DEFAULT now(),
+          user_id VARCHAR NOT NULL
+        )
+      `);
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS themes (
+          id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+          name TEXT NOT NULL DEFAULT 'Default Theme',
+          is_active BOOLEAN NOT NULL DEFAULT true,
+          primary_color TEXT NOT NULL DEFAULT '#3b82f6',
+          secondary_color TEXT NOT NULL DEFAULT '#6b7280',
+          calling_color TEXT NOT NULL DEFAULT '#3b82f6',
+          highlight_box_color TEXT NOT NULL DEFAULT '#ef4444',
+          history_name_color TEXT NOT NULL DEFAULT '#6b7280',
+          clinic_name_color TEXT NOT NULL DEFAULT '#1f2937',
+          modal_background_color TEXT NOT NULL DEFAULT '#1e293b',
+          modal_border_color TEXT NOT NULL DEFAULT '#fbbf24',
+          modal_text_color TEXT NOT NULL DEFAULT '#ffffff',
+          calling_gradient TEXT,
+          highlight_box_gradient TEXT,
+          history_name_gradient TEXT,
+          clinic_name_gradient TEXT,
+          background_color TEXT NOT NULL DEFAULT '#ffffff',
+          background_gradient TEXT,
+          accent_color TEXT NOT NULL DEFAULT '#f3f4f6',
+          created_at TIMESTAMP NOT NULL DEFAULT now(),
+          updated_at TIMESTAMP NOT NULL DEFAULT now(),
+          user_id VARCHAR NOT NULL
+        )
+      `);
+      console.log('[MIGRATION] Database schema migrations completed successfully');
+    } catch (error) {
+      console.error('[MIGRATION] Error running migrations:', error);
+    }
   }
 
   private async initializeDefaultSettings() {
