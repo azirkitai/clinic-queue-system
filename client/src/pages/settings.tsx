@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { GradientPicker } from "@/components/ui/gradient-picker";
 import type { Setting, Media, Theme } from "@shared/schema";
 import { audioSystem } from "@/lib/audio-system";
+import { TvLayoutPreview } from "@/components/tv-layout-preview";
 
 import type { PresetSoundKeyType } from "@shared/schema";
 
@@ -1146,6 +1147,7 @@ export default function Settings() {
                 Clinic Name Settings
               </CardTitle>
               <p className="text-xs text-muted-foreground">Set the clinic name to be displayed on the TV screen</p>
+              <TvLayoutPreview highlight="clinicName" />
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="space-y-1">
@@ -1170,6 +1172,7 @@ export default function Settings() {
                 Clinic Logo
               </CardTitle>
               <p className="text-xs text-muted-foreground">Upload clinic logo to be displayed on TV screen</p>
+              <TvLayoutPreview highlight="clinicLogo" />
             </CardHeader>
             <CardContent className="space-y-3">
               {/* Logo Preview */}
@@ -1262,6 +1265,7 @@ export default function Settings() {
                 Header Display
               </CardTitle>
               <p className="text-xs text-muted-foreground">Colors for TV screen header section</p>
+              <TvLayoutPreview highlight="header" />
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="space-y-2">
@@ -1327,6 +1331,7 @@ export default function Settings() {
               Clinic Name Text
             </CardTitle>
             <p className="text-sm text-muted-foreground">Colors for clinic name text on TV screen</p>
+            <TvLayoutPreview highlight="clinicName" />
           </CardHeader>
           <CardContent className="space-y-3">
             {/* Compact clinic name text control */}
@@ -1387,6 +1392,7 @@ export default function Settings() {
               Current Call Display
             </CardTitle>
             <p className="text-sm text-muted-foreground">Colors for current call display</p>
+            <TvLayoutPreview highlight="call" />
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -1556,6 +1562,7 @@ export default function Settings() {
               Highlight Box (Patient Calling)
             </CardTitle>
             <p className="text-sm text-muted-foreground">Colors for highlight box when calling patient</p>
+            <TvLayoutPreview highlight="modal" />
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -1597,6 +1604,7 @@ export default function Settings() {
               Prayer Times Display
             </CardTitle>
             <p className="text-sm text-muted-foreground">Colors for prayer times display</p>
+            <TvLayoutPreview highlight="prayer" />
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -1726,6 +1734,7 @@ export default function Settings() {
               Weather Display
             </CardTitle>
             <p className="text-sm text-muted-foreground">Colors for weather display</p>
+            <TvLayoutPreview highlight="weather" />
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -1843,6 +1852,7 @@ export default function Settings() {
               Queue List Display
             </CardTitle>
             <p className="text-sm text-muted-foreground">Colors for patient queue list</p>
+            <TvLayoutPreview highlight="queue" />
           </CardHeader>
           <CardContent className="space-y-3">
             {/* Compact grid layout */}
@@ -2138,6 +2148,7 @@ export default function Settings() {
 
             {/* Marquee Settings */}
             <div className="space-y-4">
+              <TvLayoutPreview highlight="marquee" />
               {/* Enable Marquee Switch */}
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
