@@ -1,0 +1,274 @@
+[{
+  "table_name": "media",
+  "column_name": "id"
+}, {
+  "table_name": "media",
+  "column_name": "name"
+}, {
+  "table_name": "media",
+  "column_name": "filename"
+}, {
+  "table_name": "media",
+  "column_name": "url"
+}, {
+  "table_name": "media",
+  "column_name": "type"
+}, {
+  "table_name": "media",
+  "column_name": "mime_type"
+}, {
+  "table_name": "media",
+  "column_name": "size"
+}, {
+  "table_name": "media",
+  "column_name": "uploaded_at"
+}, {
+  "table_name": "media",
+  "column_name": "is_active"
+}, {
+  "table_name": "media",
+  "column_name": "user_id"
+}, {
+  "table_name": "media",
+  "column_name": "data"
+}, {
+  "table_name": "patients",
+  "column_name": "id"
+}, {
+  "table_name": "patients",
+  "column_name": "name"
+}, {
+  "table_name": "patients",
+  "column_name": "number"
+}, {
+  "table_name": "patients",
+  "column_name": "status"
+}, {
+  "table_name": "patients",
+  "column_name": "is_priority"
+}, {
+  "table_name": "patients",
+  "column_name": "priority_reason"
+}, {
+  "table_name": "patients",
+  "column_name": "ready_for_dispensary"
+}, {
+  "table_name": "patients",
+  "column_name": "window_id"
+}, {
+  "table_name": "patients",
+  "column_name": "last_window_id"
+}, {
+  "table_name": "patients",
+  "column_name": "registered_at"
+}, {
+  "table_name": "patients",
+  "column_name": "called_at"
+}, {
+  "table_name": "patients",
+  "column_name": "completed_at"
+}, {
+  "table_name": "patients",
+  "column_name": "requeue_reason"
+}, {
+  "table_name": "patients",
+  "column_name": "tracking_history"
+}, {
+  "table_name": "patients",
+  "column_name": "archived_at"
+}, {
+  "table_name": "patients",
+  "column_name": "user_id"
+}, {
+  "table_name": "qr_sessions",
+  "column_name": "id"
+}, {
+  "table_name": "qr_sessions",
+  "column_name": "tv_verifier_hash"
+}, {
+  "table_name": "qr_sessions",
+  "column_name": "status"
+}, {
+  "table_name": "qr_sessions",
+  "column_name": "authorized_user_id"
+}, {
+  "table_name": "qr_sessions",
+  "column_name": "created_at"
+}, {
+  "table_name": "qr_sessions",
+  "column_name": "expires_at"
+}, {
+  "table_name": "qr_sessions",
+  "column_name": "used_at"
+}, {
+  "table_name": "qr_sessions",
+  "column_name": "metadata"
+}, {
+  "table_name": "settings",
+  "column_name": "id"
+}, {
+  "table_name": "settings",
+  "column_name": "key"
+}, {
+  "table_name": "settings",
+  "column_name": "value"
+}, {
+  "table_name": "settings",
+  "column_name": "category"
+}, {
+  "table_name": "settings",
+  "column_name": "user_id"
+}, {
+  "table_name": "text_groups",
+  "column_name": "id"
+}, {
+  "table_name": "text_groups",
+  "column_name": "group_name"
+}, {
+  "table_name": "text_groups",
+  "column_name": "display_name"
+}, {
+  "table_name": "text_groups",
+  "column_name": "description"
+}, {
+  "table_name": "text_groups",
+  "column_name": "color"
+}, {
+  "table_name": "text_groups",
+  "column_name": "background_color"
+}, {
+  "table_name": "text_groups",
+  "column_name": "font_size"
+}, {
+  "table_name": "text_groups",
+  "column_name": "font_weight"
+}, {
+  "table_name": "text_groups",
+  "column_name": "text_align"
+}, {
+  "table_name": "text_groups",
+  "column_name": "gradient"
+}, {
+  "table_name": "text_groups",
+  "column_name": "is_active"
+}, {
+  "table_name": "text_groups",
+  "column_name": "created_at"
+}, {
+  "table_name": "text_groups",
+  "column_name": "updated_at"
+}, {
+  "table_name": "text_groups",
+  "column_name": "user_id"
+}, {
+  "table_name": "themes",
+  "column_name": "id"
+}, {
+  "table_name": "themes",
+  "column_name": "name"
+}, {
+  "table_name": "themes",
+  "column_name": "is_active"
+}, {
+  "table_name": "themes",
+  "column_name": "primary_color"
+}, {
+  "table_name": "themes",
+  "column_name": "secondary_color"
+}, {
+  "table_name": "themes",
+  "column_name": "calling_color"
+}, {
+  "table_name": "themes",
+  "column_name": "highlight_box_color"
+}, {
+  "table_name": "themes",
+  "column_name": "history_name_color"
+}, {
+  "table_name": "themes",
+  "column_name": "clinic_name_color"
+}, {
+  "table_name": "themes",
+  "column_name": "modal_background_color"
+}, {
+  "table_name": "themes",
+  "column_name": "modal_border_color"
+}, {
+  "table_name": "themes",
+  "column_name": "modal_text_color"
+}, {
+  "table_name": "themes",
+  "column_name": "calling_gradient"
+}, {
+  "table_name": "themes",
+  "column_name": "highlight_box_gradient"
+}, {
+  "table_name": "themes",
+  "column_name": "history_name_gradient"
+}, {
+  "table_name": "themes",
+  "column_name": "clinic_name_gradient"
+}, {
+  "table_name": "themes",
+  "column_name": "background_color"
+}, {
+  "table_name": "themes",
+  "column_name": "background_gradient"
+}, {
+  "table_name": "themes",
+  "column_name": "accent_color"
+}, {
+  "table_name": "themes",
+  "column_name": "created_at"
+}, {
+  "table_name": "themes",
+  "column_name": "updated_at"
+}, {
+  "table_name": "themes",
+  "column_name": "user_id"
+}, {
+  "table_name": "user_sessions",
+  "column_name": "sid"
+}, {
+  "table_name": "user_sessions",
+  "column_name": "sess"
+}, {
+  "table_name": "user_sessions",
+  "column_name": "expire"
+}, {
+  "table_name": "users",
+  "column_name": "id"
+}, {
+  "table_name": "users",
+  "column_name": "username"
+}, {
+  "table_name": "users",
+  "column_name": "password"
+}, {
+  "table_name": "users",
+  "column_name": "role"
+}, {
+  "table_name": "users",
+  "column_name": "is_active"
+}, {
+  "table_name": "users",
+  "column_name": "tv_pin"
+}, {
+  "table_name": "windows",
+  "column_name": "id"
+}, {
+  "table_name": "windows",
+  "column_name": "name"
+}, {
+  "table_name": "windows",
+  "column_name": "is_active"
+}, {
+  "table_name": "windows",
+  "column_name": "is_permanent"
+}, {
+  "table_name": "windows",
+  "column_name": "current_patient_id"
+}, {
+  "table_name": "windows",
+  "column_name": "user_id"
+}]
