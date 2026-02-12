@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { io, Socket } from "socket.io-client";
 import { TVDisplay } from "@/components/tv-display";
 import { Button } from "@/components/ui/button";
 import { Monitor, Copy, Check } from "lucide-react";
@@ -43,6 +44,57 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
         setValidating(false);
       });
   }, [token]);
+
+  useEffect(() => {
+    if (!clinicInfo) return;
+
+    const socket: Socket = io({
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 30000,
+      randomizationFactor: 0.5,
+      reconnectionAttempts: Infinity,
+      timeout: 20000,
+    });
+
+    socket.on('connect', () => {
+      console.log('[TV-WS] Connected:', socket.id);
+      socket.emit('tv:join', { token });
+    });
+
+    socket.on('tv:joined', (data) => {
+      console.log('[TV-WS] Joined clinic room:', data);
+    });
+
+    const refetchPatients = () => {
+      queryClient.refetchQueries({ queryKey: [`/api/tv/${token}/patients`] });
+    };
+
+    socket.on('patient:called', refetchPatients);
+    socket.on('patient:updated', refetchPatients);
+    socket.on('patient:created', refetchPatients);
+    socket.on('patient:status-updated', refetchPatients);
+    socket.on('patient:deleted', refetchPatients);
+    socket.on('patient:priority-updated', refetchPatients);
+    socket.on('queue:updated', refetchPatients);
+    socket.on('queue:reset', refetchPatients);
+    socket.on('window:updated', refetchPatients);
+    socket.on('window:patient-assigned', refetchPatients);
+
+    socket.on('settings:updated', () => {
+      queryClient.refetchQueries({ queryKey: [`/api/tv/${token}/settings`] });
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('[TV-WS] Disconnected:', reason);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [clinicInfo, token, queryClient]);
 
   const { data: tvPatients = [] } = useQuery<TvQueueItem[]>({
     queryKey: [`/api/tv/${token}/patients`],

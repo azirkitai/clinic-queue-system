@@ -121,8 +121,7 @@ export function setupWebSocket(io: Server) {
       });
     });
 
-    // Handle TV display connections (unauthenticated but token-based)
-    socket.on("tv:connect", (data) => {
+    socket.on("tv:join", async (data) => {
       const { token } = data;
       
       if (!token) {
@@ -130,10 +129,26 @@ export function setupWebSocket(io: Server) {
         return;
       }
       
-      // TODO: Validate TV token and join appropriate clinic room
-      // This will be implemented when TV token validation is needed
-      // console.log removed (emoji)
-      socket.emit("tv:connected", { message: "TV display connected" });
+      try {
+        const user = await storage.resolveByTvIdentifier(token);
+        if (!user) {
+          socket.emit("tv:error", { message: "Invalid TV token or PIN" });
+          return;
+        }
+        
+        const clinicRoom = `clinic:${user.id}`;
+        socket.join(clinicRoom);
+        (socket as any).clinicRoom = clinicRoom;
+        
+        socket.emit("tv:joined", {
+          clinicId: user.id,
+          room: clinicRoom,
+          message: "TV display connected to clinic updates"
+        });
+      } catch (error) {
+        console.error("[WEBSOCKET] TV join error:", error);
+        socket.emit("tv:error", { message: "Failed to join clinic room" });
+      }
     });
 
     // Handle QR authentication flow (server-authoritative)
