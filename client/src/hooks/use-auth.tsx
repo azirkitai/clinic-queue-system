@@ -36,8 +36,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if user is authenticated on app start
+  // Check if user is authenticated on app start (skip for TV standalone pages)
   useEffect(() => {
+    const path = window.location.pathname;
+    if (path.startsWith('/tv/') || path.startsWith('/qr-auth/')) {
+      setIsLoading(false);
+      return;
+    }
     checkAuth();
   }, []);
 
