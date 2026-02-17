@@ -41,45 +41,67 @@ export function useTvPatients(): UseTvPatientsResult {
 
   const callLogRef = useRef<CallLogEntry[]>([]);
   const prevSnapshotRef = useRef<Map<string, { calledAt: string | null; windowName: string | null; status: string }>>(new Map());
+  const seededRef = useRef(false);
   const [callLogVersion, setCallLogVersion] = useState(0);
 
   useEffect(() => {
-    if (tvPatients.length === 0 && prevSnapshotRef.current.size === 0) return;
+    if (tvPatients.length === 0) return;
 
-    const prevSnapshot = prevSnapshotRef.current;
-    const newSnapshot = new Map<string, { calledAt: string | null; windowName: string | null; status: string }>();
     let changed = false;
 
-    for (const p of tvPatients) {
-      const calledAtStr = p.calledAt ? new Date(p.calledAt).toISOString() : null;
-      newSnapshot.set(p.id, { calledAt: calledAtStr, windowName: p.windowName || null, status: p.status });
+    if (!seededRef.current) {
+      seededRef.current = true;
+      const initialEntries = tvPatients
+        .filter(p => (p.status === "called" || p.status === "completed") && p.calledAt)
+        .sort((a, b) => {
+          const aTime = a.calledAt ? new Date(a.calledAt).getTime() : 0;
+          const bTime = b.calledAt ? new Date(b.calledAt).getTime() : 0;
+          return bTime - aTime;
+        });
+      for (const p of initialEntries) {
+        callLogRef.current.push({
+          logId: `${p.id}-init-${new Date(p.calledAt!).getTime()}`,
+          patientId: p.id,
+          name: p.name || `No. ${p.number}`,
+          room: p.windowName || "N/A",
+          calledAt: new Date(p.calledAt!),
+        });
+      }
+      changed = true;
+    } else {
+      const prevSnapshot = prevSnapshotRef.current;
+      for (const p of tvPatients) {
+        if (p.status === "called" && p.calledAt) {
+          const calledAtStr = new Date(p.calledAt).toISOString();
+          const prev = prevSnapshot.get(p.id);
+          const isNewCall = !prev || prev.status !== "called";
+          const isRecall = prev && prev.status === "called" && prev.calledAt !== calledAtStr;
 
-      if (p.status === "called" && p.calledAt) {
-        const prev = prevSnapshot.get(p.id);
-        const prevCalledAt = prev?.calledAt || null;
-        const prevStatus = prev?.status || null;
-
-        const isNewCall = !prev || prevStatus !== "called";
-        const isRecall = prev && prevStatus === "called" && prevCalledAt !== calledAtStr;
-
-        if (isNewCall || isRecall) {
-          callLogRef.current.unshift({
-            logId: `${p.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-            patientId: p.id,
-            name: p.name || `No. ${p.number}`,
-            room: p.windowName || "N/A",
-            calledAt: new Date(p.calledAt),
-          });
-          changed = true;
+          if (isNewCall || isRecall) {
+            callLogRef.current.unshift({
+              logId: `${p.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              patientId: p.id,
+              name: p.name || `No. ${p.number}`,
+              room: p.windowName || "N/A",
+              calledAt: new Date(p.calledAt),
+            });
+            changed = true;
+          }
         }
       }
     }
+
+    const newSnapshot = new Map<string, { calledAt: string | null; windowName: string | null; status: string }>();
+    for (const p of tvPatients) {
+      const calledAtStr = p.calledAt ? new Date(p.calledAt).toISOString() : null;
+      newSnapshot.set(p.id, { calledAt: calledAtStr, windowName: p.windowName || null, status: p.status });
+    }
+    prevSnapshotRef.current = newSnapshot;
 
     if (callLogRef.current.length > 20) {
       callLogRef.current = callLogRef.current.slice(0, 20);
     }
 
-    prevSnapshotRef.current = newSnapshot;
     if (changed) {
       setCallLogVersion(v => v + 1);
     }
