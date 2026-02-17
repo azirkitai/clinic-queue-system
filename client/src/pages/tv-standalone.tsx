@@ -61,9 +61,32 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     document.documentElement.style.colorScheme = 'light';
     document.body.style.colorScheme = 'light';
 
+    const forceLightStyle = document.createElement('style');
+    forceLightStyle.id = 'tv-force-light';
+    forceLightStyle.textContent = `
+      .tv-white-bg {
+        background-color: #ffffff !important;
+        background-image: linear-gradient(#ffffff, #ffffff) !important;
+        color: #111827 !important;
+      }
+      @media (prefers-color-scheme: dark) {
+        .tv-white-bg {
+          background-color: #ffffff !important;
+          background-image: linear-gradient(#ffffff, #ffffff) !important;
+          color: #111827 !important;
+        }
+      }
+      .tv-force-light {
+        color-scheme: light !important;
+        forced-color-adjust: none !important;
+      }
+    `;
+    document.head.appendChild(forceLightStyle);
+
     return () => {
       document.head.removeChild(meta);
       document.head.removeChild(metaDark);
+      document.head.removeChild(forceLightStyle);
       document.documentElement.style.colorScheme = '';
       document.body.style.colorScheme = '';
     };
@@ -392,13 +415,14 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     return (
       <div
         id="tv-container"
-        className="fixed overflow-hidden m-0"
+        className="fixed overflow-hidden m-0 tv-force-light tv-white-bg"
         style={{
           inset: 0,
           width: '100vw',
           height: '100dvh',
           padding: 'var(--tv-overscan, 3vw)',
           backgroundColor: '#ffffff',
+          backgroundImage: 'linear-gradient(#ffffff, #ffffff)',
           colorScheme: 'light'
         }}
       >

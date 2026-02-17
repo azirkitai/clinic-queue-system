@@ -1050,7 +1050,7 @@ export function TVDisplay({
           {/* Logo Display - Use uploaded logo if enabled */}
           {showClinicLogo && clinicLogo && (
             <div className="mb-4">
-              <div className="rounded-lg p-4 shadow-lg w-full flex items-center justify-center" style={{ backgroundColor: '#ffffff', colorScheme: 'light' }}>
+              <div className="rounded-lg p-4 shadow-lg w-full flex items-center justify-center tv-white-bg" style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)' }}>
                 <img 
                   src={clinicLogo} 
                   alt="Clinic Logo" 
@@ -1193,7 +1193,7 @@ export function TVDisplay({
              ...getBackgroundStyle(showWeather ? weatherBackgroundMode : prayerTimesBackgroundMode, showWeather ? weatherBackgroundColor : prayerTimesBackgroundColor, showWeather ? weatherBackgroundGradient : prayerTimesBackgroundGradient, showWeather ? '#f97316' : '#1e40af')
            }}>
         {/* Date/Time Section - Larger */}
-        <div className={`p-6 ${isFullscreen ? 'rounded-md mb-6' : 'rounded-lg mb-6'}`} style={{ backgroundColor: '#ffffff', color: '#111827', colorScheme: 'light' }}>
+        <div className={`p-6 tv-white-bg ${isFullscreen ? 'rounded-md mb-6' : 'rounded-lg mb-6'}`} style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)', color: '#111827' }}>
           <IsolatedClock />
         </div>
 
