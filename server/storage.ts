@@ -462,17 +462,24 @@ export class MemStorage implements IStorage {
     // Map to lightweight DTO with validation
     return patients
       .filter(p => validStatuses.has(p.status)) // ✅ Validate status
-      .map(p => ({
-        id: p.id,
-        name: p.name,
-        number: p.number,
-        status: p.status as schema.TvQueueItem['status'], // Safe after validation
-        isPriority: p.isPriority,
-        windowId: p.windowId || null,
-        windowName: p.windowId ? (windowMap.get(p.windowId) || null) : null,
-        calledAt: p.calledAt ? p.calledAt.toISOString() : null,
-        requeueReason: p.requeueReason || null,
-      }));
+      .map(p => {
+        const history = Array.isArray(p.trackingHistory) ? p.trackingHistory : [];
+        const callHistory = history
+          .filter((e: any) => e.action === 'called' && e.roomName && e.timestamp)
+          .map((e: any) => ({ room: e.roomName, calledAt: e.timestamp }));
+        return {
+          id: p.id,
+          name: p.name,
+          number: p.number,
+          status: p.status as schema.TvQueueItem['status'],
+          isPriority: p.isPriority,
+          windowId: p.windowId || null,
+          windowName: p.windowId ? (windowMap.get(p.windowId) || null) : null,
+          calledAt: p.calledAt ? p.calledAt.toISOString() : null,
+          requeueReason: p.requeueReason || null,
+          callHistory: callHistory.length > 0 ? callHistory : null,
+        };
+      });
   }
 
   async getPatientsByDate(date: string, userId: string): Promise<Patient[]> {
@@ -1954,10 +1961,11 @@ export class DatabaseStorage implements IStorage {
         status: schema.patients.status,
         isPriority: schema.patients.isPriority,
         windowId: schema.patients.windowId,
-        windowName: schema.windows.name, // JOIN for room name
+        windowName: schema.windows.name,
         calledAt: schema.patients.calledAt,
         requeueReason: schema.patients.requeueReason,
-        registeredAt: schema.patients.registeredAt, // For sorting
+        registeredAt: schema.patients.registeredAt,
+        trackingHistory: schema.patients.trackingHistory,
       })
       .from(schema.patients)
       .leftJoin(
@@ -1968,32 +1976,36 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(schema.patients.userId, userId),
           sql`${schema.patients.archivedAt} IS NULL`,
-          gte(schema.patients.registeredAt, startOfDayUTC) // ✅ TODAY ONLY! Using gte() for proper timestamp comparison
+          gte(schema.patients.registeredAt, startOfDayUTC)
         )
       )
       .orderBy(
-        // ✅ Latest activity first: calledAt DESC (nulls last), then registeredAt DESC
         sql`${schema.patients.calledAt} DESC NULLS LAST`,
         sql`${schema.patients.registeredAt} DESC`
       );
     
-    // Valid statuses for type safety
     const validStatuses = new Set(["waiting", "called", "in-progress", "completed", "requeue", "dispensary"]);
     
-    // Map to TvQueueItem with validation
     return results
-      .filter(r => validStatuses.has(r.status)) // ✅ Validate status
-      .map(r => ({
-        id: r.id,
-        name: r.name,
-        number: r.number,
-        status: r.status as schema.TvQueueItem['status'], // Safe after validation
-        isPriority: r.isPriority,
-        windowId: r.windowId,
-        windowName: r.windowName,
-        calledAt: r.calledAt ? r.calledAt.toISOString() : null, // ✅ Convert Date to ISO string
-        requeueReason: r.requeueReason,
-      }));
+      .filter(r => validStatuses.has(r.status))
+      .map(r => {
+        const history = Array.isArray(r.trackingHistory) ? r.trackingHistory : [];
+        const callHistory = history
+          .filter((e: any) => e.action === 'called' && e.roomName && e.timestamp)
+          .map((e: any) => ({ room: e.roomName, calledAt: e.timestamp }));
+        return {
+          id: r.id,
+          name: r.name,
+          number: r.number,
+          status: r.status as schema.TvQueueItem['status'],
+          isPriority: r.isPriority,
+          windowId: r.windowId,
+          windowName: r.windowName,
+          calledAt: r.calledAt ? r.calledAt.toISOString() : null,
+          requeueReason: r.requeueReason,
+          callHistory: callHistory.length > 0 ? callHistory : null,
+        };
+      });
   }
 
   async getPatient(id: string): Promise<Patient | undefined> {

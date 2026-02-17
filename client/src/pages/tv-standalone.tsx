@@ -156,22 +156,31 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
 
     if (!seededRef.current) {
       seededRef.current = true;
-      const initialEntries = tvPatients
-        .filter(p => p.calledAt)
-        .sort((a, b) => {
-          const aTime = a.calledAt ? new Date(a.calledAt).getTime() : 0;
-          const bTime = b.calledAt ? new Date(b.calledAt).getTime() : 0;
-          return bTime - aTime;
-        });
-      for (const p of initialEntries) {
-        callLogRef.current.push({
-          logId: `${p.id}-init-${new Date(p.calledAt!).getTime()}`,
-          patientId: p.id,
-          name: p.name || `No. ${p.number}`,
-          room: p.windowName || "N/A",
-          calledAt: new Date(p.calledAt!),
-        });
+      const allCallEvents: Array<{ logId: string; patientId: string; name: string; room: string; calledAt: Date }> = [];
+      for (const p of tvPatients) {
+        const name = p.name || `No. ${p.number}`;
+        if (p.callHistory && p.callHistory.length > 0) {
+          for (const ch of p.callHistory) {
+            allCallEvents.push({
+              logId: `${p.id}-init-${new Date(ch.calledAt).getTime()}`,
+              patientId: p.id,
+              name,
+              room: ch.room,
+              calledAt: new Date(ch.calledAt),
+            });
+          }
+        } else if (p.calledAt) {
+          allCallEvents.push({
+            logId: `${p.id}-init-${new Date(p.calledAt).getTime()}`,
+            patientId: p.id,
+            name,
+            room: p.windowName || "N/A",
+            calledAt: new Date(p.calledAt),
+          });
+        }
       }
+      allCallEvents.sort((a, b) => b.calledAt.getTime() - a.calledAt.getTime());
+      callLogRef.current = allCallEvents;
       changed = true;
     } else {
       const prevSnapshot = prevSnapshotRef.current;

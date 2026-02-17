@@ -286,9 +286,10 @@ export type TvQueueItem = {
   name: string | null;
   number: number;
   status: "waiting" | "called" | "in-progress" | "completed" | "requeue" | "dispensary";
-  isPriority: boolean; // ✅ Keep for priority badge display
-  windowId: string | null; // ✅ Keep for dispensary logic and reconciliation
-  windowName: string | null; // Joined from windows table
-  calledAt: string | null; // ✅ ISO string format for JSON efficiency
+  isPriority: boolean;
+  windowId: string | null;
+  windowName: string | null;
+  calledAt: string | null;
   requeueReason: string | null;
+  callHistory: Array<{ room: string; calledAt: string }> | null;
 };
