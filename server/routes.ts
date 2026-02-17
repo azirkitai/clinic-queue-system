@@ -3105,8 +3105,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Invalid TV token" });
       }
       
-      const activeMedia = await storage.getActiveMedia(user.id);
-      res.json(activeMedia);
+      const [mediaTypeSetting, youtubeUrlSetting] = await Promise.all([
+        storage.getSetting('dashboardMediaType', user.id),
+        storage.getSetting('youtubeUrl', user.id)
+      ]);
+
+      const dashboardMediaType = mediaTypeSetting?.value || "own";
+      const youtubeUrl = youtubeUrlSetting?.value || "";
+
+      if (dashboardMediaType === "youtube" && youtubeUrl) {
+        const youtubeMedia = [{
+          id: "youtube-video",
+          name: "YouTube Video",
+          filename: "youtube-video",
+          url: youtubeUrl,
+          type: "youtube" as const,
+          mimeType: "video/youtube",
+          size: 0,
+          isActive: true,
+          uploadedAt: new Date()
+        }];
+        res.json(youtubeMedia);
+      } else {
+        const activeMedia = await storage.getActiveMedia(user.id);
+        const lightweightMedia = activeMedia.map(({ data, ...rest }: any) => rest);
+        res.json(lightweightMedia);
+      }
     } catch (error) {
       console.error("Error fetching TV active media:", error);
       res.status(500).json({ error: "Failed to get active TV media" });
