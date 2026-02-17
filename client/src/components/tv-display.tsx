@@ -957,11 +957,13 @@ export function TVDisplay({
     boxSizing: 'border-box' as const,
     minWidth: 0,
     minHeight: 0,
+    colorScheme: 'light',
     ...getBackgroundStyle(headerBackgroundMode, headerBackgroundColor, headerBackgroundGradient, '#ffffff')
   } : {
     gridTemplateRows: 'auto 1fr',
     gridTemplateColumns: '65% 35%',
     gap: '0',
+    colorScheme: 'light',
     ...getBackgroundStyle(headerBackgroundMode, headerBackgroundColor, headerBackgroundGradient, '#ffffff')
   };
 
@@ -974,7 +976,7 @@ export function TVDisplay({
     <>
       {/* Top Row - Advertisement Area with 16:9 ratio */}
       <div className={`${isFullscreen ? 'm-0 p-0 w-full h-full' : 'p-4 w-full'}`}>
-        <div className="overflow-hidden flex items-center justify-center w-full h-full relative" style={{ aspectRatio: '16/9', backgroundColor: '#f3f4f6' }}>
+        <div className="overflow-hidden flex items-center justify-center w-full h-full relative" style={{ aspectRatio: '16/9', backgroundColor: '#f3f4f6', colorScheme: 'light' }}>
           {currentMedia ? (
             <div 
               className="absolute inset-0 w-full h-full transition-opacity ease-in-out"
@@ -1048,7 +1050,7 @@ export function TVDisplay({
           {/* Logo Display - Use uploaded logo if enabled */}
           {showClinicLogo && clinicLogo && (
             <div className="mb-4">
-              <div className="bg-white rounded-lg p-4 shadow-lg w-full flex items-center justify-center">
+              <div className="rounded-lg p-4 shadow-lg w-full flex items-center justify-center" style={{ backgroundColor: '#ffffff', colorScheme: 'light' }}>
                 <img 
                   src={clinicLogo} 
                   alt="Clinic Logo" 
@@ -1191,7 +1193,7 @@ export function TVDisplay({
              ...getBackgroundStyle(showWeather ? weatherBackgroundMode : prayerTimesBackgroundMode, showWeather ? weatherBackgroundColor : prayerTimesBackgroundColor, showWeather ? weatherBackgroundGradient : prayerTimesBackgroundGradient, showWeather ? '#f97316' : '#1e40af')
            }}>
         {/* Date/Time Section - Larger */}
-        <div className={`bg-white text-gray-900 p-6 ${isFullscreen ? 'rounded-md mb-6' : 'rounded-lg mb-6'}`}>
+        <div className={`p-6 ${isFullscreen ? 'rounded-md mb-6' : 'rounded-lg mb-6'}`} style={{ backgroundColor: '#ffffff', color: '#111827', colorScheme: 'light' }}>
           <IsolatedClock />
         </div>
 

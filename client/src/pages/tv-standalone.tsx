@@ -48,6 +48,28 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
+    const meta = document.createElement('meta');
+    meta.name = 'color-scheme';
+    meta.content = 'light only';
+    document.head.appendChild(meta);
+
+    const metaDark = document.createElement('meta');
+    metaDark.name = 'supported-color-schemes';
+    metaDark.content = 'light only';
+    document.head.appendChild(metaDark);
+
+    document.documentElement.style.colorScheme = 'light';
+    document.body.style.colorScheme = 'light';
+
+    return () => {
+      document.head.removeChild(meta);
+      document.head.removeChild(metaDark);
+      document.documentElement.style.colorScheme = '';
+      document.body.style.colorScheme = '';
+    };
+  }, []);
+
+  useEffect(() => {
     if (!clinicInfo) return;
 
     const socket: Socket = io({
@@ -342,7 +364,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
 
   if (validating) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#ffffff', colorScheme: 'light' }}>
         <div className="text-center space-y-4">
           <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-gray-600 text-lg">Mengesahkan pautan TV...</p>
@@ -353,7 +375,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white" data-testid="tv-error">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#ffffff', colorScheme: 'light' }} data-testid="tv-error">
         <div className="text-center space-y-4 max-w-md mx-4">
           <div className="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center">
             <Monitor className="w-8 h-8 text-red-500" />
@@ -370,12 +392,14 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     return (
       <div
         id="tv-container"
-        className="fixed overflow-hidden bg-white m-0"
+        className="fixed overflow-hidden m-0"
         style={{
           inset: 0,
           width: '100vw',
           height: '100dvh',
-          padding: 'var(--tv-overscan, 3vw)'
+          padding: 'var(--tv-overscan, 3vw)',
+          backgroundColor: '#ffffff',
+          colorScheme: 'light'
         }}
       >
         <TVDisplay
@@ -411,7 +435,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center" data-testid="tv-landing">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center" style={{ colorScheme: 'light' }} data-testid="tv-landing">
       <div className="text-center space-y-6 max-w-lg mx-4">
         <div className="w-20 h-20 mx-auto bg-blue-100 rounded-2xl flex items-center justify-center">
           <Monitor className="w-10 h-10 text-blue-600" />
