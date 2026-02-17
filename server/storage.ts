@@ -464,8 +464,9 @@ export class MemStorage implements IStorage {
       .filter(p => validStatuses.has(p.status)) // ✅ Validate status
       .map(p => {
         const history = Array.isArray(p.trackingHistory) ? p.trackingHistory : [];
+        const dispensaryIdx = history.findIndex((e: any) => e.action === 'dispensary');
         const callHistory = history
-          .filter((e: any) => e.action === 'called' && e.roomName && e.timestamp)
+          .filter((e: any, idx: number) => e.action === 'called' && e.roomName && e.timestamp && (dispensaryIdx === -1 || idx < dispensaryIdx))
           .map((e: any) => ({ room: e.roomName, calledAt: e.timestamp }));
         return {
           id: p.id,
@@ -1990,8 +1991,9 @@ export class DatabaseStorage implements IStorage {
       .filter(r => validStatuses.has(r.status))
       .map(r => {
         const history = Array.isArray(r.trackingHistory) ? r.trackingHistory : [];
+        const dispensaryIdx = history.findIndex((e: any) => e.action === 'dispensary');
         const callHistory = history
-          .filter((e: any) => e.action === 'called' && e.roomName && e.timestamp)
+          .filter((e: any, idx: number) => e.action === 'called' && e.roomName && e.timestamp && (dispensaryIdx === -1 || idx < dispensaryIdx))
           .map((e: any) => ({ room: e.roomName, calledAt: e.timestamp }));
         return {
           id: r.id,
