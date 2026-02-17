@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { type TvQueueItem } from "@shared/schema";
 
@@ -13,10 +13,18 @@ interface QueueItem {
   requeueReason?: string | null;
 }
 
+interface CallLogEntry {
+  logId: string;
+  patientId: string;
+  name: string;
+  room: string;
+  calledAt: Date;
+}
+
 interface UseTvPatientsResult {
   currentPatient: QueueItem | null;
-  queueWaiting: QueueItem[]; // Waiting patients for TV display
-  queueHistory: QueueItem[]; // Completed patients
+  queueWaiting: QueueItem[];
+  queueHistory: QueueItem[];
   isLoading: boolean;
   error: Error | null;
 }
@@ -24,25 +32,67 @@ interface UseTvPatientsResult {
 export function useTvPatients(): UseTvPatientsResult {
   const { data: tvPatients = [], isLoading, error } = useQuery<TvQueueItem[]>({
     queryKey: ['/api/patients/tv'],
-    staleTime: 120000, // ✅ BANDWIDTH SAVE: Data stays fresh for 2 min (WebSocket is primary!)
-    refetchInterval: 120000, // ✅ BANDWIDTH SAVE: Poll every 2 min as fallback only (was 30s = 4x reduction!)
-    refetchOnReconnect: false, // ❌ Disable - WebSocket handles reconnect updates
-    refetchOnWindowFocus: false, // ❌ Disable - prevents burst on tab switch
-    refetchOnMount: false, // ❌ Disable - use cached data on mount
+    staleTime: 120000,
+    refetchInterval: 120000,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
-  // Memoize transformed patients to avoid re-creating Date objects on every render
+  const callLogRef = useRef<CallLogEntry[]>([]);
+  const prevSnapshotRef = useRef<Map<string, { calledAt: string | null; windowName: string | null; status: string }>>(new Map());
+  const [callLogVersion, setCallLogVersion] = useState(0);
+
+  useEffect(() => {
+    if (tvPatients.length === 0 && prevSnapshotRef.current.size === 0) return;
+
+    const prevSnapshot = prevSnapshotRef.current;
+    const newSnapshot = new Map<string, { calledAt: string | null; windowName: string | null; status: string }>();
+    let changed = false;
+
+    for (const p of tvPatients) {
+      const calledAtStr = p.calledAt ? new Date(p.calledAt).toISOString() : null;
+      newSnapshot.set(p.id, { calledAt: calledAtStr, windowName: p.windowName || null, status: p.status });
+
+      if (p.status === "called" && p.calledAt) {
+        const prev = prevSnapshot.get(p.id);
+        const prevCalledAt = prev?.calledAt || null;
+        const prevStatus = prev?.status || null;
+
+        const isNewCall = !prev || prevStatus !== "called";
+        const isRecall = prev && prevStatus === "called" && prevCalledAt !== calledAtStr;
+
+        if (isNewCall || isRecall) {
+          callLogRef.current.unshift({
+            logId: `${p.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            patientId: p.id,
+            name: p.name || `No. ${p.number}`,
+            room: p.windowName || "N/A",
+            calledAt: new Date(p.calledAt),
+          });
+          changed = true;
+        }
+      }
+    }
+
+    if (callLogRef.current.length > 20) {
+      callLogRef.current = callLogRef.current.slice(0, 20);
+    }
+
+    prevSnapshotRef.current = newSnapshot;
+    if (changed) {
+      setCallLogVersion(v => v + 1);
+    }
+  }, [tvPatients]);
+
   const { currentPatient, queueWaiting, queueHistory } = useMemo(() => {
-    // Transform TvQueueItem to QueueItem format for TV display
     const transformToQueueItem = (patient: TvQueueItem): QueueItem => {
-      // Map status from TvQueueItem to QueueItem format
       let displayStatus: "waiting" | "calling" | "completed";
       if (patient.status === "called") {
         displayStatus = "calling";
       } else if (patient.status === "completed") {
         displayStatus = "completed";
       } else {
-        // Covers: waiting, in-progress, requeue, dispensary
         displayStatus = "waiting";
       }
 
@@ -52,52 +102,48 @@ export function useTvPatients(): UseTvPatientsResult {
         number: patient.number.toString(),
         room: patient.windowName || "Not available",
         status: displayStatus,
-        // Use server timestamp if available, otherwise current time
         timestamp: patient.calledAt ? new Date(patient.calledAt) : new Date(),
         calledAt: patient.calledAt ? new Date(patient.calledAt) : null,
         requeueReason: patient.requeueReason,
       };
     };
 
-    // Find current patient (status = 'called' with most recent calledAt)
     const current = (() => {
       const calledPatients = tvPatients
         .filter(p => p.status === "called")
         .map(transformToQueueItem)
         .sort((a, b) => {
-          // Sort by calledAt DESC (most recent first)
           if (!a.calledAt) return 1;
           if (!b.calledAt) return -1;
           return b.calledAt.getTime() - a.calledAt.getTime();
         });
-      
       return calledPatients[0] || null;
     })();
 
-    // Get waiting patients (all non-completed, non-called statuses)
     const waiting = tvPatients
       .filter(p => p.status !== "completed" && p.status !== "called")
       .map(transformToQueueItem);
 
-    // Get calling history: rolling log of all patients that were ever called (called OR completed)
-    // Sorted by calledAt DESC, excludes the current patient shown at top, shows max 4
-    const history = tvPatients
-      .filter(p => (p.status === "called" || p.status === "completed") && p.calledAt)
-      .map(transformToQueueItem)
-      .sort((a, b) => {
-        if (!a.calledAt) return 1;
-        if (!b.calledAt) return -1;
-        return b.calledAt.getTime() - a.calledAt.getTime();
-      })
-      .filter(item => !current || item.id !== current.id)
-      .slice(0, 4);
+    const history: QueueItem[] = callLogRef.current
+      .filter(entry => !current || entry.patientId !== current.id || entry.calledAt.getTime() !== current.calledAt?.getTime())
+      .slice(0, 4)
+      .map(entry => ({
+        id: entry.logId,
+        name: entry.name,
+        number: "",
+        room: entry.room,
+        status: "completed" as const,
+        timestamp: entry.calledAt,
+        calledAt: entry.calledAt,
+      }));
 
     return {
       currentPatient: current,
       queueWaiting: waiting,
       queueHistory: history,
     };
-  }, [tvPatients]); // Only recompute when tvPatients changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tvPatients, callLogVersion]);
 
   return {
     currentPatient,

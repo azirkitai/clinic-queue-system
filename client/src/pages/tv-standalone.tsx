@@ -144,53 +144,91 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
   const showWeather = settings.showWeather === true;
   const clinicName = settings.clinicName || clinicInfo?.clinicName || "CLINIC";
 
-  const { currentPatient, queueHistory } = useMemo(() => {
-    const transformToQueueItem = (patient: TvQueueItem): QueueItem => {
-      let displayStatus: "waiting" | "calling" | "completed";
-      if (patient.status === "called") {
-        displayStatus = "calling";
-      } else if (patient.status === "completed") {
-        displayStatus = "completed";
-      } else {
-        displayStatus = "waiting";
-      }
-      return {
-        id: patient.id,
-        name: patient.name || `No. ${patient.number}`,
-        number: patient.number.toString(),
-        room: patient.windowName || "Not available",
-        status: displayStatus,
-        timestamp: patient.calledAt ? new Date(patient.calledAt) : new Date(),
-        calledAt: patient.calledAt ? new Date(patient.calledAt) : null,
-        requeueReason: patient.requeueReason,
-      };
-    };
+  const callLogRef = useRef<Array<{ logId: string; patientId: string; name: string; room: string; calledAt: Date }>>([]);
+  const prevSnapshotRef = useRef<Map<string, { calledAt: string | null; windowName: string | null; status: string }>>(new Map());
+  const [callLogVersion, setCallLogVersion] = useState(0);
 
+  useEffect(() => {
+    if (tvPatients.length === 0 && prevSnapshotRef.current.size === 0) return;
+
+    const prevSnapshot = prevSnapshotRef.current;
+    const newSnapshot = new Map<string, { calledAt: string | null; windowName: string | null; status: string }>();
+    let changed = false;
+
+    for (const p of tvPatients) {
+      const calledAtStr = p.calledAt ? new Date(p.calledAt).toISOString() : null;
+      newSnapshot.set(p.id, { calledAt: calledAtStr, windowName: p.windowName || null, status: p.status });
+
+      if (p.status === "called" && p.calledAt) {
+        const prev = prevSnapshot.get(p.id);
+        const prevCalledAt = prev?.calledAt || null;
+        const prevStatus = prev?.status || null;
+
+        const isNewCall = !prev || prevStatus !== "called";
+        const isRecall = prev && prevStatus === "called" && prevCalledAt !== calledAtStr;
+
+        if (isNewCall || isRecall) {
+          callLogRef.current.unshift({
+            logId: `${p.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            patientId: p.id,
+            name: p.name || `No. ${p.number}`,
+            room: p.windowName || "N/A",
+            calledAt: new Date(p.calledAt),
+          });
+          changed = true;
+        }
+      }
+    }
+
+    if (callLogRef.current.length > 20) {
+      callLogRef.current = callLogRef.current.slice(0, 20);
+    }
+
+    prevSnapshotRef.current = newSnapshot;
+    if (changed) {
+      setCallLogVersion(v => v + 1);
+    }
+  }, [tvPatients]);
+
+  const { currentPatient, queueHistory } = useMemo(() => {
     const current = (() => {
       const calledPatients = tvPatients
-        .filter(p => p.status === "called")
-        .map(transformToQueueItem)
+        .filter(p => p.status === "called" && p.calledAt)
         .sort((a, b) => {
-          if (!a.calledAt) return 1;
-          if (!b.calledAt) return -1;
-          return b.calledAt.getTime() - a.calledAt.getTime();
+          const aTime = a.calledAt ? new Date(a.calledAt).getTime() : 0;
+          const bTime = b.calledAt ? new Date(b.calledAt).getTime() : 0;
+          return bTime - aTime;
         });
-      return calledPatients[0] || null;
+      const p = calledPatients[0];
+      if (!p) return null;
+      return {
+        id: p.id,
+        name: p.name || `No. ${p.number}`,
+        number: p.number.toString(),
+        room: p.windowName || "Not available",
+        status: "calling" as const,
+        timestamp: p.calledAt ? new Date(p.calledAt) : new Date(),
+        calledAt: p.calledAt ? new Date(p.calledAt) : null,
+        requeueReason: p.requeueReason,
+      };
     })();
 
-    const history = tvPatients
-      .filter(p => (p.status === "called" || p.status === "completed") && p.calledAt)
-      .map(transformToQueueItem)
-      .sort((a, b) => {
-        if (!a.calledAt) return 1;
-        if (!b.calledAt) return -1;
-        return b.calledAt.getTime() - a.calledAt.getTime();
-      })
-      .filter(item => !current || item.id !== current.id)
-      .slice(0, 4);
+    const history: QueueItem[] = callLogRef.current
+      .filter(entry => !current || entry.patientId !== current.id || entry.calledAt.getTime() !== current.calledAt?.getTime())
+      .slice(0, 4)
+      .map(entry => ({
+        id: entry.logId,
+        name: entry.name,
+        number: "",
+        room: entry.room,
+        status: "completed" as const,
+        timestamp: entry.calledAt,
+        calledAt: entry.calledAt,
+      }));
 
     return { currentPatient: current, queueHistory: history };
-  }, [tvPatients]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tvPatients, callLogVersion]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
