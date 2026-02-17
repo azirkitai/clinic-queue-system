@@ -61,6 +61,22 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     document.documentElement.style.colorScheme = 'light';
     document.body.style.colorScheme = 'light';
 
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.attributeName === 'class') {
+          const root = document.documentElement;
+          if (root.classList.contains('dark')) {
+            root.classList.remove('dark');
+            root.classList.add('light');
+          }
+        }
+      }
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
     const forceLightStyle = document.createElement('style');
     forceLightStyle.id = 'tv-force-light';
     forceLightStyle.textContent = `
@@ -84,6 +100,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     document.head.appendChild(forceLightStyle);
 
     return () => {
+      observer.disconnect();
       document.head.removeChild(meta);
       document.head.removeChild(metaDark);
       document.head.removeChild(forceLightStyle);
