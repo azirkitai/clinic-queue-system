@@ -371,6 +371,15 @@
     animation: marquee 25s linear infinite;
   }
 
+  @keyframes tv-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .tv-blink-active {
+    animation: tv-blink 0.8s step-end 5;
+  }
+
   /* Custom Sidebar Gradient - Force Override */
   .sidebar-gradient {
     background: linear-gradient(180deg, #2980b9 0%, #1f4e79 30%, #1a252f 70%, #0d1821 100%) !important;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Volume2, Calendar } from "lucide-react";
@@ -7,6 +7,37 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { audioSystem } from "@/lib/audio-system";
 import type { AudioSettings } from "@/lib/audio-system";
 import { useWebSocket } from "@/hooks/useWebSocket";
+
+const IsolatedClock = memo(function IsolatedClock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (d: Date) => d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  const day = now.getDate();
+  const dayName = now.toLocaleDateString('en-US', { weekday: 'long' });
+  const month = now.toLocaleDateString('en-US', { month: 'long' });
+  const year = now.getFullYear();
+
+  return (
+    <div className="flex items-center justify-center space-x-8">
+      <div className="text-center">
+        <div className="text-6xl font-bold text-black">{day}</div>
+      </div>
+      <div className="text-center">
+        <div className="font-bold text-4xl">{dayName}</div>
+        <div className="text-3xl text-gray-600">{month} {year}</div>
+      </div>
+      <div className="text-center">
+        <div className="font-mono font-bold text-6xl" data-testid="display-time">
+          {formatTime(now)}
+        </div>
+      </div>
+    </div>
+  );
+});
 
 interface QueueItem {
   id: string;
@@ -95,7 +126,6 @@ export function TVDisplay({
   tvToken
 }: TVDisplayProps) {
   
-  const [currentTime, setCurrentTime] = useState(new Date());
   const stageRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   
@@ -160,15 +190,13 @@ export function TVDisplay({
     }
   }, [isTVMode]);
   
-  // WebSocket connection for real-time updates
-  const { socket } = useWebSocket();
+  const wsResult = useWebSocket(!!tvToken);
+  const socket = tvToken ? null : wsResult.socket;
   
-  // Listen for settings/theme/text-groups updates via WebSocket for instant TV updates
   useEffect(() => {
     if (!socket) return;
 
     const handleSettingsUpdate = () => {
-      console.log('🔔 Settings updated via WebSocket - invalidating cache');
       queryClient.invalidateQueries({ 
         predicate: (query) => {
           const key = String(query.queryKey[0]);
@@ -178,7 +206,6 @@ export function TVDisplay({
     };
 
     const handleThemesUpdate = () => {
-      console.log('🎨 Themes updated via WebSocket - invalidating cache');
       queryClient.invalidateQueries({
         predicate: (query) => {
           const key = String(query.queryKey[0]);
@@ -188,7 +215,6 @@ export function TVDisplay({
     };
 
     const handleTextGroupsUpdate = () => {
-      console.log('📝 Text groups updated via WebSocket - invalidating cache');
       queryClient.invalidateQueries({
         predicate: (query) => {
           const key = String(query.queryKey[0]);
@@ -531,41 +557,39 @@ export function TVDisplay({
     : (prayerTimes || []);
   
   
-  // Client-side highlight computation using browser timezone (more accurate)
-  const computeHighlighting = () => {
+  const [minuteKey, setMinuteKey] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setMinuteKey(k => k + 1), 300000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const { nextPrayer, shouldHighlight } = useMemo(() => {
     if (!showPrayerTimes || !prayerTimesData?.prayerTimes) {
       return { nextPrayer: null, shouldHighlight: false };
     }
 
     const now = new Date();
-    const currentTime = now.getHours() * 60 + now.getMinutes();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
     
-    // Removed excessive debug logging
-    
-    // Find next upcoming prayer (for highlighting purpose)
     let nextUpcomingPrayer = null;
     let minTimeUntilNext = Infinity;
     
     for (const prayer of prayerTimesData.prayerTimes) {
-      // Clean time string - remove timezone info like "(MYT)"
       const cleanTime = prayer.time.replace(/[^\d:]/g, '');
       const [hours, minutes] = cleanTime.split(':').map(Number);
-      
-      if (isNaN(hours) || isNaN(minutes)) continue; // Skip invalid times
+      if (isNaN(hours) || isNaN(minutes)) continue;
       
       const prayerTime = hours * 60 + minutes;
-      const timeDiff = prayerTime - currentTime;
+      const timeDiff = prayerTime - currentMinutes;
       
-      // If prayer is upcoming today and closer than current minimum
       if (timeDiff > 0 && timeDiff < minTimeUntilNext) {
         nextUpcomingPrayer = prayer;
         minTimeUntilNext = timeDiff;
       }
     }
     
-    // If no prayer left today, highlight first prayer of next day (SUBUH)
     if (!nextUpcomingPrayer && prayerTimesData.prayerTimes.length > 0) {
-      nextUpcomingPrayer = prayerTimesData.prayerTimes[0]; // First prayer (usually SUBUH)
+      nextUpcomingPrayer = prayerTimesData.prayerTimes[0];
     }
     
     if (nextUpcomingPrayer) {
@@ -573,14 +597,10 @@ export function TVDisplay({
     }
     
     return { nextPrayer: null, shouldHighlight: false };
-  };
-
-  const { nextPrayer, shouldHighlight } = computeHighlighting();
+  }, [showPrayerTimes, prayerTimesData, minuteKey]);
   
-  // Animation states
   const [showHighlight, setShowHighlight] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);
-  const [blinkVisible, setBlinkVisible] = useState(true);
   const [prevPatientId, setPrevPatientId] = useState<string | undefined>(undefined);
   const [prevCalledAt, setPrevCalledAt] = useState<number | null>(null);
   const [prevRequeueReason, setPrevRequeueReason] = useState<string | null | undefined>(undefined);
@@ -620,13 +640,6 @@ export function TVDisplay({
   const mediaTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fadeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   // Auto-scale 1920×1080 stage to fit any screen size (VIEWPORT-CENTERED APPROACH)
   useEffect(() => {
@@ -769,10 +782,8 @@ export function TVDisplay({
         clearInterval(blinkTimerRef.current);
       }
       
-      // Reset all animation states
       setShowHighlight(false);
       setIsBlinking(false);
-      setBlinkVisible(true);
       
       // AUDIO PLAYBACK: Parse audio settings and play sound (use correct setting keys)
       const audioSettings: AudioSettings = {
@@ -793,30 +804,17 @@ export function TVDisplay({
         });
       }
       
-      // Step 1: Show highlight card for 5 seconds
       setShowHighlight(true);
       
       highlightTimerRef.current = setTimeout(() => {
         setShowHighlight(false);
-        
-        // Step 2: Start blinking after highlight disappears
         setIsBlinking(true);
-        setBlinkVisible(true);
         
-        // Blink 5 complete cycles (10 toggles: 5 off, 5 on)
-        let toggleCount = 0;
-        blinkTimerRef.current = setInterval(() => {
-          toggleCount++;
-          setBlinkVisible(toggleCount % 2 === 1); // true for odd, false for even
-          
-          if (toggleCount >= 10) { // 5 complete blinks = 10 toggles
-            clearInterval(blinkTimerRef.current!);
-            setIsBlinking(false);
-            setBlinkVisible(true); // Ensure final state is visible
-          }
-        }, 400); // 400ms per toggle (faster, crisper blinks)
+        blinkTimerRef.current = setTimeout(() => {
+          setIsBlinking(false);
+        }, 4000);
         
-      }, 5000); // 5 seconds for highlight
+      }, 5000);
 
       // Update previous patient ID, calledAt timestamp, and requeueReason
       setPrevPatientId(currentPatient.id);
@@ -918,25 +916,6 @@ export function TVDisplay({
     };
   }, []);
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false 
-    });
-  };
-
-  const formatDate = (date: Date) => {
-    const day = date.getDate();
-    const month = date.toLocaleDateString('en-US', { month: 'long' });
-    const year = date.getFullYear();
-    const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-    
-    return { day, month, year, dayName };
-  };
-
-  const dateInfo = formatDate(currentTime);
 
   // YouTube video helper functions
   const isYouTubeUrl = (url: string): boolean => {
@@ -1108,11 +1087,9 @@ export function TVDisplay({
                style={{
                  ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#2563eb')
                }}>
-            <div className="font-bold"
+            <div className={`font-bold ${isBlinking ? 'tv-blink-active' : ''}`}
                  style={{ 
                    fontSize: patientNameFontSize,
-                   opacity: isBlinking ? (blinkVisible ? '1' : '0') : '1',
-                   transition: isBlinking ? 'none' : 'opacity 300ms ease-in-out',
                    lineHeight: '1.1',
                    wordBreak: 'break-word',
                    overflow: 'hidden',
@@ -1121,11 +1098,9 @@ export function TVDisplay({
                  data-testid="current-patient-display">
               {currentPatient.name}
             </div>
-            <div
+            <div className={isBlinking ? 'tv-blink-active' : ''}
                  style={{ 
                    fontSize: roomNameFontSize,
-                   opacity: isBlinking ? (blinkVisible ? '1' : '0') : '1',
-                   transition: isBlinking ? 'none' : 'opacity 300ms ease-in-out',
                    lineHeight: '1.1',
                    wordBreak: 'break-word',
                    overflow: 'hidden',
@@ -1216,19 +1191,8 @@ export function TVDisplay({
              ...getBackgroundStyle(showWeather ? weatherBackgroundMode : prayerTimesBackgroundMode, showWeather ? weatherBackgroundColor : prayerTimesBackgroundColor, showWeather ? weatherBackgroundGradient : prayerTimesBackgroundGradient, showWeather ? '#f97316' : '#1e40af')
            }}>
         {/* Date/Time Section - Larger */}
-        <div className={`bg-white text-gray-900 p-6 ${isFullscreen ? 'rounded-md mb-6' : 'rounded-lg mb-6'} flex items-center justify-center space-x-8`}>
-          <div className="text-center">
-            <div className="text-6xl font-bold text-black">{dateInfo.day}</div>
-          </div>
-          <div className="text-center">
-            <div className="font-bold text-4xl">{dateInfo.dayName}</div>
-            <div className="text-3xl text-gray-600">{dateInfo.month} {dateInfo.year}</div>
-          </div>
-          <div className="text-center">
-            <div className="font-mono font-bold text-6xl" data-testid="display-time">
-              {formatTime(currentTime)}
-            </div>
-          </div>
+        <div className={`bg-white text-gray-900 p-6 ${isFullscreen ? 'rounded-md mb-6' : 'rounded-lg mb-6'}`}>
+          <IsolatedClock />
         </div>
 
         {/* Prayer Times Section - Conditional with Loading/Error States */}

@@ -7,6 +7,17 @@ This project is a comprehensive clinic patient calling system designed to enhanc
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+- **February 17, 2026**: TV Display performance optimization for Android TV dongles:
+  - **Isolated Clock component**: Date/time extracted into `memo` component - prevents full TVDisplay re-render every second
+  - **CSS blink animation**: Replaced React setInterval-driven blink (10 state changes per cycle) with CSS `@keyframes tv-blink` - zero React re-renders during blink
+  - **Debounced WebSocket refetch**: All patient events consolidated with 300ms debounce, uses `invalidateQueries` for smarter refetch
+  - **Eliminated duplicate WebSocket**: TV standalone no longer creates 2 simultaneous socket connections - `useWebSocket(disabled)` parameter prevents extra connection
+  - **Memoized prayer time highlighting**: `computeHighlighting()` wrapped in `useMemo` with 5-minute update interval instead of per-render
+  - **Lazy audio loading**: Removed bulk preloading of all 13 audio presets on TV unlock - audio now loads on-demand and caches after first use
+- **February 12, 2026**: WebSocket real-time updates for TV standalone:
+  - TV standalone page (`/tv/:token`) now connects via WebSocket for instant updates (~1s vs 30s polling)
+  - Server `tv:join` handler validates token/PIN and joins TV to correct clinic room
+  - 30s polling retained as fallback when WebSocket disconnects
 - **February 11, 2026**: Standalone TV Display page (`/tv/:token`):
   - No login required - Smart TV opens URL directly via unique token
   - **Short PIN system**: 6-digit PIN (e.g., `/tv/482916`) easy to type on TV remote

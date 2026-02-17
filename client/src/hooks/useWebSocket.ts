@@ -18,13 +18,16 @@ interface WebSocketEvent {
 /**
  * Custom hook for WebSocket connection with automatic reconnection
  * Handles clinic-specific room joining and real-time updates
+ * @param disabled - Set true to skip creating a socket (e.g. TV standalone uses its own)
  */
-export function useWebSocket(): UseWebSocketReturn {
+export function useWebSocket(disabled = false): UseWebSocketReturn {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [lastEvent, setLastEvent] = useState<WebSocketEvent | null>(null);
 
   useEffect(() => {
+    if (disabled) return;
+
     // Initialize Socket.IO connection
     const socketInstance = io({
       autoConnect: true,
@@ -107,7 +110,7 @@ export function useWebSocket(): UseWebSocketReturn {
       console.log('🔌🧹 Cleaning up WebSocket connection');
       socketInstance.disconnect();
     };
-  }, []);
+  }, [disabled]);
 
   // Emit wrapper function
   const emit = useCallback((event: string, data?: any) => {

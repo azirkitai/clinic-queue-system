@@ -278,8 +278,7 @@ export class AudioSystem {
         console.log('✅ AudioContext resumed successfully');
       }
       
-      // Preload sounds in background (don't await - preserves user gesture)
-      void this.preloadPresets();
+      // Skip bulk preloading on TV - audio loads on-demand and caches after first use
       
       console.log('✅ Audio system unlocked and ready for TV');
     } catch (error) {
@@ -288,18 +287,16 @@ export class AudioSystem {
     }
   }
 
-  // Preload preset sounds for better performance (skip unsupported codecs)
-  public async preloadPresets(): Promise<void> {
+  public async preloadPresets(onlyKey?: PresetSoundKeyType): Promise<void> {
     try {
       const codecSupport = this.checkCodecSupport();
       
-      // Filter presets based on codec support
       const presetsToLoad = AudioSystem.PRESET_DEFS.filter(def => {
+        if (onlyKey && def.key !== onlyKey) return false;
         const isWav = def.src.endsWith('.wav');
         const isMp3 = def.src.endsWith('.mp3');
-        
-        if (isWav && !codecSupport.wav) return false; // Skip WAV if unsupported
-        if (isMp3 && !codecSupport.mp3) return false; // Skip MP3 if unsupported
+        if (isWav && !codecSupport.wav) return false;
+        if (isMp3 && !codecSupport.mp3) return false;
         return true;
       });
       
@@ -310,7 +307,7 @@ export class AudioSystem {
       );
       
       await Promise.allSettled(preloadPromises);
-      console.log(`Preset sounds preloading completed - ${presetsToLoad.length}/${AudioSystem.PRESET_DEFS.length} sounds loaded`);
+      console.log(`Preset sounds preloading completed - ${presetsToLoad.length} sounds loaded`);
     } catch (error) {
       console.error('Error preloading preset sounds:', error);
     }

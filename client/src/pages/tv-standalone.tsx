@@ -45,6 +45,8 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
       });
   }, [token]);
 
+  const socketRef = useRef<Socket | null>(null);
+
   useEffect(() => {
     if (!clinicInfo) return;
 
@@ -58,6 +60,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
       reconnectionAttempts: Infinity,
       timeout: 20000,
     });
+    socketRef.current = socket;
 
     socket.on('connect', () => {
       console.log('[TV-WS] Connected:', socket.id);
@@ -68,23 +71,23 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
       console.log('[TV-WS] Joined clinic room:', data);
     });
 
-    const refetchPatients = () => {
-      queryClient.refetchQueries({ queryKey: [`/api/tv/${token}/patients`] });
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedRefetchPatients = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: [`/api/tv/${token}/patients`] });
+      }, 300);
     };
 
-    socket.on('patient:called', refetchPatients);
-    socket.on('patient:updated', refetchPatients);
-    socket.on('patient:created', refetchPatients);
-    socket.on('patient:status-updated', refetchPatients);
-    socket.on('patient:deleted', refetchPatients);
-    socket.on('patient:priority-updated', refetchPatients);
-    socket.on('queue:updated', refetchPatients);
-    socket.on('queue:reset', refetchPatients);
-    socket.on('window:updated', refetchPatients);
-    socket.on('window:patient-assigned', refetchPatients);
+    const patientEvents = [
+      'patient:called', 'patient:updated', 'patient:created',
+      'patient:status-updated', 'patient:deleted', 'patient:priority-updated',
+      'queue:updated', 'queue:reset', 'window:updated', 'window:patient-assigned'
+    ];
+    patientEvents.forEach(evt => socket.on(evt, debouncedRefetchPatients));
 
     socket.on('settings:updated', () => {
-      queryClient.refetchQueries({ queryKey: [`/api/tv/${token}/settings`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tv/${token}/settings`] });
     });
 
     socket.on('disconnect', (reason) => {
@@ -92,7 +95,9 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     });
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       socket.disconnect();
+      socketRef.current = null;
     };
   }, [clinicInfo, token, queryClient]);
 
