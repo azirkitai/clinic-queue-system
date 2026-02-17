@@ -157,7 +157,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     if (!seededRef.current) {
       seededRef.current = true;
       const initialEntries = tvPatients
-        .filter(p => (p.status === "called" || p.status === "completed") && p.calledAt)
+        .filter(p => p.calledAt)
         .sort((a, b) => {
           const aTime = a.calledAt ? new Date(a.calledAt).getTime() : 0;
           const bTime = b.calledAt ? new Date(b.calledAt).getTime() : 0;
