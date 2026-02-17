@@ -193,11 +193,32 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setFullscreen(document.fullscreenElement !== null);
+      const doc = document as any;
+      const isFs = !!(document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement);
+      setFullscreen(isFs);
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
   }, []);
+
+  useEffect(() => {
+    if (!fullscreen) return;
+    const setTVHeight = () => {
+      const container = document.getElementById('tv-container');
+      if (container && (typeof CSS === 'undefined' || !CSS.supports('height', '100dvh'))) {
+        const vh = window.innerHeight;
+        container.style.height = `${vh}px`;
+        container.style.minHeight = `${vh}px`;
+      }
+    };
+    setTVHeight();
+    window.addEventListener('resize', setTVHeight);
+    return () => window.removeEventListener('resize', setTVHeight);
+  }, [fullscreen]);
 
   useEffect(() => {
     if (!fullscreen) return;
@@ -218,9 +239,34 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     try {
       const { audioSystem } = await import("@/lib/audio-system");
       await audioSystem.unlock();
-      await document.documentElement.requestFullscreen();
+      const el = document.documentElement as any;
+      if (el.requestFullscreen) {
+        await el.requestFullscreen();
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      } else if (el.mozRequestFullScreen) {
+        el.mozRequestFullScreen();
+      } else if (el.msRequestFullscreen) {
+        el.msRequestFullscreen();
+      } else {
+        setFullscreen(true);
+      }
     } catch (err) {
       console.error('Fullscreen error:', err);
+      setFullscreen(true);
+    }
+  };
+
+  const exitFullscreen = () => {
+    const doc = document as any;
+    if (doc.exitFullscreen) {
+      doc.exitFullscreen().catch(console.error);
+    } else if (doc.webkitExitFullscreen) {
+      doc.webkitExitFullscreen();
+    } else if (doc.mozCancelFullScreen) {
+      doc.mozCancelFullScreen();
+    } else if (doc.msExitFullscreen) {
+      doc.msExitFullscreen();
     }
   };
 
@@ -281,7 +327,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
           style={{ opacity: showExitButton ? 1 : 0, pointerEvents: showExitButton ? 'auto' : 'none' }}
         >
           <Button
-            onClick={() => document.exitFullscreen().catch(console.error)}
+            onClick={exitFullscreen}
             className="bg-black/70 text-white border-white/20"
             variant="outline"
             size="sm"

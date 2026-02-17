@@ -42,15 +42,18 @@ export default function Dashboard() {
     onDisconnect: () => console.log('[Dashboard] WebSocket disconnected'),
   });
 
-  // Listen for browser fullscreen changes
   useEffect(() => {
     const handleFullscreenChange = () => {
-      const isFs = document.fullscreenElement !== null;
+      const doc = document as any;
+      const isFs = !!(document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement);
       setFullscreen(isFs);
     };
-
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
   }, []);
 
   // Force light theme when TV fullscreen is active (Smart TVs often default to dark)
@@ -127,17 +130,31 @@ export default function Dashboard() {
   }, []);
 
   // Handle fullscreen prompt click (from QR auth)
+  const requestFs = async (el: any) => {
+    if (el.requestFullscreen) await el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+    else if (el.msRequestFullscreen) el.msRequestFullscreen();
+    else setFullscreen(true);
+  };
+
+  const exitFs = () => {
+    const doc = document as any;
+    if (doc.exitFullscreen) doc.exitFullscreen().catch(console.error);
+    else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
+    else if (doc.mozCancelFullScreen) doc.mozCancelFullScreen();
+    else if (doc.msExitFullscreen) doc.msExitFullscreen();
+  };
+
   const handleEnterFullscreen = async () => {
     try {
-      // Unlock audio BEFORE entering fullscreen (user gesture required)
       const { audioSystem } = await import("@/lib/audio-system");
       await audioSystem.unlock();
-      
-      // Enter fullscreen
-      await document.documentElement.requestFullscreen();
+      await requestFs(document.documentElement);
       setShowFullscreenPrompt(false);
     } catch (error) {
       console.error('Failed to enter fullscreen or unlock audio:', error);
+      setFullscreen(true);
       setShowFullscreenPrompt(false);
     }
   };
@@ -212,13 +229,13 @@ export default function Dashboard() {
         const { audioSystem } = await import("@/lib/audio-system");
         await audioSystem.unlock();
         
-        // Enter fullscreen
-        await document.documentElement.requestFullscreen();
+        await requestFs(document.documentElement);
       } catch (error) {
         console.error('Failed to enter fullscreen or unlock audio:', error);
+        setFullscreen(true);
       }
     } else {
-      document.exitFullscreen().catch(console.error);
+      exitFs();
     }
     // State will auto-update via fullscreenchange event listener
   };
