@@ -1137,10 +1137,10 @@ export function TVDisplay({
             </div>
           </div>
           
-          {/* Recent Calling History Items (show 2nd, 3rd, 4th most recently called patients) */}
+          {/* Recent Calling History Items (rolling log of recent calls, max 4) */}
           <div className="space-y-4 overflow-y-auto flex-1" data-testid="queue-list">
             {queueHistory.length > 0 ? (
-              queueHistory.slice(0, 3).map((item) => (
+              queueHistory.slice(0, 4).map((item) => (
                 <div key={item.id} className="grid grid-cols-2 gap-1 p-2 rounded-lg"
                      style={{
                        ...getBackgroundStyle(queueItemBackgroundMode, queueItemBackgroundColor, queueItemBackgroundGradient, '#2563eb')

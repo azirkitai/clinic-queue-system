@@ -179,14 +179,15 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     })();
 
     const history = tvPatients
-      .filter(p => p.status === "called")
+      .filter(p => (p.status === "called" || p.status === "completed") && p.calledAt)
       .map(transformToQueueItem)
       .sort((a, b) => {
         if (!a.calledAt) return 1;
         if (!b.calledAt) return -1;
         return b.calledAt.getTime() - a.calledAt.getTime();
       })
-      .slice(1, 4);
+      .filter(item => !current || item.id !== current.id)
+      .slice(0, 4);
 
     return { currentPatient: current, queueHistory: history };
   }, [tvPatients]);

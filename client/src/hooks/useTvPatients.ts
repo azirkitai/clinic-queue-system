@@ -79,18 +79,18 @@ export function useTvPatients(): UseTvPatientsResult {
       .filter(p => p.status !== "completed" && p.status !== "called")
       .map(transformToQueueItem);
 
-    // Get calling history (all called patients EXCEPT current one, sorted by calledAt DESC)
-    // This shows recent calling history for TV display (rolling list of recent calls)
+    // Get calling history: rolling log of all patients that were ever called (called OR completed)
+    // Sorted by calledAt DESC, excludes the current patient shown at top, shows max 4
     const history = tvPatients
-      .filter(p => p.status === "called")
+      .filter(p => (p.status === "called" || p.status === "completed") && p.calledAt)
       .map(transformToQueueItem)
       .sort((a, b) => {
-        // Sort by calledAt DESC (most recent first)
         if (!a.calledAt) return 1;
         if (!b.calledAt) return -1;
         return b.calledAt.getTime() - a.calledAt.getTime();
       })
-      .slice(1, 4); // Skip first (current patient), take next 3 for history
+      .filter(item => !current || item.id !== current.id)
+      .slice(0, 4);
 
     return {
       currentPatient: current,
