@@ -87,6 +87,23 @@ function AppContent() {
   const { isAuthenticated, isLoading, login } = useAuth();
   const [location] = useLocation();
   const [qrSessionId, setQrSessionId] = useState<string | null>(null);
+  const [tvToken, setTvToken] = useState<string | null>(() => {
+    const path = window.location.pathname;
+    if (path.startsWith('/tv/')) {
+      const token = path.replace('/tv/', '').replace(/\/$/, '');
+      return token || null;
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (location.startsWith('/tv/')) {
+      const token = location.replace('/tv/', '').replace(/\/$/, '');
+      if (token) {
+        setTvToken(token);
+      }
+    }
+  }, [location]);
 
   // REACTIVE hash detection - runs on mount AND when hash changes
   useEffect(() => {
@@ -109,6 +126,12 @@ function AppContent() {
     return () => window.removeEventListener('hashchange', checkHash);
   }, []);
 
+  // Standalone TV display - no login required, uses token-based API
+  // Check FIRST before any auth logic to prevent redirect to login
+  if (tvToken) {
+    return <TvStandalone token={tvToken} />;
+  }
+
   // If QR session detected, show QR auth page
   if (qrSessionId) {
     console.log('🎯 Rendering QR Auth Page with sessionId:', qrSessionId);
@@ -120,14 +143,6 @@ function AppContent() {
     const sessionId = location.replace('/qr-auth/', '').replace(/\/$/, '');
     console.log('QR Auth detected from PATH! SessionId:', sessionId);
     return <QrAuthPage sessionId={sessionId} />;
-  }
-
-  // Standalone TV display - no login required, uses token-based API
-  if (location.startsWith('/tv/')) {
-    const tvToken = location.replace('/tv/', '').replace(/\/$/, '');
-    if (tvToken) {
-      return <TvStandalone token={tvToken} />;
-    }
   }
 
   // Regular authentication flow
