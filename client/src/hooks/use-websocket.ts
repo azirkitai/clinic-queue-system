@@ -2,7 +2,6 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { queryClient } from '@/lib/queryClient';
 
-// Store the initial server version when page loads
 let initialServerVersion: string | null = null;
 
 interface UseWebSocketOptions {
@@ -10,12 +9,22 @@ interface UseWebSocketOptions {
   onDisconnect?: () => void;
 }
 
+function createDebouncedTvRefetch(delayMs = 300) {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  return () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] });
+      timer = null;
+    }, delayMs);
+  };
+}
+
 export function useWebSocket(options: UseWebSocketOptions = {}) {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const { onConnect, onDisconnect } = options;
   
-  // Stable callbacks to prevent useEffect re-runs
   const onConnectRef = useRef(onConnect);
   const onDisconnectRef = useRef(onDisconnect);
   
@@ -92,7 +101,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   }, []);
 
   useEffect(() => {
-    // Create socket connection with exponential backoff reconnection
+    const debouncedTvRefetch = createDebouncedTvRefetch(300);
+    
     const socket = io({
       path: '/socket.io',
       transports: ['websocket', 'polling'],
@@ -156,7 +166,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       }
       // Invalidate lightweight queries (stats + TV)
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }); // ✅ Force immediate refetch for real-time updates
+      debouncedTvRefetch();
     });
 
     socket.on('patient:status-updated', (data: any) => {
@@ -189,7 +199,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       
       // Invalidate dependent queries (lightweight)
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }); // ✅ Force immediate refetch for real-time updates
+      debouncedTvRefetch();
     });
 
     socket.on('patient:priority-updated', (data: any) => {
@@ -210,7 +220,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }); // ✅ Force immediate refetch for real-time updates
+      debouncedTvRefetch();
     });
 
     socket.on('patient:deleted', (data: any) => {
@@ -227,7 +237,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }); // ✅ Force immediate refetch for real-time updates
+      debouncedTvRefetch();
     });
 
     socket.on('queue:reset', () => {
@@ -235,7 +245,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
       queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] });
-      queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }); // ✅ Force immediate refetch for real-time updates
+      debouncedTvRefetch();
     });
 
     // Window events - optimistic updates
@@ -261,7 +271,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }); // ✅ Force immediate refetch for real-time updates (room names)
+      debouncedTvRefetch();
     });
 
     socket.on('window:patient-updated', (data: any) => {
@@ -275,10 +285,10 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }); // ✅ Force immediate refetch for real-time updates (assignments)
+      debouncedTvRefetch();
     });
 
-    // Settings/Theme events (already exist)
+    // Settings/Theme events
     socket.on('settings:updated', () => {
       queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
       queryClient.invalidateQueries({ queryKey: ['/api/settings/tv'] });
