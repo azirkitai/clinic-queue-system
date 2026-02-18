@@ -406,8 +406,8 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#ffffff', colorScheme: 'light' }}>
         <div className="text-center space-y-4">
-          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-gray-600 text-lg">Mengesahkan pautan TV...</p>
+          <div className="w-10 h-10 border-4 rounded-full animate-spin mx-auto" style={{ borderColor: '#3b82f6', borderTopColor: 'transparent' }} />
+          <p className="text-lg" style={{ color: '#4B5563' }}>Mengesahkan pautan TV...</p>
         </div>
       </div>
     );
@@ -417,12 +417,12 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#ffffff', colorScheme: 'light' }} data-testid="tv-error">
         <div className="text-center space-y-4 max-w-md mx-4">
-          <div className="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center">
-            <Monitor className="w-8 h-8 text-red-500" />
+          <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center" style={{ backgroundColor: '#fee2e2' }}>
+            <Monitor className="w-8 h-8" style={{ color: '#ef4444' }} />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Pautan TV Tidak Sah</h1>
-          <p className="text-gray-600">{error}</p>
-          <p className="text-sm text-gray-400">Sila minta admin klinik untuk memberikan pautan TV yang betul.</p>
+          <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>Pautan TV Tidak Sah</h1>
+          <p style={{ color: '#4B5563' }}>{error}</p>
+          <p className="text-sm" style={{ color: '#9CA3AF' }}>Sila minta admin klinik untuk memberikan pautan TV yang betul.</p>
         </div>
       </div>
     );
@@ -463,7 +463,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
         >
           <Button
             onClick={exitFullscreen}
-            className="bg-black/70 text-white border-white/20"
+            style={{ backgroundColor: 'rgba(0,0,0,0.7)', color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}
             variant="outline"
             size="sm"
             data-testid="button-exit-fullscreen"
@@ -476,22 +476,23 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center" style={{ colorScheme: 'light' }} data-testid="tv-landing">
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(to bottom right, #eff6ff, #ffffff)', colorScheme: 'light' }} data-testid="tv-landing">
       <div className="text-center space-y-6 max-w-lg mx-4">
-        <div className="w-20 h-20 mx-auto bg-blue-100 rounded-2xl flex items-center justify-center">
-          <Monitor className="w-10 h-10 text-blue-600" />
+        <div className="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center" style={{ backgroundColor: '#dbeafe' }}>
+          <Monitor className="w-10 h-10" style={{ color: '#2563eb' }} />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="text-clinic-name">{clinicName}</h1>
-          <p className="text-gray-500 text-lg">Paparan TV Klinik</p>
+          <h1 className="text-3xl font-bold mb-2" style={{ color: '#111827' }} data-testid="text-clinic-name">{clinicName}</h1>
+          <p className="text-lg" style={{ color: '#6B7280' }}>Paparan TV Klinik</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-6 space-y-4">
-          <p className="text-gray-600">
+        <div className="rounded-xl shadow-lg p-6 space-y-4" style={{ backgroundColor: '#ffffff' }}>
+          <p style={{ color: '#4B5563' }}>
             Tekan butang di bawah untuk memulakan paparan TV dalam mod skrin penuh.
           </p>
           <Button
             onClick={enterFullscreen}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg"
+            className="w-full py-6 text-lg"
+            style={{ backgroundColor: '#2563eb', color: '#ffffff' }}
             size="lg"
             data-testid="button-start-tv"
           >
@@ -499,7 +500,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
             Mulakan Paparan TV
           </Button>
         </div>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs" style={{ color: '#9CA3AF' }}>
           Paparan ini akan dikemas kini secara automatik setiap 30 saat.
           <br />Tiada login diperlukan.
         </p>

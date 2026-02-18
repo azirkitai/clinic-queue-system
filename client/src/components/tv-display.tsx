@@ -22,16 +22,16 @@ const IsolatedClock = memo(function IsolatedClock() {
   const year = now.getFullYear();
 
   return (
-    <div className="flex items-center justify-center space-x-8">
+    <div className="flex items-center justify-center space-x-8" style={{ color: '#111827' }}>
       <div className="text-center">
-        <div className="text-6xl font-bold text-black">{day}</div>
+        <div className="text-6xl font-bold" style={{ color: '#000000' }}>{day}</div>
       </div>
       <div className="text-center">
-        <div className="font-bold text-4xl">{dayName}</div>
-        <div className="text-3xl text-gray-600">{month} {year}</div>
+        <div className="font-bold text-4xl" style={{ color: '#111827' }}>{dayName}</div>
+        <div className="text-3xl" style={{ color: '#4B5563' }}>{month} {year}</div>
       </div>
       <div className="text-center">
-        <div className="font-mono font-bold text-6xl" data-testid="display-time">
+        <div className="font-mono font-bold text-6xl" style={{ color: '#111827' }} data-testid="display-time">
           {formatTime(now)}
         </div>
       </div>
@@ -958,25 +958,27 @@ export function TVDisplay({
     minWidth: 0,
     minHeight: 0,
     colorScheme: 'light',
+    color: '#111827',
     ...getBackgroundStyle(headerBackgroundMode, headerBackgroundColor, headerBackgroundGradient, '#ffffff')
   } : {
     gridTemplateRows: 'auto 1fr',
     gridTemplateColumns: '65% 35%',
     gap: '0',
     colorScheme: 'light',
+    color: '#111827',
     ...getBackgroundStyle(headerBackgroundMode, headerBackgroundColor, headerBackgroundGradient, '#ffffff')
   };
 
   const wrapperClass = isFullscreen 
-    ? `text-gray-900 grid${isTVMode ? ' tv-mode' : ''}`  // No h-screen - inline 1080px is enough
-    : `h-screen text-gray-900 grid${isTVMode ? ' tv-mode' : ''}`;
+    ? `grid${isTVMode ? ' tv-mode' : ''}`
+    : `h-screen grid${isTVMode ? ' tv-mode' : ''}`;
 
   // Render content - same for both fullscreen and non-fullscreen
   const renderContent = () => (
     <>
       {/* Top Row - Advertisement Area with 16:9 ratio */}
       <div className={`${isFullscreen ? 'm-0 p-0 w-full h-full' : 'p-4 w-full'}`}>
-        <div className="overflow-hidden flex items-center justify-center w-full h-full relative" style={{ aspectRatio: '16/9', backgroundColor: '#f3f4f6', colorScheme: 'light' }}>
+        <div className="overflow-hidden flex items-center justify-center w-full h-full relative" style={{ aspectRatio: '16/9', backgroundColor: '#f3f4f6', colorScheme: 'light', color: '#111827' }}>
           {currentMedia ? (
             <div 
               className="absolute inset-0 w-full h-full transition-opacity ease-in-out"
@@ -1014,7 +1016,7 @@ export function TVDisplay({
             </div>
           ) : (
             <div className="h-full flex items-center justify-center">
-              <div className="text-center text-gray-500">
+              <div className="text-center" style={{ color: '#6B7280' }}>
                 <div className="text-5xl font-bold mb-4" data-testid="no-display-message">
                   NO DISPLAY
                 </div>
@@ -1029,9 +1031,11 @@ export function TVDisplay({
               {mediaItems.map((_, index) => (
                 <div
                   key={index}
-                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                    index === currentMediaIndex ? 'bg-white shadow-lg' : 'bg-white/50'
-                  }`}
+                  className="w-3 h-3 rounded-full transition-all duration-300"
+                  style={{
+                    backgroundColor: index === currentMediaIndex ? '#ffffff' : 'rgba(255,255,255,0.5)',
+                    boxShadow: index === currentMediaIndex ? '0 4px 6px rgba(0,0,0,0.3)' : 'none'
+                  }}
                   data-testid={`media-indicator-${index}`}
                 />
               ))}
@@ -1041,8 +1045,9 @@ export function TVDisplay({
       </div>
 
       {/* Top Right - Patient Names Header and History */}
-      <div className={`text-white ${isFullscreen ? 'p-0 m-0 row-span-2' : 'p-4 row-span-2'} flex flex-col w-full h-full`}
+      <div className={`${isFullscreen ? 'p-0 m-0 row-span-2' : 'p-4 row-span-2'} flex flex-col w-full h-full`}
            style={{
+             color: '#ffffff',
              ...getBackgroundStyle(headerBackgroundMode, headerBackgroundColor, headerBackgroundGradient, '#1d4ed8')
            }}>
         {/* Header */}
@@ -1117,7 +1122,7 @@ export function TVDisplay({
                style={{
                  ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#2563eb')
                }}>
-            <div className="text-white" style={{ fontSize: 'var(--tv-fs-2xl, 48px)' }}>N/A</div>
+            <div style={{ fontSize: 'var(--tv-fs-2xl, 48px)', color: '#ffffff' }}>N/A</div>
           </div>
         )}
 
@@ -1188,8 +1193,9 @@ export function TVDisplay({
       </div>
 
       {/* Second Row Left - Date & Prayer Times / Weather */}
-      <div className={`${isFullscreen ? 'px-4 py-2 m-0' : 'px-4 py-2'} text-white w-full h-full flex flex-col justify-center`}
+      <div className={`${isFullscreen ? 'px-4 py-2 m-0' : 'px-4 py-2'} w-full h-full flex flex-col justify-center`}
            style={{
+             color: '#ffffff',
              ...getBackgroundStyle(showWeather ? weatherBackgroundMode : prayerTimesBackgroundMode, showWeather ? weatherBackgroundColor : prayerTimesBackgroundColor, showWeather ? weatherBackgroundGradient : prayerTimesBackgroundGradient, showWeather ? '#f97316' : '#1e40af')
            }}>
         {/* Date/Time Section - Larger */}
@@ -1201,12 +1207,12 @@ export function TVDisplay({
         {showPrayerTimes && (
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <span className="text-yellow-400 text-3xl">🕌</span>
+              <span className="text-3xl" style={{ color: '#facc15' }}>🕌</span>
               <span className="font-bold text-3xl" style={{ ...getTextStyle(prayerTimesTextMode, prayerTimesTextColor, prayerTimesTextGradient, '#facc15') }}>PRAYER TIME</span>
             </div>
             
             {prayerTimesLoading ? (
-              <div className="text-white text-xl">
+              <div className="text-xl" style={{ color: '#ffffff' }}>
                 Loading prayer times...
               </div>
             ) : null}
@@ -1235,7 +1241,7 @@ export function TVDisplay({
             )}
             
             {!prayerTimesLoading && displayPrayerTimes.length === 0 && (
-              <div className="text-white text-xl">
+              <div className="text-xl" style={{ color: '#ffffff' }}>
                 Prayer times not available
               </div>
             )}
@@ -1246,23 +1252,23 @@ export function TVDisplay({
         {showWeather && (
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <span className="text-blue-400 text-3xl">🌤️</span>
+              <span className="text-3xl" style={{ color: '#60a5fa' }}>🌤️</span>
               <span className="font-bold text-3xl" style={{ ...getTextStyle(weatherTextMode, weatherTextColor, weatherTextGradient, '#60a5fa') }}>WEATHER</span>
             </div>
             
             {/* Fix rendering race condition - better conditional logic */}
             {!location ? (
-              <div className="text-white text-xl">
+              <div className="text-xl" style={{ color: '#ffffff' }}>
                 Detecting location...
               </div>
             ) : weatherLoading ? (
-              <div className="text-white text-xl">
+              <div className="text-xl" style={{ color: '#ffffff' }}>
                 Loading weather data...
               </div>
             ) : weatherData ? (
               <div className="space-y-4">
                 {locationError && (
-                  <div className="text-yellow-300 text-lg mb-2">
+                  <div className="text-lg mb-2" style={{ color: '#fde047' }}>
                     Using default location
                   </div>
                 )}
@@ -1299,7 +1305,7 @@ export function TVDisplay({
                 </div>
               </div>
             ) : (
-              <div className="text-white text-xl">
+              <div className="text-xl" style={{ color: '#ffffff' }}>
                 Weather data unavailable, retrying...
               </div>
             )}
@@ -1311,8 +1317,9 @@ export function TVDisplay({
       {/* Floating Marquee Overlay */}
       {isFullscreen && enableMarquee && (
         <div 
-          className="fixed bottom-0 left-0 w-full text-white py-2 z-50"
+          className="fixed bottom-0 left-0 w-full py-2 z-50"
           style={{
+            color: '#ffffff',
             ...getBackgroundStyle(marqueeBackgroundMode, marqueeBackgroundColor, marqueeBackgroundGradient, '#1e40af')
           }}
         >
@@ -1447,7 +1454,7 @@ export function TVDisplay({
   // Conditional wrapper: fullscreen uses viewport-centered 1920×1080 stage with black background
   if (isFullscreen) {
     return (
-      <div className="fixed inset-0 bg-black overflow-hidden">
+      <div className="fixed inset-0 overflow-hidden" style={{ backgroundColor: '#000000' }}>
         <div 
           ref={stageRef}
           id="stage"
