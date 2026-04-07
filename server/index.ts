@@ -160,16 +160,15 @@ app.use((req, res, next) => {
       const cleaned = await storage.deleteOldCompletedPatients(user.id, 24);
       totalCleaned += cleaned;
       
-      // CRITICAL FIX: Clear any windows that reference deleted/non-existent patients
-      if (cleaned > 0) {
-        const windows = await storage.getWindows(user.id);
-        for (const window of windows) {
-          if (window.currentPatientId) {
-            const patient = await storage.getPatient(window.currentPatientId);
-            if (!patient) {
-              await storage.updateWindowPatient(window.id, user.id, undefined);
-              console.log(`[STARTUP CLEANUP] Cleared stuck window ${window.name} (patient ${window.currentPatientId} no longer exists)`);
-            }
+      // ALWAYS check for stuck windows on startup (not just when patients were deleted)
+      // Windows can become stuck from crashes, direct DB edits, or race conditions
+      const windows = await storage.getWindows(user.id);
+      for (const window of windows) {
+        if (window.currentPatientId) {
+          const patient = await storage.getPatient(window.currentPatientId);
+          if (!patient || patient.userId !== user.id) {
+            await storage.updateWindowPatient(window.id, user.id, undefined);
+            console.log(`[STARTUP CLEANUP] Cleared stuck window ${window.name} (patient ${window.currentPatientId} ${!patient ? 'no longer exists' : 'wrong tenant'})`);
           }
         }
       }
