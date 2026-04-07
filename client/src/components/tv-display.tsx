@@ -1132,17 +1132,17 @@ export function TVDisplay({
           </div>
           
           {/* Recent Calling History Items (rolling log of recent calls, max 4) */}
-          <div className="space-y-4 overflow-y-auto flex-1" data-testid="queue-list">
+          <div className="flex flex-col gap-4 overflow-hidden flex-1" data-testid="queue-list">
             {queueHistory.length > 0 ? (
               queueHistory.slice(0, 4).map((item) => (
-                <div key={item.id} className="grid grid-cols-2 gap-1 p-2 rounded-lg"
+                <div key={item.id} className="grid grid-cols-2 gap-1 p-2 rounded-lg flex-1 min-h-0"
                      style={{
                        ...getBackgroundStyle(queueItemBackgroundMode, queueItemBackgroundColor, queueItemBackgroundGradient, '#2563eb')
                      }}>
-                  <div className="text-center" 
+                  <div className="text-center flex items-center justify-center" 
                        style={{ 
                          ...getHistoryNameStyle(),
-                         fontSize: historyFontSizes[item.id]?.name || 'var(--tv-fs-xl, 32px)', // Bigger: auto-scales from 22px to 48px
+                         fontSize: historyFontSizes[item.id]?.name || 'var(--tv-fs-xl, 32px)',
                          fontWeight: 'bold',
                          lineHeight: '1.1',
                          wordBreak: 'break-word',
@@ -1150,10 +1150,10 @@ export function TVDisplay({
                        }}>
                     {getDisplayName(item.name)}
                   </div>
-                  <div className="text-center" 
+                  <div className="text-center flex items-center justify-center" 
                        style={{ 
                          ...getHistoryNameStyle(),
-                         fontSize: historyFontSizes[item.id]?.room || 'var(--tv-fs-xl, 32px)', // Bigger: auto-scales from 22px to 48px
+                         fontSize: historyFontSizes[item.id]?.room || 'var(--tv-fs-xl, 32px)',
                          fontWeight: 'normal',
                          lineHeight: '1.1',
                          wordBreak: 'break-word',
