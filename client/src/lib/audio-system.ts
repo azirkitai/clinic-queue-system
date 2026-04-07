@@ -269,65 +269,80 @@ export class AudioSystem {
     }
   }
 
-  private speakText(text: string, lang: string, volume: number, rate: number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (!('speechSynthesis' in window)) {
-        console.warn('SpeechSynthesis not supported');
-        resolve();
-        return;
-      }
-
-      window.speechSynthesis.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang;
-      utterance.volume = Math.max(0, Math.min(1, volume / 100));
-      utterance.rate = rate;
-      utterance.pitch = 1;
-
-      const voices = window.speechSynthesis.getVoices();
-      const langVoice = voices.find(v => v.lang === lang) 
-        || voices.find(v => v.lang.startsWith(lang.split('-')[0]));
-      if (langVoice) {
-        utterance.voice = langVoice;
-      }
-
-      const timeout = setTimeout(() => {
-        window.speechSynthesis.cancel();
-        resolve();
-      }, 15000);
-
-      utterance.onend = () => {
-        clearTimeout(timeout);
-        resolve();
-      };
-
-      utterance.onerror = (e) => {
-        clearTimeout(timeout);
-        console.error('TTS error:', e);
-        resolve();
-      };
-
-      window.speechSynthesis.speak(utterance);
+  private async synthesizeFromServer(text: string, language: 'ms-MY' | 'en-US'): Promise<string> {
+    const response = await fetch('/api/tts/synthesize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, language }),
     });
+
+    if (!response.ok) {
+      throw new Error(`TTS server error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.audioContent;
+  }
+
+  private async playBase64Audio(base64Audio: string, volume: number): Promise<void> {
+    const audioUrl = `data:audio/mp3;base64,${base64Audio}`;
+
+    if (this.forceHTMLAudio) {
+      return await this.playAudioWithHTMLAudio(audioUrl, volume);
+    }
+
+    try {
+      const binaryString = atob(base64Audio);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      const audioContext = this.getAudioContext();
+      if (audioContext.state === 'suspended') {
+        return await this.playAudioWithHTMLAudio(audioUrl, volume);
+      }
+
+      const audioBuffer = await audioContext.decodeAudioData(bytes.buffer);
+      const source = audioContext.createBufferSource();
+      const gainNode = audioContext.createGain();
+
+      source.buffer = audioBuffer;
+      source.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      gainNode.gain.value = volume / 100;
+
+      return new Promise((resolve, reject) => {
+        source.onended = () => resolve();
+        try {
+          source.start();
+        } catch {
+          this.playAudioWithHTMLAudio(audioUrl, volume).then(resolve).catch(reject);
+        }
+      });
+    } catch {
+      return await this.playAudioWithHTMLAudio(audioUrl, volume);
+    }
   }
 
   public async playTts(callInfo: CallInfo, settings: AudioSettings): Promise<void> {
-    if (!settings.ttsEnabled || !('speechSynthesis' in window)) return;
+    if (!settings.ttsEnabled) return;
 
     const lang = settings.ttsLanguage || 'ms-MY';
-    const rate = settings.ttsRate ?? 0.9;
 
     try {
       if (lang === 'both') {
         const msText = this.buildTtsText(callInfo, 'ms-MY');
-        await this.speakText(msText, 'ms-MY', settings.volume, rate);
-        await new Promise(r => setTimeout(r, 800));
+        const msAudio = await this.synthesizeFromServer(msText, 'ms-MY');
+        await this.playBase64Audio(msAudio, settings.volume);
+        await new Promise(r => setTimeout(r, 600));
         const enText = this.buildTtsText(callInfo, 'en-US');
-        await this.speakText(enText, 'en-US', settings.volume, rate);
+        const enAudio = await this.synthesizeFromServer(enText, 'en-US');
+        await this.playBase64Audio(enAudio, settings.volume);
       } else {
         const text = this.buildTtsText(callInfo, lang);
-        await this.speakText(text, lang, settings.volume, rate);
+        const audio = await this.synthesizeFromServer(text, lang);
+        await this.playBase64Audio(audio, settings.volume);
       }
     } catch (error) {
       console.error('TTS playback error:', error);
@@ -430,10 +445,12 @@ export class AudioSystem {
   }
 
   public getAvailableTtsVoices(): Array<{lang: string, name: string}> {
-    if (!('speechSynthesis' in window)) return [];
-    return window.speechSynthesis.getVoices()
-      .filter(v => v.lang.startsWith('ms') || v.lang.startsWith('en') || v.lang.startsWith('id'))
-      .map(v => ({ lang: v.lang, name: v.name }));
+    return [
+      { lang: 'ms-MY', name: 'Yasmin (BM - Perempuan)' },
+      { lang: 'ms-MY', name: 'Osman (BM - Lelaki)' },
+      { lang: 'en-US', name: 'Jenny (EN - Female)' },
+      { lang: 'en-US', name: 'Guy (EN - Male)' },
+    ];
   }
 }
 

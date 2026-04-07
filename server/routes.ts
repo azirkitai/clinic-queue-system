@@ -50,6 +50,7 @@ import fs from "fs/promises";
 import path from "path";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import gcsRouter from "./gcs";
+import edgeTtsRouter from "./edge-tts";
 
 // Server-side cache for high-frequency read endpoints
 // Reduces Neon CPU usage by caching responses for 2-3 seconds
@@ -492,6 +493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Google Cloud Storage routes
   app.use("/api/gcs", requireAuth, gcsRouter);
+  app.use("/api/tts", edgeTtsRouter);
 
   // Legacy Object Storage routes (kept for backward compatibility)
   // Get presigned upload URL for media files

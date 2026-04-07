@@ -2457,25 +2457,6 @@ export default function Settings() {
                   </p>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Speech Speed: {currentSettings.ttsRate.toFixed(1)}x</Label>
-                  <input
-                    type="range"
-                    min="0.5"
-                    max="1.5"
-                    step="0.1"
-                    value={currentSettings.ttsRate}
-                    onChange={(e) => updateSoundSetting('ttsRate', parseFloat(e.target.value))}
-                    className="w-full"
-                    data-testid="slider-tts-rate"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Slow (0.5x)</span>
-                    <span>Normal (0.9x)</span>
-                    <span>Fast (1.5x)</span>
-                  </div>
-                </div>
-
                 <Button
                   variant="outline"
                   onClick={async () => {
@@ -2511,9 +2492,8 @@ export default function Settings() {
 
                 <div className="p-3 rounded-md border bg-muted/50">
                   <p className="text-xs text-muted-foreground">
-                    Voice announcement uses your device's built-in text-to-speech engine. 
-                    Quality depends on your browser/device. Android TV, Chrome, and Edge have good Malay voice support.
-                    The chime sound plays first, followed by the voice announcement.
+                    Suara neural berkualiti tinggi (percuma). Bahasa Melayu: Yasmin/Osman. English: Jenny/Guy.
+                    Bunyi chime dimainkan dahulu, kemudian suara panggilan.
                   </p>
                 </div>
               </div>
