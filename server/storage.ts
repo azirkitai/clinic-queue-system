@@ -1392,6 +1392,7 @@ export class DatabaseStorage implements IStorage {
     try {
       await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS tv_pin VARCHAR(6) UNIQUE`);
       await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true`);
+      await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP`);
       await db.execute(sql`ALTER TABLE settings ADD COLUMN IF NOT EXISTS category TEXT`);
       await db.execute(sql`ALTER TABLE patients ADD COLUMN IF NOT EXISTS is_priority BOOLEAN NOT NULL DEFAULT false`);
       await db.execute(sql`ALTER TABLE patients ADD COLUMN IF NOT EXISTS priority_reason TEXT`);
