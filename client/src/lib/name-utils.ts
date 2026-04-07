@@ -1,10 +1,33 @@
-const SEPARATORS = /\b(BIN|BINTI|A\/P|A\/L)\b/i;
+const SEPARATOR_LIST = [
+  'BINTI', 'BIN', 'BTE', 'BT', 'B.',
+  'A/P', 'A/L', 'A.P', 'A.L', 'AP', 'AL',
+  'S/O', 'D/O',
+];
+
+function findSeparatorIndex(name: string): number {
+  const upper = name.toUpperCase();
+  const words = upper.split(/\s+/);
+
+  let pos = 0;
+  for (let i = 0; i < words.length; i++) {
+    if (i > 0) {
+      const word = words[i];
+      for (const sep of SEPARATOR_LIST) {
+        if (word === sep) {
+          return pos;
+        }
+      }
+    }
+    pos += words[i].length + 1;
+  }
+  return -1;
+}
 
 function shortenName(name: string): string {
   if (!name) return '';
   const upper = name.trim().toUpperCase();
 
-  const sepIndex = upper.search(SEPARATORS);
+  const sepIndex = findSeparatorIndex(upper);
   if (sepIndex > 0) {
     return upper.substring(0, sepIndex).trim();
   }
