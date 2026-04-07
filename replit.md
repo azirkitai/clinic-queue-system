@@ -7,6 +7,14 @@ This project is a comprehensive clinic patient calling system designed to enhanc
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+- **April 7, 2026**: Stuck room self-healing + dashboard dispensary counter:
+  - **Self-healing helper**: `clearStuckWindows(userId)` detects and clears rooms referencing deleted/non-existent patients
+  - **Bulk delete fix**: `clear-completed` and `clear-old-completed` endpoints now auto-clear stuck windows after deleting patients
+  - **Tenant-safe**: Self-heal validates patient belongs to same tenant (prevents cross-tenant data leak)
+  - **WebSocket fix**: `patient:deleted` event now invalidates `/api/windows` cache so connected clients update room status instantly
+  - **Stuck room UI**: Window card shows red "Room Stuck" warning with clear instructions when patient was deleted but room not cleared
+  - **Dashboard dispensary**: Added orange "Dispensary" counter card showing patients awaiting medicine (5-column grid)
+  - **GET /api/windows self-heal**: Refactored to use shared `clearStuckWindows` helper, re-fetches windows after healing
 - **April 7, 2026**: Connection stability + long-running reliability fixes:
   - **Database keepalive**: Pool pings every 4 minutes to prevent Neon serverless from dropping idle connections
   - **Pool error handler**: `pool.on('error')` catches unexpected disconnects and logs them instead of crashing

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Edit, Trash2, User, UserCheck, XCircle } from "lucide-react";
+import { Edit, Trash2, User, UserCheck, XCircle, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -133,18 +133,30 @@ export function WindowCard({
       <CardContent>
         {/* Current Patient Info */}
         {window.currentPatientId && window.isActive ? (
-          <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-            <div className="flex items-center text-green-700 dark:text-green-300">
-              <UserCheck className="h-4 w-4 mr-2" />
-              <span className="text-sm font-medium">Currently Serving:</span>
+          !window.currentPatientName && !window.currentPatientNumber ? (
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-300 dark:border-red-800">
+              <div className="flex items-center text-red-700 dark:text-red-300">
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                <span className="text-sm font-medium">Room Stuck</span>
+              </div>
+              <div className="mt-1 text-sm text-red-600 dark:text-red-400">
+                Patient was deleted but room not cleared. Use "Force Clear" below.
+              </div>
             </div>
-            <div 
-              className="mt-1 font-semibold text-green-800 dark:text-green-200"
-              data-testid={`text-current-patient-${window.id}`}
-            >
-              {window.currentPatientName || `No. ${window.currentPatientNumber}`}
+          ) : (
+            <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="flex items-center text-green-700 dark:text-green-300">
+                <UserCheck className="h-4 w-4 mr-2" />
+                <span className="text-sm font-medium">Currently Serving:</span>
+              </div>
+              <div 
+                className="mt-1 font-semibold text-green-800 dark:text-green-200"
+                data-testid={`text-current-patient-${window.id}`}
+              >
+                {window.currentPatientName || `No. ${window.currentPatientNumber}`}
+              </div>
             </div>
-          </div>
+          )
         ) : (
           <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="flex items-center text-gray-500">

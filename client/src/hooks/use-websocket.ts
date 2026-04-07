@@ -224,7 +224,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     });
 
     socket.on('patient:deleted', (data: any) => {
-      // Optimistic update: Remove patient from BOTH caches
       if (data.patientId) {
         queryClient.setQueryData(['/api/patients'], (old: any) => {
           if (!old) return old;
@@ -237,6 +236,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
       debouncedTvRefetch();
     });
 

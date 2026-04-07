@@ -137,6 +137,23 @@ setInterval(() => {
   }
 }, 10000);
 
+// Helper: Clear windows that reference non-existent or wrong-tenant patients (self-healing)
+async function clearStuckWindows(userId: string): Promise<number> {
+  const windows = await storage.getWindows(userId);
+  let cleared = 0;
+  for (const window of windows) {
+    if (window.currentPatientId) {
+      const patient = await storage.getPatient(window.currentPatientId);
+      if (!patient || patient.userId !== userId) {
+        await storage.updateWindowPatient(window.id, userId, undefined);
+        console.log(`[SELF-HEAL] Cleared stuck window ${window.name} (patient ${window.currentPatientId} ${!patient ? 'no longer exists' : 'belongs to different tenant'})`);
+        cleared++;
+      }
+    }
+  }
+  return cleared;
+}
+
 // Configure multer for file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -1053,18 +1070,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Clear completed patients (manual cleanup to reduce database size)
   app.post("/api/patients/clear-completed", async (req, res) => {
     try {
-      // Check authentication
       if (!req.session.userId) {
         return res.status(401).json({ error: "Session inactive" });
       }
       
-      // Delete ALL completed patients
       const deletedCount = await storage.deleteAllCompletedPatients(req.session.userId);
+      
+      // CRITICAL: Clear any windows that now reference deleted patients
+      if (deletedCount > 0) {
+        const clearedWindows = await clearStuckWindows(req.session.userId);
+        if (clearedWindows > 0) {
+          console.log(`[CLEAR COMPLETED] Also cleared ${clearedWindows} stuck window(s)`);
+        }
+      }
       
       console.log(`[CLEAR COMPLETED] Deleted ${deletedCount} completed patients for user ${req.session.userId}`);
       
-      // Invalidate cache immediately after clearing completed (destructive action)
       invalidateCache(req.session.userId, undefined, true);
+      
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('patient:deleted', { timestamp: Date.now() });
+      }
       
       res.json({ 
         success: true, 
@@ -1080,25 +1106,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Clear old completed patients (cleanup patients older than X hours)
   app.post("/api/patients/clear-old-completed", async (req, res) => {
     try {
-      // Check authentication
       if (!req.session.userId) {
         return res.status(401).json({ error: "Session inactive" });
       }
       
-      const { hoursOld = 24 } = req.body; // Default to 24 hours
+      const { hoursOld = 24 } = req.body;
       
-      // Validate hoursOld
       if (typeof hoursOld !== 'number' || hoursOld < 1 || hoursOld > 720) {
         return res.status(400).json({ error: "hoursOld must be between 1 and 720 (30 days)" });
       }
       
-      // Delete completed patients older than specified hours
       const deletedCount = await storage.deleteOldCompletedPatients(req.session.userId, hoursOld);
+      
+      // CRITICAL: Clear any windows that now reference deleted patients
+      if (deletedCount > 0) {
+        const clearedWindows = await clearStuckWindows(req.session.userId);
+        if (clearedWindows > 0) {
+          console.log(`[CLEAR OLD] Also cleared ${clearedWindows} stuck window(s)`);
+        }
+      }
       
       console.log(`[CLEAR OLD] Deleted ${deletedCount} completed patients older than ${hoursOld}h for user ${req.session.userId}`);
       
-      // Invalidate cache immediately after clearing old completed (destructive action)
       invalidateCache(req.session.userId, undefined, true);
+      
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('patient:deleted', { timestamp: Date.now() });
+      }
       
       res.json({ 
         success: true, 
@@ -1416,25 +1450,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(cached);
       }
       
-      const windows = await storage.getWindows(req.session.userId);
+      let windows = await storage.getWindows(req.session.userId);
       
       // SELF-HEALING: Auto-clear windows that reference non-existent patients
-      // This prevents rooms from getting "stuck" when patients are deleted/cleaned up
-      let healed = false;
-      for (const window of windows) {
-        if (window.currentPatientId) {
-          const patient = await storage.getPatient(window.currentPatientId);
-          if (!patient) {
-            await storage.updateWindowPatient(window.id, req.session.userId, undefined);
-            window.currentPatientId = undefined;
-            healed = true;
-            console.log(`[SELF-HEAL] Cleared stuck window ${window.name} (patient ${window.currentPatientId} no longer exists)`);
-          }
-        }
-      }
-      
-      if (healed) {
+      const healed = await clearStuckWindows(req.session.userId);
+      if (healed > 0) {
         invalidateCache(req.session.userId);
+        windows = await storage.getWindows(req.session.userId);
       }
       
       // Cache the result
