@@ -420,7 +420,7 @@ export class AudioSystem {
           await this.playNotificationSound(item.settings);
         }
         if (item.settings.ttsEnabled) {
-          await new Promise(r => setTimeout(r, 400));
+          await new Promise(r => setTimeout(r, 200));
           await this.playTts(item.callInfo, item.settings);
         }
         if (this.audioQueue.length > 0) {
