@@ -7,6 +7,12 @@ This project is a comprehensive clinic patient calling system designed to enhanc
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+- **April 7, 2026**: External API billing optimization:
+  - **Server-side cache for prayer times**: 1-hour TTL prevents redundant calls to aladhan.com (coordinates rounded to 2 decimal places for cache key sharing across nearby TVs)
+  - **Server-side cache for weather**: 15-minute TTL prevents redundant calls to open-meteo.com
+  - **Fixed duplicate settings queries**: TV display component was using different query keys than TV standalone, causing double API fetches for settings. Unified query keys so TanStack Query deduplicates
+  - **Reduced weather polling**: Client-side weather refetch interval increased from 10 min to 30 min (server cache handles freshness)
+  - **Impact**: With 10 TVs, external API calls reduced from ~80/hour to ~2/hour (prayer: 1/hour, weather: 4/hour cached)
 - **February 17, 2026**: TV Display performance optimization for Android TV dongles:
   - **Isolated Clock component**: Date/time extracted into `memo` component - prevents full TVDisplay re-render every second
   - **CSS blink animation**: Replaced React setInterval-driven blink (10 state changes per cycle) with CSS `@keyframes tv-blink` - zero React re-renders during blink

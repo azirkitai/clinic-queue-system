@@ -2732,11 +2732,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Server-side cache for external APIs (prayer times + weather)
+  // Prevents redundant external calls when multiple TVs request the same data
+  const externalApiCache = new Map<string, { data: any; timestamp: number }>();
+  const PRAYER_CACHE_TTL = 3600000; // 1 hour - prayer times change daily
+  const WEATHER_CACHE_TTL = 900000; // 15 minutes - weather changes slowly
+
+  function getExternalCache(key: string, ttl: number): any | null {
+    const entry = externalApiCache.get(key);
+    if (entry && Date.now() - entry.timestamp < ttl) {
+      return entry.data;
+    }
+    if (entry) externalApiCache.delete(key);
+    return null;
+  }
+
+  function setExternalCache(key: string, data: any): void {
+    externalApiCache.set(key, { data, timestamp: Date.now() });
+  }
+
   // Prayer Times API Routes
   app.get("/api/prayer-times", async (req, res) => {
     try {
       const { city = 'Kuala Lumpur', country = 'Malaysia', latitude, longitude } = req.query;
       
+      // Round coordinates to 2 decimal places for cache key (same neighborhood)
+      const cacheKey = latitude && longitude 
+        ? `prayer:${parseFloat(latitude as string).toFixed(2)},${parseFloat(longitude as string).toFixed(2)}`
+        : `prayer:${city},${country}`;
+
+      const cached = getExternalCache(cacheKey, PRAYER_CACHE_TTL);
+      if (cached) {
+        return res.json(cached);
+      }
+
       let apiUrl = 'https://api.aladhan.com/v1/timings';
       let params: Record<string, string> = {
         method: '11' // Singapore method for Malaysia
@@ -2779,7 +2808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ];
 
       // Return prayer times with metadata - let client handle highlighting with browser timezone
-      res.json({
+      const result = {
         prayerTimes,
         date: data.data.date,
         location: { 
@@ -2790,7 +2819,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           timezone: data.data.meta.timezone,
           method: data.data.meta.method.name
         }
-      });
+      };
+
+      setExternalCache(cacheKey, result);
+      res.json(result);
 
     } catch (error) {
       console.error("Error fetching prayer times:", error);
@@ -2833,26 +2865,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/weather", async (req, res) => {
     try {
       const { city = 'Kuala Lumpur', country = 'Malaysia', latitude, longitude } = req.query;
-      
-      let weatherUrl = 'https://api.openweathermap.org/data/2.5/weather?';
-      let params: Record<string, string> = {
-        units: 'metric', // Celsius
-        lang: 'en'
-      };
 
       // Use coordinates if provided, otherwise use city/country
       if (latitude && longitude) {
-        params.lat = latitude as string;
-        params.lon = longitude as string;
-      } else {
-        params.q = `${city},${country}`;
-      }
-
-      // Note: OpenWeatherMap requires API key for most endpoints
-      // Using a free alternative: Open-Meteo API (no key required)
-      if (latitude && longitude) {
         const lat = parseFloat(latitude as string);
         const lon = parseFloat(longitude as string);
+        
+        // Check server-side cache first (15 min TTL)
+        const cacheKey = `weather:${lat.toFixed(2)},${lon.toFixed(2)}`;
+        const cached = getExternalCache(cacheKey, WEATHER_CACHE_TTL);
+        if (cached) {
+          return res.json(cached);
+        }
         
         const openMeteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=auto`;
         const response = await fetch(openMeteoUrl);
@@ -2891,7 +2915,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const current = data.current;
         const weather = getWeatherDescription(current.weather_code);
         
-        res.json({
+        const result = {
           location: {
             city: city || 'Unknown',
             country: country || 'Unknown'
@@ -2908,7 +2932,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             windSpeed: 'km/h',
             humidity: '%'
           }
-        });
+        };
+
+        setExternalCache(cacheKey, result);
+        res.json(result);
         
       } else {
         // Fallback: Return default weather for KL if no coordinates

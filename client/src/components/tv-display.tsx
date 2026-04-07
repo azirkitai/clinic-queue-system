@@ -236,7 +236,7 @@ export function TVDisplay({
   
   // Fetch active theme - use token-based endpoint if tvToken provided
   const { data: theme } = useQuery({
-    queryKey: tvToken ? [`/api/tv/${tvToken}/themes/active`, 'tv-theme'] : ['/api/themes/active'],
+    queryKey: tvToken ? [`/api/tv/${tvToken}/themes/active`] : ['/api/themes/active'],
     queryFn: async () => {
       const endpoint = tvToken ? `/api/tv/${tvToken}/themes/active` : '/api/themes/active';
       const response = await fetch(endpoint);
@@ -252,7 +252,7 @@ export function TVDisplay({
 
   // Fetch text groups - use token-based endpoint if tvToken provided
   const { data: textGroups = [] } = useQuery({
-    queryKey: tvToken ? [`/api/tv/${tvToken}/text-groups/active`, 'tv-text-groups'] : ['/api/text-groups/active'],
+    queryKey: tvToken ? [`/api/tv/${tvToken}/text-groups/active`] : ['/api/text-groups/active'],
     queryFn: async () => {
       const endpoint = tvToken ? `/api/tv/${tvToken}/text-groups/active` : '/api/text-groups/active';
       const response = await fetch(endpoint);
@@ -269,7 +269,7 @@ export function TVDisplay({
   // ✅ Use /api/settings/tv for 80% smaller payload (~2KB vs ~11KB)
   // NOTE: clinicLogo excluded from this endpoint - fetched separately with long cache
   const { data: settings = [] } = useQuery<Array<{key: string; value: string}>>({
-    queryKey: tvToken ? [`/api/tv/${tvToken}/settings`, 'tv-settings'] : ['/api/settings/tv'],
+    queryKey: tvToken ? [`/api/tv/${tvToken}/settings`] : ['/api/settings/tv'],
     queryFn: async () => {
       const endpoint = tvToken ? `/api/tv/${tvToken}/settings` : '/api/settings/tv';
       const response = await fetch(endpoint);
@@ -548,7 +548,7 @@ export function TVDisplay({
     },
     enabled: showWeather && !!location,
     staleTime: 1000 * 60 * 15, // 15 minutes - weather changes more frequently
-    refetchInterval: 1000 * 60 * 10, // Refetch every 10 minutes
+    refetchInterval: 1000 * 60 * 30, // Refetch every 30 minutes (server caches for 15 min)
   });
 
   // Use real prayer times if available, otherwise fall back to props
