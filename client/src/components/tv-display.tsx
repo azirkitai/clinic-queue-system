@@ -8,6 +8,7 @@ import { CLINIC_LOGO } from "@/lib/clinic-logo";
 import { audioSystem } from "@/lib/audio-system";
 import type { AudioSettings } from "@/lib/audio-system";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { getDisplayName } from "@/lib/name-utils";
 
 const IsolatedClock = memo(function IsolatedClock() {
   const [now, setNow] = useState(new Date());
@@ -822,7 +823,7 @@ export function TVDisplay({
       const roomBaseSize = isFullSize ? 50 : 40; // Bigger calling room
       
       // Calculate optimal font sizes
-      const newNameSize = calculateFontSize(currentPatient.name, nameContainerWidth, nameBaseSize, 20);
+      const newNameSize = calculateFontSize(getDisplayName(currentPatient.name), nameContainerWidth, nameBaseSize, 20);
       const newRoomSize = calculateFontSize(currentPatient.room, roomContainerWidth, roomBaseSize, 16);
       
       setPatientNameFontSize(newNameSize);
@@ -845,7 +846,7 @@ export function TVDisplay({
       const historyRoomBaseSize = isFullSize ? 56 : 42; // Bigger history room size
       
       queueHistory.forEach((item) => {
-        const nameFontSize = calculateFontSize(item.name, historyNameContainerWidth, historyNameBaseSize, 22); // Bigger minimum size
+        const nameFontSize = calculateFontSize(getDisplayName(item.name), historyNameContainerWidth, historyNameBaseSize, 22); // Bigger minimum size
         const roomFontSize = calculateFontSize(item.room, historyRoomContainerWidth, historyRoomBaseSize, 22); // Bigger minimum size
         
         newHistoryFontSizes[item.id] = {
@@ -1089,7 +1090,7 @@ export function TVDisplay({
                    ...getTextStyle(callNameTextMode, callNameTextColor, callNameTextGradient, '#facc15')
                  }} 
                  data-testid="current-patient-display">
-              {currentPatient.name}
+              {getDisplayName(currentPatient.name)}
             </div>
             <div className={isBlinking ? 'tv-blink-active' : ''}
                  style={{ 
@@ -1147,7 +1148,7 @@ export function TVDisplay({
                          wordBreak: 'break-word',
                          overflow: 'hidden'
                        }}>
-                    {item.name}
+                    {getDisplayName(item.name)}
                   </div>
                   <div className="text-center" 
                        style={{ 
@@ -1404,7 +1405,7 @@ export function TVDisplay({
                        lineHeight: '1.1'
                      }}
                      data-testid="highlight-patient-name">
-                  {currentPatient.name}
+                  {getDisplayName(currentPatient.name)}
                 </div>
               </div>
 

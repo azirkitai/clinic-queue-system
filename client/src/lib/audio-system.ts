@@ -2,6 +2,7 @@
 // Handles preset audio notifications only
 
 import type { SoundModeType, PresetSoundKeyType } from "@shared/schema";
+import { getTtsName } from "@/lib/name-utils";
 
 // Import preset audio files via @assets
 // Original 5 files
@@ -306,7 +307,7 @@ export class AudioSystem {
   }
 
   private buildTtsText(callInfo: CallInfo, lang: 'ms-MY' | 'en-US'): string {
-    const name = callInfo.patientName || '';
+    const name = getTtsName(callInfo.patientName, lang);
     const room = this.translateRoomName(callInfo.windowName || '', lang);
 
     if (lang === 'ms-MY') {

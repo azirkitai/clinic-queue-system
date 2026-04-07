@@ -79,7 +79,7 @@ export function PatientRegistration({ onRegister, nextNumber, isRegistering = fa
               value={patientName}
               onChange={(e) => setPatientName(e.target.value.toUpperCase())}
               placeholder="Enter patient name"
-              maxLength={25}
+              maxLength={100}
               data-testid="input-patient-name"
             />
           </div>
@@ -138,7 +138,8 @@ export function PatientRegistration({ onRegister, nextNumber, isRegistering = fa
           </p>
           <ul className="mt-1 space-y-1 list-disc list-inside">
             <li>Enter patient full name to register</li>
-            <li>Patient name will be shown on TV display when called</li>
+            <li>TV display & voice will use short name (before BIN/BINTI/A/P/A/L)</li>
+            <li>Names starting with B/O will be announced as "Baby of..."</li>
             <li>Each patient will automatically get a queue number</li>
           </ul>
         </div>
