@@ -1,6 +1,6 @@
 const SEPARATOR_LIST = [
   'BINTI', 'BIN', 'BTE', 'BT', 'B.',
-  'A/P', 'A/L', 'A.P', 'A.L', 'AP', 'AL',
+  'A/P', 'A/L', 'A.P', 'A.L',
   'S/O', 'D/O',
 ];
 
