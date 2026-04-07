@@ -934,7 +934,7 @@ export class MemStorage implements IStorage {
       totalWaiting: todayPatients.filter(p => p.status === 'waiting').length,
       totalCalled: todayPatients.filter(p => p.status === 'called').length,
       totalCompleted: todayPatients.filter(p => p.status === 'completed').length,
-      totalDispensary: todayPatients.filter(p => p.status === 'dispensary').length,
+      totalDispensary: todayPatients.filter(p => p.readyForDispensary && p.status !== 'completed').length,
       activeWindows: userWindows.filter(w => w.isActive).length,
       totalWindows: userWindows.length
     };
@@ -2606,7 +2606,7 @@ export class DatabaseStorage implements IStorage {
       totalWaiting: todayPatients.filter(p => p.status === "waiting").length,
       totalCalled: todayPatients.filter(p => p.status === "called").length,
       totalCompleted: todayPatients.filter(p => p.status === "completed").length,
-      totalDispensary: todayPatients.filter(p => p.status === "dispensary").length,
+      totalDispensary: todayPatients.filter(p => p.readyForDispensary && p.status !== "completed").length,
       activeWindows: windows.filter(w => w.isActive && w.currentPatientId).length,
       totalWindows: windows.filter(w => w.isActive).length
     };
