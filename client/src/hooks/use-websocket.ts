@@ -92,8 +92,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     // Check version on mount
     checkVersion();
 
-    // Check version every 2 minutes
-    const intervalId = setInterval(checkVersion, 2 * 60 * 1000);
+    // Check version every 30 seconds
+    const intervalId = setInterval(checkVersion, 30 * 1000);
 
     return () => {
       clearInterval(intervalId);
