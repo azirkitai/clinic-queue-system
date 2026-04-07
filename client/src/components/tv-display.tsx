@@ -770,16 +770,17 @@ export function TVDisplay({
       setShowHighlight(false);
       setIsBlinking(false);
       
-      // AUDIO PLAYBACK: Parse audio settings and play sound (use correct setting keys)
       const audioSettings: AudioSettings = {
         enableSound: (settingsObj.enableSound ?? 'true') === 'true',
         volume: parseInt(settingsObj.volume || '70', 10),
         soundMode: 'preset',
-        presetKey: (settingsObj.presetKey || 'notification_sound') as any
+        presetKey: (settingsObj.presetKey || 'notification_sound') as any,
+        ttsEnabled: (settingsObj.ttsEnabled ?? 'false') === 'true',
+        ttsLanguage: (settingsObj.ttsLanguage as any) || 'ms-MY',
+        ttsRate: parseFloat(settingsObj.ttsRate || '0.9'),
       };
 
-      // Play notification sound for new/recalled patient (only if audio not disabled)
-      if (!disableAudio && audioSettings.enableSound) {
+      if (!disableAudio && (audioSettings.enableSound || audioSettings.ttsEnabled)) {
         audioSystem.playCallingSequence({
           patientName: currentPatient.name,
           patientNumber: parseInt(currentPatient.number, 10),

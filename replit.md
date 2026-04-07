@@ -35,7 +35,7 @@ Key entities: Users (auth/roles), Windows (rooms/stations), Patients (queue mana
 ### Core Features
 - **Patient Management**: Named patient registration with automatic queue numbering, priority patient management, real-time queue management, multi-window support.
 - **TV Display Mode**: Full-screen display for calling, including Islamic prayer times, and a standalone TV Display page (`/tv/:token`) with short PIN access and WebSocket real-time updates.
-- **Audio Integration**: Configurable sound alerts and text-to-speech.
+- **Audio Integration**: Configurable preset sound alerts with Text-to-Speech (TTS) voice announcements in Bahasa Melayu (ms-MY), English (en-US), or both languages. Uses browser built-in Web Speech API (zero cost). Configurable speech rate.
 - **Theme Customization**: Medical blue color scheme, accessibility-focused.
 - **Security**: Role-based authentication (admin/user), secure session handling, BCrypt password hashing, admin impersonation.
 - **System Health**: Stuck room self-healing to clear windows referencing deleted patients, user online/offline status tracking.

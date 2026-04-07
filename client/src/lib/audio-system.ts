@@ -21,11 +21,16 @@ import orchestraEnding2292 from "@assets/mixkit-orchestra-trumpets-ending-2292_1
 import softwareRemove2576 from "@assets/mixkit-software-interface-remove-2576_1759142829294.wav";
 import trumpetFanfare2293 from "@assets/mixkit-trumpet-fanfare-2293_1759142829294.wav";
 
+export type TtsLanguageType = 'ms-MY' | 'en-US' | 'both';
+
 export interface AudioSettings {
   enableSound: boolean;
   volume: number;
   soundMode: SoundModeType; // Will always be 'preset'
   presetKey: PresetSoundKeyType;
+  ttsEnabled?: boolean;
+  ttsLanguage?: TtsLanguageType;
+  ttsRate?: number;
 }
 
 export interface CallInfo {
@@ -246,11 +251,98 @@ export class AudioSystem {
   }
 
 
-  // Complete calling sequence - plays preset audio notification only
+  private buildTtsText(callInfo: CallInfo, lang: 'ms-MY' | 'en-US'): string {
+    const num = callInfo.patientNumber;
+    const name = callInfo.patientName || '';
+    const room = callInfo.windowName || '';
+
+    if (lang === 'ms-MY') {
+      const parts = [`Nombor ${num}`];
+      if (name) parts.push(name);
+      if (room) parts.push(`sila ke ${room}`);
+      return parts.join(', ');
+    } else {
+      const parts = [`Number ${num}`];
+      if (name) parts.push(name);
+      if (room) parts.push(`please proceed to ${room}`);
+      return parts.join(', ');
+    }
+  }
+
+  private speakText(text: string, lang: string, volume: number, rate: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!('speechSynthesis' in window)) {
+        console.warn('SpeechSynthesis not supported');
+        resolve();
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      utterance.volume = Math.max(0, Math.min(1, volume / 100));
+      utterance.rate = rate;
+      utterance.pitch = 1;
+
+      const voices = window.speechSynthesis.getVoices();
+      const langVoice = voices.find(v => v.lang === lang) 
+        || voices.find(v => v.lang.startsWith(lang.split('-')[0]));
+      if (langVoice) {
+        utterance.voice = langVoice;
+      }
+
+      const timeout = setTimeout(() => {
+        window.speechSynthesis.cancel();
+        resolve();
+      }, 15000);
+
+      utterance.onend = () => {
+        clearTimeout(timeout);
+        resolve();
+      };
+
+      utterance.onerror = (e) => {
+        clearTimeout(timeout);
+        console.error('TTS error:', e);
+        resolve();
+      };
+
+      window.speechSynthesis.speak(utterance);
+    });
+  }
+
+  public async playTts(callInfo: CallInfo, settings: AudioSettings): Promise<void> {
+    if (!settings.ttsEnabled || !('speechSynthesis' in window)) return;
+
+    const lang = settings.ttsLanguage || 'ms-MY';
+    const rate = settings.ttsRate ?? 0.9;
+
+    try {
+      if (lang === 'both') {
+        const msText = this.buildTtsText(callInfo, 'ms-MY');
+        await this.speakText(msText, 'ms-MY', settings.volume, rate);
+        await new Promise(r => setTimeout(r, 800));
+        const enText = this.buildTtsText(callInfo, 'en-US');
+        await this.speakText(enText, 'en-US', settings.volume, rate);
+      } else {
+        const text = this.buildTtsText(callInfo, lang);
+        await this.speakText(text, lang, settings.volume, rate);
+      }
+    } catch (error) {
+      console.error('TTS playback error:', error);
+    }
+  }
+
   public async playCallingSequence(callInfo: CallInfo, settings: AudioSettings): Promise<void> {
     try {
       if (settings.enableSound) {
         await this.playNotificationSound(settings);
+      }
+
+      if (settings.ttsEnabled) {
+        await new Promise(r => setTimeout(r, 500));
+        await this.playTts(callInfo, settings);
       }
     } catch (error) {
       console.error('Error in calling sequence:', error);
@@ -313,7 +405,6 @@ export class AudioSystem {
     }
   }
 
-  // Test function for settings preview
   public async playTestSequence(settings: AudioSettings): Promise<void> {
     const testCallInfo: CallInfo = {
       patientName: "Ahmad Bin Ali",
@@ -324,9 +415,25 @@ export class AudioSystem {
     return this.playCallingSequence(testCallInfo, settings);
   }
 
-  // Test individual sound modes for settings UI
+  public async playTestTts(settings: AudioSettings): Promise<void> {
+    const testCallInfo: CallInfo = {
+      patientName: "Ahmad Bin Ali",
+      patientNumber: 5,
+      windowName: "Bilik 1"
+    };
+
+    await this.playTts(testCallInfo, { ...settings, ttsEnabled: true });
+  }
+
   public async playTestSound(settings: AudioSettings): Promise<void> {
     return this.playNotificationSound(settings);
+  }
+
+  public getAvailableTtsVoices(): Array<{lang: string, name: string}> {
+    if (!('speechSynthesis' in window)) return [];
+    return window.speechSynthesis.getVoices()
+      .filter(v => v.lang.startsWith('ms') || v.lang.startsWith('en') || v.lang.startsWith('id'))
+      .map(v => ({ lang: v.lang, name: v.name }));
   }
 }
 

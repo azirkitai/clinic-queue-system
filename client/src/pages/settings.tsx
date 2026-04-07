@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Monitor, Volume2, Palette, Upload, Save, RefreshCw, CheckCircle, Plus, ChevronLeft, ChevronRight, Eye, Trash2, Edit, Star, Upload as UploadIcon, Brush, X, Image, Type, LayoutGrid, Clock, Cloud, List, MessageSquare, Copy, Check } from "lucide-react";
+import { Monitor, Volume2, Palette, Upload, Save, RefreshCw, CheckCircle, Plus, ChevronLeft, ChevronRight, Eye, Trash2, Edit, Star, Upload as UploadIcon, Brush, X, Image, Type, LayoutGrid, Clock, Cloud, List, MessageSquare, Copy, Check, Mic } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -40,9 +40,11 @@ interface SettingsState {
   clinicNameTextGradient: string;
   enableSound: boolean;
   volume: number;
-  // Simplified audio system - preset only
   soundMode: 'preset';
   presetKey: PresetSoundKeyType;
+  ttsEnabled: boolean;
+  ttsLanguage: 'ms-MY' | 'en-US' | 'both';
+  ttsRate: number;
   // Individual section colors
   headerTextColor: string;
   headerTextMode: 'solid' | 'gradient';
@@ -308,6 +310,9 @@ export default function Settings() {
     volume: 50,
     soundMode: 'preset',
     presetKey: 'notification_sound',
+    ttsEnabled: false,
+    ttsLanguage: 'ms-MY' as 'ms-MY' | 'en-US' | 'both',
+    ttsRate: 0.9,
     // Individual section colors with defaults
     headerTextColor: '#ffffff',
     headerTextMode: 'solid' as 'solid' | 'gradient',
@@ -387,6 +392,9 @@ export default function Settings() {
         volume: parseInt(settingsObj.volume || '50'),
         soundMode: 'preset' as const,
         presetKey: (settingsObj.presetKey as PresetSoundKeyType) || 'notification_sound',
+        ttsEnabled: settingsObj.ttsEnabled === 'true',
+        ttsLanguage: (settingsObj.ttsLanguage as 'ms-MY' | 'en-US' | 'both') || 'ms-MY',
+        ttsRate: parseFloat(settingsObj.ttsRate || '0.9'),
         // Individual section colors with defaults
         headerTextColor: settingsObj.headerTextColor || '#ffffff',
         headerTextMode: (settingsObj.headerTextMode as 'solid' | 'gradient') || 'solid',
@@ -484,7 +492,9 @@ export default function Settings() {
     settingsObj.marqueeTextMode, settingsObj.marqueeTextGradient,
     settingsObj.marqueeBackgroundMode, settingsObj.marqueeBackgroundGradient,
     // Clinic name text
-    settingsObj.clinicNameTextColor, settingsObj.clinicNameTextMode, settingsObj.clinicNameTextGradient
+    settingsObj.clinicNameTextColor, settingsObj.clinicNameTextMode, settingsObj.clinicNameTextGradient,
+    // TTS settings
+    settingsObj.ttsEnabled, settingsObj.ttsLanguage, settingsObj.ttsRate
   ]);
 
   const handleRefresh = () => {
@@ -671,6 +681,9 @@ export default function Settings() {
       { key: 'enableSound', value: currentSettings.enableSound.toString(), category: 'audio' },
       { key: 'volume', value: currentSettings.volume.toString(), category: 'audio' },
       { key: 'presetKey', value: currentSettings.presetKey, category: 'audio' },
+      { key: 'ttsEnabled', value: currentSettings.ttsEnabled.toString(), category: 'audio' },
+      { key: 'ttsLanguage', value: currentSettings.ttsLanguage, category: 'audio' },
+      { key: 'ttsRate', value: currentSettings.ttsRate.toString(), category: 'audio' },
     ];
     
     await saveSettingsMutation.mutateAsync(settingsToSave);
@@ -749,6 +762,9 @@ export default function Settings() {
       { key: 'enableSound', value: currentSettings.enableSound.toString(), category: 'audio' },
       { key: 'volume', value: currentSettings.volume.toString(), category: 'audio' },
       { key: 'presetKey', value: currentSettings.presetKey, category: 'audio' },
+      { key: 'ttsEnabled', value: currentSettings.ttsEnabled.toString(), category: 'audio' },
+      { key: 'ttsLanguage', value: currentSettings.ttsLanguage, category: 'audio' },
+      { key: 'ttsRate', value: currentSettings.ttsRate.toString(), category: 'audio' },
     ];
     
     await saveSettingsMutation.mutateAsync(allSettingsToSave);
@@ -842,31 +858,30 @@ export default function Settings() {
     setCurrentMediaIndex((prev) => Math.max(prev - 1, 0));
   };
 
-  // Test audio function
   const playTestSequence = useCallback(async () => {
     try {
-      if (!currentSettings.enableSound) {
+      if (!currentSettings.enableSound && !currentSettings.ttsEnabled) {
         toast({
           title: "Sound Disabled",
-          description: "Please enable sound first to test audio",
+          description: "Please enable sound or voice calling first",
           variant: "destructive",
         });
         return;
       }
 
-      console.log('Testing audio preset:', currentSettings.presetKey, 'at volume:', currentSettings.volume);
-      
-      // Play test sound using audio system
-      await audioSystem.playNotificationSound({
+      await audioSystem.playTestSequence({
         enableSound: currentSettings.enableSound,
         volume: currentSettings.volume,
         soundMode: 'preset',
-        presetKey: currentSettings.presetKey || 'notification_sound'
+        presetKey: currentSettings.presetKey || 'notification_sound',
+        ttsEnabled: currentSettings.ttsEnabled,
+        ttsLanguage: currentSettings.ttsLanguage,
+        ttsRate: currentSettings.ttsRate,
       });
 
       toast({
         title: "Sound Test",
-        description: `Test sound ${currentSettings.presetKey} at volume ${currentSettings.volume}% played`,
+        description: `Full calling sequence played (preset${currentSettings.ttsEnabled ? ' + voice' : ''})`,
       });
     } catch (error) {
       console.error('Error playing test sound:', error);
@@ -876,7 +891,7 @@ export default function Settings() {
         variant: "destructive",
       });
     }
-  }, [currentSettings.enableSound, currentSettings.presetKey, currentSettings.volume, toast]);
+  }, [currentSettings.enableSound, currentSettings.presetKey, currentSettings.volume, currentSettings.ttsEnabled, currentSettings.ttsLanguage, currentSettings.ttsRate, toast]);
 
   // Active settings tab state
   const [activeTab, setActiveTab] = useState("media");
@@ -2388,8 +2403,118 @@ export default function Settings() {
                     data-testid="button-test-audio"
                   >
                     <Volume2 className="h-4 w-4 mr-2" />
-                    Test Audio Preset
+                    Test Full Calling Sequence
                   </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mic className="h-5 w-5" />
+              Voice Announcement (TTS)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Enable Voice Calling</Label>
+                <div className="text-sm text-muted-foreground">
+                  Announce patient name and room using text-to-speech
+                </div>
+              </div>
+              <Switch
+                checked={currentSettings.ttsEnabled}
+                onCheckedChange={(checked) => updateSoundSetting('ttsEnabled', checked)}
+                data-testid="switch-tts-enabled"
+              />
+            </div>
+
+            {currentSettings.ttsEnabled && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Language / Bahasa</Label>
+                  <Select
+                    value={currentSettings.ttsLanguage}
+                    onValueChange={(value) => updateSoundSetting('ttsLanguage', value)}
+                  >
+                    <SelectTrigger data-testid="select-tts-language">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ms-MY">Bahasa Melayu</SelectItem>
+                      <SelectItem value="en-US">English</SelectItem>
+                      <SelectItem value="both">Both (BM first, then EN)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {currentSettings.ttsLanguage === 'ms-MY' && 'Contoh: "Nombor 5, Ahmad Bin Ali, sila ke Bilik 1"'}
+                    {currentSettings.ttsLanguage === 'en-US' && 'Example: "Number 5, Ahmad Bin Ali, please proceed to Room 1"'}
+                    {currentSettings.ttsLanguage === 'both' && 'BM dahulu, kemudian EN / BM first, then EN'}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Speech Speed: {currentSettings.ttsRate.toFixed(1)}x</Label>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="1.5"
+                    step="0.1"
+                    value={currentSettings.ttsRate}
+                    onChange={(e) => updateSoundSetting('ttsRate', parseFloat(e.target.value))}
+                    className="w-full"
+                    data-testid="slider-tts-rate"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Slow (0.5x)</span>
+                    <span>Normal (0.9x)</span>
+                    <span>Fast (1.5x)</span>
+                  </div>
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      await audioSystem.playTestTts({
+                        enableSound: currentSettings.enableSound,
+                        volume: currentSettings.volume,
+                        soundMode: 'preset',
+                        presetKey: currentSettings.presetKey,
+                        ttsEnabled: true,
+                        ttsLanguage: currentSettings.ttsLanguage,
+                        ttsRate: currentSettings.ttsRate,
+                      });
+                      toast({
+                        title: "TTS Test",
+                        description: "Voice announcement test played",
+                      });
+                    } catch (error) {
+                      console.error('TTS test error:', error);
+                      toast({
+                        title: "Error",
+                        description: "Failed to play TTS. Your browser may not support this language.",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  className="w-full"
+                  data-testid="button-test-tts"
+                >
+                  <Mic className="h-4 w-4 mr-2" />
+                  Test Voice: "Nombor 5, Ahmad Bin Ali, sila ke Bilik 1"
+                </Button>
+
+                <div className="p-3 rounded-md border bg-muted/50">
+                  <p className="text-xs text-muted-foreground">
+                    Voice announcement uses your device's built-in text-to-speech engine. 
+                    Quality depends on your browser/device. Android TV, Chrome, and Edge have good Malay voice support.
+                    The chime sound plays first, followed by the voice announcement.
+                  </p>
                 </div>
               </div>
             )}
