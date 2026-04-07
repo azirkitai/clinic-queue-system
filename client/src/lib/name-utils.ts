@@ -23,6 +23,14 @@ function findSeparatorIndex(name: string): number {
   return -1;
 }
 
+function isRealWord(word: string): boolean {
+  if (!word) return false;
+  if (word === '.') return false;
+  if (word.length === 1 && /[A-Z]/i.test(word)) return false;
+  if (word.length === 2 && word[1] === '.' && /[A-Z]/i.test(word[0])) return false;
+  return true;
+}
+
 function shortenName(name: string): string {
   if (!name) return '';
   const upper = name.trim().toUpperCase();
@@ -33,8 +41,23 @@ function shortenName(name: string): string {
   }
 
   const words = upper.split(/\s+/);
-  if (words.length > 2) {
-    return words.slice(0, 2).join(' ');
+  let realWordCount = 0;
+  let cutIndex = words.length;
+  for (let i = 0; i < words.length; i++) {
+    if (isRealWord(words[i])) {
+      realWordCount++;
+      if (realWordCount === 2) {
+        cutIndex = i + 1;
+        while (cutIndex < words.length && !isRealWord(words[cutIndex])) {
+          cutIndex++;
+        }
+        break;
+      }
+    }
+  }
+
+  if (realWordCount >= 2 && cutIndex < words.length) {
+    return words.slice(0, cutIndex).join(' ');
   }
 
   return upper;
