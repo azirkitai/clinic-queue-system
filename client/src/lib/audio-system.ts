@@ -407,7 +407,7 @@ export class AudioSystem {
       }
 
       if (settings.ttsEnabled) {
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, 400));
         await this.playTts(callInfo, settings);
       }
     } catch (error) {
