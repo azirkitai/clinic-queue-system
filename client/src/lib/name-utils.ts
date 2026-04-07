@@ -52,7 +52,25 @@ export function getDisplayName(fullName: string | null | undefined): string {
   return shortenName(trimmed);
 }
 
-export function getTtsName(fullName: string | null | undefined): string {
+const TTS_REPLACEMENTS_MS: Record<string, string> = {
+  'A/P': 'anak perempuan',
+  'A.P': 'anak perempuan',
+  'A/L': 'anak lelaki',
+  'A.L': 'anak lelaki',
+  'S/O': 'anak lelaki',
+  'D/O': 'anak perempuan',
+};
+
+const TTS_REPLACEMENTS_EN: Record<string, string> = {
+  'A/P': 'daughter off',
+  'A.P': 'daughter off',
+  'A/L': 'son off',
+  'A.L': 'son off',
+  'S/O': 'son off',
+  'D/O': 'daughter off',
+};
+
+export function getTtsName(fullName: string | null | undefined, lang?: 'ms-MY' | 'en-US'): string {
   if (!fullName) return '';
   const trimmed = fullName.trim();
 
@@ -61,5 +79,16 @@ export function getTtsName(fullName: string | null | undefined): string {
     return `Baby off ${boMatch[1].trim()}`;
   }
 
-  return trimmed;
+  const replacements = lang === 'en-US' ? TTS_REPLACEMENTS_EN : TTS_REPLACEMENTS_MS;
+  const upper = trimmed.toUpperCase();
+  const words = upper.split(/\s+/);
+  const originalWords = trimmed.split(/\s+/);
+
+  for (let i = 0; i < words.length; i++) {
+    if (replacements[words[i]]) {
+      originalWords[i] = replacements[words[i]];
+    }
+  }
+
+  return originalWords.join(' ');
 }
