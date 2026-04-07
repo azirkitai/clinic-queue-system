@@ -304,17 +304,16 @@ export class AudioSystem {
   }
 
   private buildTtsText(callInfo: CallInfo, lang: 'ms-MY' | 'en-US'): string {
-    const num = callInfo.patientNumber;
     const name = callInfo.patientName || '';
     const room = this.translateRoomName(callInfo.windowName || '', lang);
 
     if (lang === 'ms-MY') {
-      const parts = [`Nombor ${num}`];
+      const parts: string[] = [];
       if (name) parts.push(name);
       if (room) parts.push(`sila ke ${room}`);
       return parts.join(', ');
     } else {
-      const parts = [`Number ${num}`];
+      const parts: string[] = [];
       if (name) parts.push(name);
       if (room) parts.push(`please proceed to ${room}`);
       return parts.join(', ');
@@ -485,7 +484,7 @@ export class AudioSystem {
   public async playTestTts(settings: AudioSettings, customCallInfo?: Partial<CallInfo>): Promise<void> {
     const testCallInfo: CallInfo = {
       patientName: customCallInfo?.patientName ?? "Ahmad Bin Ali",
-      patientNumber: customCallInfo?.patientNumber ?? 5,
+      patientNumber: customCallInfo?.patientNumber ?? 0,
       windowName: customCallInfo?.windowName ?? "Bilik 1"
     };
 

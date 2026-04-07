@@ -214,7 +214,6 @@ export default function Settings() {
   const { toast } = useToast();
   const [unsavedChanges, setUnsavedChanges] = useState<string[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [ttsTestNumber, setTtsTestNumber] = useState(5);
   const [ttsTestName, setTtsTestName] = useState("");
   const [ttsTestRoom, setTtsTestRoom] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -2454,25 +2453,15 @@ export default function Settings() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    {currentSettings.ttsLanguage === 'ms-MY' && 'Contoh: "Nombor 5, Ahmad Bin Ali, sila ke Bilik 1"'}
-                    {currentSettings.ttsLanguage === 'en-US' && 'Example: "Number 5, Ahmad Bin Ali, please proceed to Room 1"'}
+                    {currentSettings.ttsLanguage === 'ms-MY' && 'Contoh: "Ahmad Bin Ali, sila ke Bilik 1"'}
+                    {currentSettings.ttsLanguage === 'en-US' && 'Example: "Ahmad Bin Ali, please proceed to Room 1"'}
                     {currentSettings.ttsLanguage === 'both' && 'BM dahulu, kemudian EN / BM first, then EN'}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Test Custom Voice / Cuba Suara</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">No.</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={ttsTestNumber}
-                        onChange={(e) => setTtsTestNumber(parseInt(e.target.value) || 1)}
-                        data-testid="input-tts-test-number"
-                      />
-                    </div>
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label className="text-xs text-muted-foreground">Nama / Name</Label>
                       <Input
@@ -2493,8 +2482,8 @@ export default function Settings() {
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {currentSettings.ttsLanguage === 'ms-MY' && `BM: "Nombor ${ttsTestNumber}, ${ttsTestName || 'Ahmad Bin Ali'}, sila ke ${ttsTestRoom || 'Bilik 1'}"`}
-                    {currentSettings.ttsLanguage === 'en-US' && `EN: "Number ${ttsTestNumber}, ${ttsTestName || 'Ahmad Bin Ali'}, please proceed to ${ttsTestRoom || 'Room 1'}"`}
+                    {currentSettings.ttsLanguage === 'ms-MY' && `BM: "${ttsTestName || 'Ahmad Bin Ali'}, sila ke ${ttsTestRoom || 'Bilik 1'}"`}
+                    {currentSettings.ttsLanguage === 'en-US' && `EN: "${ttsTestName || 'Ahmad Bin Ali'}, please proceed to ${ttsTestRoom || 'Room 1'}"`}
                     {currentSettings.ttsLanguage === 'both' && `BM + EN`}
                   </p>
                 </div>
@@ -2512,7 +2501,6 @@ export default function Settings() {
                         ttsLanguage: currentSettings.ttsLanguage,
                         ttsRate: currentSettings.ttsRate,
                       }, {
-                        patientNumber: ttsTestNumber,
                         patientName: ttsTestName || "Ahmad Bin Ali",
                         windowName: ttsTestRoom || "Bilik 1",
                       });
