@@ -245,7 +245,8 @@ export const PresetSoundKey = z.enum([
   "orchestra_trumpets_triumphant_2285",
   "orchestra_trumpets_ending_2292",
   "software_remove_2576",
-  "trumpet_fanfare_2293"
+  "trumpet_fanfare_2293",
+  "klia_chime"
 ]);
 export type PresetSoundKeyType = z.infer<typeof PresetSoundKey>;
 

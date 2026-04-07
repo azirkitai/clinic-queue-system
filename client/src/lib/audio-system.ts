@@ -21,6 +21,7 @@ import orchestraTriumphant2285 from "@assets/mixkit-orchestra-triumphant-trumpet
 import orchestraEnding2292 from "@assets/mixkit-orchestra-trumpets-ending-2292_1759142829294.wav";
 import softwareRemove2576 from "@assets/mixkit-software-interface-remove-2576_1759142829294.wav";
 import trumpetFanfare2293 from "@assets/mixkit-trumpet-fanfare-2293_1759142829294.wav";
+import kliaChime from "@assets/klia-chime-flight-announcement-bahasa-melayu-english_jSoPWQ5z_1775584093379.mp3";
 
 export type TtsLanguageType = 'ms-MY' | 'en-US' | 'both';
 
@@ -65,7 +66,8 @@ export class AudioSystem {
     { key: 'orchestra_trumpets_triumphant_2285', name: 'Orchestra Trumpets – Triumphant (2285)', src: orchestraTriumphant2285 },
     { key: 'orchestra_trumpets_ending_2292', name: 'Orchestra Trumpets – Ending (2292)', src: orchestraEnding2292 },
     { key: 'software_remove_2576', name: 'Interface Remove (2576)', src: softwareRemove2576 },
-    { key: 'trumpet_fanfare_2293', name: 'Trumpet Fanfare (2293)', src: trumpetFanfare2293 }
+    { key: 'trumpet_fanfare_2293', name: 'Trumpet Fanfare (2293)', src: trumpetFanfare2293 },
+    { key: 'klia_chime', name: 'KLIA Flight Announcement Chime', src: kliaChime }
   ];
 
   // Build preset sound mappings from centralized definitions
