@@ -214,6 +214,9 @@ export default function Settings() {
   const { toast } = useToast();
   const [unsavedChanges, setUnsavedChanges] = useState<string[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [ttsTestNumber, setTtsTestNumber] = useState(5);
+  const [ttsTestName, setTtsTestName] = useState("");
+  const [ttsTestRoom, setTtsTestRoom] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // TV Mode state (separate from Settings API - stored in localStorage)
@@ -2457,6 +2460,45 @@ export default function Settings() {
                   </p>
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Test Custom Voice / Cuba Suara</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">No.</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={ttsTestNumber}
+                        onChange={(e) => setTtsTestNumber(parseInt(e.target.value) || 1)}
+                        data-testid="input-tts-test-number"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Nama / Name</Label>
+                      <Input
+                        value={ttsTestName}
+                        onChange={(e) => setTtsTestName(e.target.value)}
+                        placeholder="Ahmad Bin Ali"
+                        data-testid="input-tts-test-name"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Bilik / Room</Label>
+                      <Input
+                        value={ttsTestRoom}
+                        onChange={(e) => setTtsTestRoom(e.target.value)}
+                        placeholder="Bilik 1"
+                        data-testid="input-tts-test-room"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {currentSettings.ttsLanguage === 'ms-MY' && `BM: "Nombor ${ttsTestNumber}, ${ttsTestName || 'Ahmad Bin Ali'}, sila ke ${ttsTestRoom || 'Bilik 1'}"`}
+                    {currentSettings.ttsLanguage === 'en-US' && `EN: "Number ${ttsTestNumber}, ${ttsTestName || 'Ahmad Bin Ali'}, please proceed to ${ttsTestRoom || 'Room 1'}"`}
+                    {currentSettings.ttsLanguage === 'both' && `BM + EN`}
+                  </p>
+                </div>
+
                 <Button
                   variant="outline"
                   onClick={async () => {
@@ -2469,6 +2511,10 @@ export default function Settings() {
                         ttsEnabled: true,
                         ttsLanguage: currentSettings.ttsLanguage,
                         ttsRate: currentSettings.ttsRate,
+                      }, {
+                        patientNumber: ttsTestNumber,
+                        patientName: ttsTestName || "Ahmad Bin Ali",
+                        windowName: ttsTestRoom || "Bilik 1",
                       });
                       toast({
                         title: "TTS Test",
@@ -2478,7 +2524,7 @@ export default function Settings() {
                       console.error('TTS test error:', error);
                       toast({
                         title: "Error",
-                        description: "Failed to play TTS. Your browser may not support this language.",
+                        description: "Failed to play TTS.",
                         variant: "destructive",
                       });
                     }
@@ -2487,7 +2533,7 @@ export default function Settings() {
                   data-testid="button-test-tts"
                 >
                   <Mic className="h-4 w-4 mr-2" />
-                  Test Voice (BM: "Bilik 1" / EN: "Room 1")
+                  Test Voice / Cuba Suara
                 </Button>
 
                 <div className="p-3 rounded-md border bg-muted/50">

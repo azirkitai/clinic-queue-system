@@ -482,11 +482,11 @@ export class AudioSystem {
     return this.playCallingSequence(testCallInfo, settings);
   }
 
-  public async playTestTts(settings: AudioSettings): Promise<void> {
+  public async playTestTts(settings: AudioSettings, customCallInfo?: Partial<CallInfo>): Promise<void> {
     const testCallInfo: CallInfo = {
-      patientName: "Ahmad Bin Ali",
-      patientNumber: 5,
-      windowName: "Bilik 1"
+      patientName: customCallInfo?.patientName ?? "Ahmad Bin Ali",
+      patientNumber: customCallInfo?.patientNumber ?? 5,
+      windowName: customCallInfo?.windowName ?? "Bilik 1"
     };
 
     await this.playTts(testCallInfo, { ...settings, ttsEnabled: true });
