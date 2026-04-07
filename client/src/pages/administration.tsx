@@ -58,7 +58,7 @@ export default function Administration() {
 
   const { data: users = [], isLoading } = useQuery<UserWithOnline[]>({
     queryKey: ['/api/users'],
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
 
   // Create user mutation
