@@ -378,6 +378,25 @@ export class AudioSystem {
     }
   }
 
+  private async prefetchTtsAudio(callInfo: CallInfo, settings: AudioSettings): Promise<Array<{ content: string }> | null> {
+    const lang = settings.ttsLanguage || 'ms-MY';
+    try {
+      if (lang === 'both') {
+        const [msAudio, enAudio] = await Promise.all([
+          this.synthesizeFromServer(this.buildTtsText(callInfo, 'ms-MY'), 'ms-MY'),
+          this.synthesizeFromServer(this.buildTtsText(callInfo, 'en-US'), 'en-US'),
+        ]);
+        return [{ content: msAudio }, { content: enAudio }];
+      } else {
+        const audio = await this.synthesizeFromServer(this.buildTtsText(callInfo, lang), lang);
+        return [{ content: audio }];
+      }
+    } catch (error) {
+      console.error('TTS prefetch error:', error);
+      return null;
+    }
+  }
+
   public async playTts(callInfo: CallInfo, settings: AudioSettings): Promise<void> {
     if (!settings.ttsEnabled) return;
 
@@ -416,11 +435,21 @@ export class AudioSystem {
     while (this.audioQueue.length > 0) {
       const item = this.audioQueue.shift()!;
       try {
-        if (item.settings.enableSound) {
+        if (item.settings.enableSound && item.settings.ttsEnabled) {
+          const ttsPromise = this.prefetchTtsAudio(item.callInfo, item.settings);
           await this.playNotificationSound(item.settings);
-        }
-        if (item.settings.ttsEnabled) {
-          await new Promise(r => setTimeout(r, 200));
+          const ttsData = await ttsPromise;
+          if (ttsData) {
+            for (const audio of ttsData) {
+              await this.playBase64Audio(audio.content, item.settings.volume);
+              if (ttsData.indexOf(audio) < ttsData.length - 1) {
+                await new Promise(r => setTimeout(r, 600));
+              }
+            }
+          }
+        } else if (item.settings.enableSound) {
+          await this.playNotificationSound(item.settings);
+        } else if (item.settings.ttsEnabled) {
           await this.playTts(item.callInfo, item.settings);
         }
         if (this.audioQueue.length > 0) {
