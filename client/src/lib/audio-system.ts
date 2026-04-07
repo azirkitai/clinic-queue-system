@@ -44,6 +44,8 @@ export class AudioSystem {
   private audioContext: AudioContext | null = null;
   private audioBufferCache: Map<string, AudioBuffer> = new Map();
   private forceHTMLAudio: boolean = false; // Force HTMLAudio mode for TV displays
+  private audioQueue: Array<{ callInfo: CallInfo; settings: AudioSettings }> = [];
+  private isPlayingSequence: boolean = false;
   
   // Centralized preset definitions
   private static readonly PRESET_DEFS: Array<{key: PresetSoundKeyType, name: string, src: string}> = [
@@ -401,19 +403,35 @@ export class AudioSystem {
   }
 
   public async playCallingSequence(callInfo: CallInfo, settings: AudioSettings): Promise<void> {
-    try {
-      if (settings.enableSound) {
-        await this.playNotificationSound(settings);
-      }
-
-      if (settings.ttsEnabled) {
-        await new Promise(r => setTimeout(r, 400));
-        await this.playTts(callInfo, settings);
-      }
-    } catch (error) {
-      console.error('Error in calling sequence:', error);
-      throw error;
+    this.audioQueue.push({ callInfo, settings });
+    if (!this.isPlayingSequence) {
+      await this.processAudioQueue();
     }
+  }
+
+  private async processAudioQueue(): Promise<void> {
+    if (this.isPlayingSequence || this.audioQueue.length === 0) return;
+    this.isPlayingSequence = true;
+
+    while (this.audioQueue.length > 0) {
+      const item = this.audioQueue.shift()!;
+      try {
+        if (item.settings.enableSound) {
+          await this.playNotificationSound(item.settings);
+        }
+        if (item.settings.ttsEnabled) {
+          await new Promise(r => setTimeout(r, 400));
+          await this.playTts(item.callInfo, item.settings);
+        }
+        if (this.audioQueue.length > 0) {
+          await new Promise(r => setTimeout(r, 300));
+        }
+      } catch (error) {
+        console.error('Error in calling sequence:', error);
+      }
+    }
+
+    this.isPlayingSequence = false;
   }
 
   // Get available preset sounds from centralized definitions
