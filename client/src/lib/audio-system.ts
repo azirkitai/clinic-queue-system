@@ -307,7 +307,7 @@ export class AudioSystem {
   }
 
   private buildTtsText(callInfo: CallInfo, lang: 'ms-MY' | 'en-US'): string {
-    const name = getTtsName(callInfo.patientName, lang);
+    const name = getTtsName(callInfo.patientName);
     const room = this.translateRoomName(callInfo.windowName || '', lang);
 
     if (lang === 'ms-MY') {

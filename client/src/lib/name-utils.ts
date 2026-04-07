@@ -29,14 +29,14 @@ export function getDisplayName(fullName: string | null | undefined): string {
   return shortenName(trimmed);
 }
 
-export function getTtsName(fullName: string | null | undefined, lang: 'ms-MY' | 'en-US'): string {
+export function getTtsName(fullName: string | null | undefined): string {
   if (!fullName) return '';
-  const trimmed = fullName.trim().toUpperCase();
+  const trimmed = fullName.trim();
 
   const boMatch = trimmed.match(/^B\/O\s+(.+)/i);
   if (boMatch) {
-    return `Baby of ${shortenName(boMatch[1])}`;
+    return `Baby of ${boMatch[1].trim()}`;
   }
 
-  return shortenName(trimmed);
+  return trimmed;
 }
