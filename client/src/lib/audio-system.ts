@@ -251,10 +251,62 @@ export class AudioSystem {
   }
 
 
+  private static readonly roomTranslations: Record<string, { bm: string; en: string }> = {
+    'bilik': { bm: 'Bilik', en: 'Room' },
+    'room': { bm: 'Bilik', en: 'Room' },
+    'kaunter': { bm: 'Kaunter', en: 'Counter' },
+    'counter': { bm: 'Kaunter', en: 'Counter' },
+    'konsultasi': { bm: 'Konsultasi', en: 'Consultation' },
+    'consultation': { bm: 'Konsultasi', en: 'Consultation' },
+    'farmasi': { bm: 'Farmasi', en: 'Pharmacy' },
+    'pharmacy': { bm: 'Farmasi', en: 'Pharmacy' },
+    'dispensari': { bm: 'Dispensari', en: 'Dispensary' },
+    'dispensary': { bm: 'Dispensari', en: 'Dispensary' },
+    'makmal': { bm: 'Makmal', en: 'Laboratory' },
+    'laboratory': { bm: 'Makmal', en: 'Laboratory' },
+    'lab': { bm: 'Makmal', en: 'Lab' },
+    'pendaftaran': { bm: 'Pendaftaran', en: 'Registration' },
+    'registration': { bm: 'Pendaftaran', en: 'Registration' },
+    'x-ray': { bm: 'X-Ray', en: 'X-Ray' },
+    'xray': { bm: 'X-Ray', en: 'X-Ray' },
+    'rawatan': { bm: 'Rawatan', en: 'Treatment' },
+    'treatment': { bm: 'Rawatan', en: 'Treatment' },
+    'suntikan': { bm: 'Suntikan', en: 'Injection' },
+    'injection': { bm: 'Suntikan', en: 'Injection' },
+    'dewan': { bm: 'Dewan', en: 'Hall' },
+    'hall': { bm: 'Dewan', en: 'Hall' },
+    'doktor': { bm: 'Doktor', en: 'Doctor' },
+    'doctor': { bm: 'Doktor', en: 'Doctor' },
+    'dr': { bm: 'Dr', en: 'Dr' },
+    'bilik rawatan': { bm: 'Bilik Rawatan', en: 'Treatment Room' },
+    'treatment room': { bm: 'Bilik Rawatan', en: 'Treatment Room' },
+    'bilik suntikan': { bm: 'Bilik Suntikan', en: 'Injection Room' },
+    'injection room': { bm: 'Bilik Suntikan', en: 'Injection Room' },
+  };
+
+  private translateRoomName(windowName: string, targetLang: 'ms-MY' | 'en-US'): string {
+    if (!windowName) return '';
+    const lower = windowName.toLowerCase().trim();
+
+    const sortedKeys = Object.keys(AudioSystem.roomTranslations).sort((a, b) => b.length - a.length);
+
+    for (const key of sortedKeys) {
+      const regex = new RegExp(`^${key.replace(/[-/]/g, '\\$&')}\\b`, 'i');
+      if (regex.test(lower)) {
+        const translation = AudioSystem.roomTranslations[key];
+        const translated = targetLang === 'ms-MY' ? translation.bm : translation.en;
+        const suffix = windowName.substring(key.length).trim();
+        return suffix ? `${translated} ${suffix}` : translated;
+      }
+    }
+
+    return windowName;
+  }
+
   private buildTtsText(callInfo: CallInfo, lang: 'ms-MY' | 'en-US'): string {
     const num = callInfo.patientNumber;
     const name = callInfo.patientName || '';
-    const room = callInfo.windowName || '';
+    const room = this.translateRoomName(callInfo.windowName || '', lang);
 
     if (lang === 'ms-MY') {
       const parts = [`Nombor ${num}`];

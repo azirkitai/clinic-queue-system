@@ -2487,7 +2487,7 @@ export default function Settings() {
                   data-testid="button-test-tts"
                 >
                   <Mic className="h-4 w-4 mr-2" />
-                  Test Voice: "Nombor 5, Ahmad Bin Ali, sila ke Bilik 1"
+                  Test Voice (BM: "Bilik 1" / EN: "Room 1")
                 </Button>
 
                 <div className="p-3 rounded-md border bg-muted/50">
