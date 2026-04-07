@@ -914,30 +914,24 @@ export class MemStorage implements IStorage {
     totalWaiting: number;
     totalCalled: number;
     totalCompleted: number;
+    totalDispensary: number;
     activeWindows: number;
     totalWindows: number;
   }> {
-    // Use Malaysia timezone (UTC+8) for daily reset at local midnight
     const malaysiaOffset = 8 * 60 * 60 * 1000;
     const nowMalaysia = new Date(Date.now() + malaysiaOffset);
     const today = nowMalaysia.toISOString().split('T')[0];
     
-    // Get today's patients only
     const todayPatients = await this.getPatientsByDate(today, userId);
     const userWindows = Array.from(this.windows.values()).filter(w => w.userId === userId);
-    
-    const totalWaiting = todayPatients.filter(p => p.status === 'waiting').length;
-    const totalCalled = todayPatients.filter(p => p.status === 'called').length;
-    const totalCompleted = todayPatients.filter(p => p.status === 'completed').length;
-    const activeWindows = userWindows.filter(w => w.isActive).length;
-    const totalWindows = userWindows.length;
 
     return {
-      totalWaiting,
-      totalCalled,
-      totalCompleted,
-      activeWindows,
-      totalWindows
+      totalWaiting: todayPatients.filter(p => p.status === 'waiting').length,
+      totalCalled: todayPatients.filter(p => p.status === 'called').length,
+      totalCompleted: todayPatients.filter(p => p.status === 'completed').length,
+      totalDispensary: todayPatients.filter(p => p.status === 'dispensary').length,
+      activeWindows: userWindows.filter(w => w.isActive).length,
+      totalWindows: userWindows.length
     };
   }
 
@@ -2571,23 +2565,20 @@ export class DatabaseStorage implements IStorage {
     totalWaiting: number;
     totalCalled: number;
     totalCompleted: number;
+    totalDispensary: number;
     activeWindows: number;
     totalWindows: number;
   }> {
-    // Use Malaysia timezone (UTC+8) for daily reset at local midnight
     const malaysiaOffset = 8 * 60 * 60 * 1000;
     const nowMalaysia = new Date(Date.now() + malaysiaOffset);
     const today = nowMalaysia.toISOString().split('T')[0];
     
-    // Convert Malaysia day boundaries to UTC
-    // Malaysia 2025-11-20 00:00:00 = UTC 2025-11-19 16:00:00 (subtract 8 hours)
     const startOfDayUTC = new Date(`${today}T00:00:00.000Z`);
     startOfDayUTC.setTime(startOfDayUTC.getTime() - malaysiaOffset);
     
     const endOfDayUTC = new Date(`${today}T23:59:59.999Z`);
     endOfDayUTC.setTime(endOfDayUTC.getTime() - malaysiaOffset);
 
-    // Get today's patients (filter by registration date for daily reset)
     const todayPatients = await db.select().from(schema.patients)
       .where(
         and(
@@ -2602,7 +2593,8 @@ export class DatabaseStorage implements IStorage {
     return {
       totalWaiting: todayPatients.filter(p => p.status === "waiting").length,
       totalCalled: todayPatients.filter(p => p.status === "called").length,
-      totalCompleted: todayPatients.filter(p => p.status === "completed").length, // ✅ Count only today's completed
+      totalCompleted: todayPatients.filter(p => p.status === "completed").length,
+      totalDispensary: todayPatients.filter(p => p.status === "dispensary").length,
       activeWindows: windows.filter(w => w.isActive && w.currentPatientId).length,
       totalWindows: windows.filter(w => w.isActive).length
     };

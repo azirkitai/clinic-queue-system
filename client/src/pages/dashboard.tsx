@@ -25,6 +25,7 @@ interface DashboardStats {
   totalWaiting: number;
   totalCalled: number;
   totalCompleted: number;
+  totalDispensary: number;
   activeWindows: number;
 }
 
@@ -162,10 +163,10 @@ export default function Dashboard() {
   // Fetch dashboard statistics (WebSocket updates automatically, polling as fallback)
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats & { totalWindows: number }>({
     queryKey: ['/api/dashboard/stats'],
-    staleTime: 120000, // ✅ BANDWIDTH SAVE: Keep data fresh for 2 min (WebSocket is primary!)
-    refetchInterval: 120000, // ✅ BANDWIDTH SAVE: Poll every 2 min as fallback (was 30s = 4x reduction!)
-    refetchOnReconnect: true, // ✅ Enable - ensures stats refresh after network blips
-    refetchOnWindowFocus: false, // ❌ Disable - prevents burst on tab switch
+    staleTime: 0,
+    refetchInterval: 30000,
+    refetchOnReconnect: true,
+    refetchOnWindowFocus: false,
   });
 
   // ✅ Use lightweight TV patients endpoint (85% bandwidth reduction: ~70KB → ~10KB!)
@@ -359,15 +360,15 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Waiting</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600" data-testid="text-waiting-count">
-              {statsLoading ? "..." : (stats?.totalWaiting || 0)}
+              {statsLoading ? "..." : (stats?.totalWaiting ?? 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               patients in queue
@@ -376,13 +377,13 @@ export default function Dashboard() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Called</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600" data-testid="text-called-count">
-              {statsLoading ? "..." : (stats?.totalCalled || 0)}
+              {statsLoading ? "..." : (stats?.totalCalled ?? 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               patients being called
@@ -391,13 +392,28 @@ export default function Dashboard() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Dispensary</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600" data-testid="text-dispensary-count">
+              {statsLoading ? "..." : (stats?.totalDispensary ?? 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              awaiting medicine
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Completed</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600" data-testid="text-completed-count">
-              {statsLoading ? "..." : (stats?.totalCompleted || 0)}
+              {statsLoading ? "..." : (stats?.totalCompleted ?? 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               patients today
@@ -406,16 +422,16 @@ export default function Dashboard() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Rooms</CardTitle>
             <SettingsIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary" data-testid="text-active-windows">
-              {statsLoading ? "..." : (stats?.activeWindows || 0)}
+              {statsLoading ? "..." : (stats?.activeWindows ?? 0)}
             </div>
             <p className="text-xs text-muted-foreground">
-              out of {stats?.totalWindows || 0} rooms
+              out of {stats?.totalWindows ?? 0} rooms
             </p>
           </CardContent>
         </Card>
