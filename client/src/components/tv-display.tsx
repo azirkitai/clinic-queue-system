@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Volume2, Calendar } from "lucide-react";
 import { createGradientStyle, createTextGradientStyle } from "@/hooks/useActiveTheme";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { CLINIC_LOGO } from "@/lib/clinic-logo";
 import { audioSystem } from "@/lib/audio-system";
 import type { AudioSettings } from "@/lib/audio-system";
 import { useWebSocket } from "@/hooks/useWebSocket";
@@ -282,22 +283,7 @@ export function TVDisplay({
     refetchOnWindowFocus: false, // ❌ Disable - prevents burst
   });
 
-  // ✅ Fetch clinicLogo SEPARATELY with very long cache (saves 211KB per regular settings fetch!)
-  // Logo rarely changes, so cache for 1 hour and let HTTP cache handle it
-  // Use token-based endpoint for unauthenticated TV displays
-  const { data: logoData } = useQuery<{ logo: string }>({
-    queryKey: tvToken ? [`/api/tv/${tvToken}/logo`] : ['/api/settings/logo'],
-    queryFn: async () => {
-      const endpoint = tvToken ? `/api/tv/${tvToken}/logo` : '/api/settings/logo';
-      const response = await fetch(endpoint);
-      if (!response.ok) throw new Error('Failed to fetch logo');
-      return response.json();
-    },
-    staleTime: 3600000, // 1 hour - logo rarely changes
-    refetchInterval: false, // Don't poll - HTTP cache + WebSocket handles updates
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-  });
+  // ✅ Logo hardcoded - no API call needed (saves 211KB per request)
 
   // Convert settings array to object for easier access
   const settingsObj = settings.reduce((acc: Record<string, string>, setting) => {
@@ -316,9 +302,8 @@ export function TVDisplay({
   const modalBorderColor = settingsObj.modalBorderColor || '#fbbf24';
   const modalTextColor = settingsObj.modalTextColor || '#ffffff';
 
-  // Extract clinic logo settings
-  // ✅ Logo now comes from dedicated endpoint with HTTP caching (not from settings)
-  const clinicLogo = logoData?.logo || '';
+  // ✅ Logo hardcoded directly - no API call, no database storage needed
+  const clinicLogo = CLINIC_LOGO;
   const showClinicLogo = settingsObj.showClinicLogo === 'true';
   
   // Helper function to get background style based on mode (solid vs gradient)

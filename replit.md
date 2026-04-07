@@ -7,6 +7,8 @@ This project is a comprehensive clinic patient calling system designed to enhanc
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+- **April 7, 2026**: Hardcoded clinic logo + External API billing optimization:
+  - **Hardcoded clinic logo**: Logo base64 moved from database to `client/src/lib/clinic-logo.ts` - eliminates logo API calls entirely (saves 211KB per fetch, removes `/api/settings/logo` and `/api/tv/:token/logo` dependency)
 - **April 7, 2026**: External API billing optimization:
   - **Server-side cache for prayer times**: 1-hour TTL prevents redundant calls to aladhan.com (coordinates rounded to 2 decimal places for cache key sharing across nearby TVs)
   - **Server-side cache for weather**: 15-minute TTL prevents redundant calls to open-meteo.com

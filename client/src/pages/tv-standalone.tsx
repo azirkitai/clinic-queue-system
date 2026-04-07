@@ -180,15 +180,6 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     refetchOnWindowFocus: false,
   });
 
-  const { data: logoData } = useQuery<{ logo: string }>({
-    queryKey: [`/api/tv/${token}/logo`],
-    enabled: !!clinicInfo,
-    staleTime: 3600000,
-    refetchInterval: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-  });
-
   const { data: activeMedia = [] } = useQuery<any[]>({
     queryKey: [`/api/tv/${token}/media/active`],
     enabled: !!clinicInfo,
