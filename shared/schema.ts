@@ -163,8 +163,8 @@ export const insertPatientSchema = createInsertSchema(patients).pick({
   userId: true,
 }).extend({
   name: z.string().nullable().refine(
-    (val) => !val || val.length <= 25,
-    { message: "Nama pesakit tidak boleh melebihi 25 karakter" }
+    (val) => !val || val.length <= 100,
+    { message: "Nama pesakit tidak boleh melebihi 100 karakter" }
   )
 });
 
