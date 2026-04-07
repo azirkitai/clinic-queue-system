@@ -1,9 +1,26 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
-  if (res.status === 401) {
+  if (res.status === 401 || res.status === 403) {
     const currentPath = window.location.pathname;
-    if (currentPath !== '/' && currentPath !== '/login' && !currentPath.startsWith('/tv/') && !currentPath.startsWith('/qr-auth/')) {
+    const isPublicPage = currentPath === '/' || currentPath === '/login' || currentPath.startsWith('/tv/') || currentPath.startsWith('/qr-auth/');
+    
+    if (res.status === 403) {
+      const body = await res.text();
+      let errorMsg = 'Account not active';
+      try {
+        const parsed = JSON.parse(body);
+        errorMsg = parsed.error || errorMsg;
+      } catch {}
+      
+      if (!isPublicPage) {
+        console.log('[AUTH] Account deactivated - redirecting to login');
+        window.location.href = '/';
+      }
+      throw new Error(errorMsg);
+    }
+    
+    if (!isPublicPage) {
       console.log('[AUTH] Session expired - redirecting to login');
       window.location.href = '/';
       throw new Error('Session expired');

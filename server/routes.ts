@@ -168,11 +168,17 @@ function sanitizeUser(user: any) {
   return sanitizedUser;
 }
 
-// Auth middleware to check session before any processing
-function requireAuth(req: any, res: any, next: any) {
+async function requireAuth(req: any, res: any, next: any) {
   if (!req.session.userId) {
     return res.status(401).json({ error: "Session inactive" });
   }
+  
+  const user = await storage.getUser(req.session.userId);
+  if (!user || !user.isActive) {
+    req.session.destroy(() => {});
+    return res.status(403).json({ error: "Account not active. Please contact your administrator." });
+  }
+  
   next();
 }
 
@@ -242,8 +248,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     message: { error: "Rate limit exceeded for this endpoint. Use /api/patients/tv instead." }
   });
 
-  // Apply general rate limiting to API routes (with exemptions above)
   app.use('/api/', apiLimiter);
+
+  const activeCheckCache = new Map<string, { isActive: boolean; checkedAt: number }>();
+  const ACTIVE_CHECK_TTL = 30000;
+  
+  app.use('/api/', async (req, res, next) => {
+    const skipPaths = ['/api/auth/login', '/api/auth/check', '/api/auth/logout', '/api/version', '/api/qr/'];
+    if (skipPaths.some(p => req.path.startsWith(p)) || req.path.startsWith('/api/tv/')) {
+      return next();
+    }
+    
+    if (req.session?.userId) {
+      const cached = activeCheckCache.get(req.session.userId);
+      const now = Date.now();
+      
+      if (cached && (now - cached.checkedAt) < ACTIVE_CHECK_TTL) {
+        if (!cached.isActive) {
+          req.session.destroy(() => {});
+          return res.status(403).json({ error: "Account not active. Please contact your administrator." });
+        }
+        return next();
+      }
+      
+      const user = await storage.getUser(req.session.userId);
+      if (user) {
+        activeCheckCache.set(req.session.userId, { isActive: user.isActive, checkedAt: now });
+      }
+      if (user && !user.isActive) {
+        req.session.destroy(() => {});
+        return res.status(403).json({ error: "Account not active. Please contact your administrator." });
+      }
+    }
+    next();
+  });
 
   // Server version endpoint for auto-refresh
   // Clients check this periodically and reload if version changed (new deploy)
@@ -261,6 +299,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!username || !password) {
         return res.status(400).json({ error: "Username and password required" });
+      }
+      
+      const userRecord = await storage.getUserByUsername(username);
+      
+      if (userRecord && !userRecord.isActive) {
+        return res.status(403).json({ error: "Account not active. Please contact your administrator." });
       }
       
       const user = await storage.authenticateUser(username, password);
@@ -1202,12 +1246,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Toggle user status - REMOVED for tenant security
-  // In multi-tenant system, users cannot disable their own clinic accounts
   app.patch("/api/users/:id/status", async (req, res) => {
-    res.status(403).json({ 
-      error: "Operation not allowed - clinic account cannot deactivate itself"
-    });
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Session inactive" });
+      }
+      
+      const adminUser = await storage.getUser(req.session.userId);
+      if (!adminUser || adminUser.role !== 'admin') {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      const { id } = req.params;
+      
+      if (req.session.userId === id) {
+        return res.status(403).json({ error: "Cannot deactivate your own account" });
+      }
+      
+      const user = await storage.toggleUserStatus(id);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      activeCheckCache.delete(id);
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Error toggling user status:", error);
+      res.status(500).json({ error: "Failed to toggle user status" });
+    }
   });
 
   // Delete user
