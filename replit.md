@@ -6,149 +6,41 @@ This project is a comprehensive clinic patient calling system designed to enhanc
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
-## Recent Changes
-- **April 7, 2026**: User online/offline status + last login tracking:
-  - **Schema**: Added `lastLoginAt` timestamp field to users table
-  - **Login tracking**: Login route records `lastLoginAt` timestamp on successful authentication
-  - **Online presence**: WebSocket connection tracking via `onlineUsers` Map in websocket.ts (multi-tab safe with Set<socketId>)
-  - **API enhancement**: GET `/api/users` now returns `isOnline` boolean for each user
-  - **Admin UI**: User list shows green/grey dot for online/offline status, relative last login time ("5m ago", "2h ago", etc.)
-  - **Stats cards**: 5-column grid (Total, Online Now, Active, Admins, Regular) with 30s auto-refresh
-- **April 7, 2026**: Stuck room self-healing + dashboard dispensary counter:
-  - **Self-healing helper**: `clearStuckWindows(userId)` detects and clears rooms referencing deleted/non-existent patients
-  - **Bulk delete fix**: `clear-completed` and `clear-old-completed` endpoints now auto-clear stuck windows after deleting patients
-  - **Tenant-safe**: Self-heal validates patient belongs to same tenant (prevents cross-tenant data leak)
-  - **WebSocket fix**: `patient:deleted` event now invalidates `/api/windows` cache so connected clients update room status instantly
-  - **Stuck room UI**: Window card shows red "Room Stuck" warning with clear instructions when patient was deleted but room not cleared
-  - **Dashboard dispensary**: Added orange "Dispensary" counter card showing patients awaiting medicine (5-column grid)
-  - **GET /api/windows self-heal**: Refactored to use shared `clearStuckWindows` helper, re-fetches windows after healing
-- **April 7, 2026**: Connection stability + long-running reliability fixes:
-  - **Database keepalive**: Pool pings every 4 minutes to prevent Neon serverless from dropping idle connections
-  - **Pool error handler**: `pool.on('error')` catches unexpected disconnects and logs them instead of crashing
-  - **DB retry logic**: Critical operations (call patient, create patient, update window) auto-retry up to 2x on connection errors
-  - **Session store error logging**: `connect-pg-simple` errors now logged with `[SESSION STORE]` prefix for debugging
-  - **Process-level error handlers**: `unhandledRejection` and `uncaughtException` caught and logged instead of silent crash
-  - **Removed clinic logo settings**: Logo upload card and showClinicLogo toggle removed from Settings (logo is hardcoded)
-- **April 7, 2026**: Hardcoded clinic logo + External API billing optimization:
-  - **Hardcoded clinic logo**: Logo base64 moved from database to `client/src/lib/clinic-logo.ts` - eliminates logo API calls entirely (saves 211KB per fetch, removes `/api/settings/logo` and `/api/tv/:token/logo` dependency)
-- **April 7, 2026**: External API billing optimization:
-  - **Server-side cache for prayer times**: 1-hour TTL prevents redundant calls to aladhan.com (coordinates rounded to 2 decimal places for cache key sharing across nearby TVs)
-  - **Server-side cache for weather**: 15-minute TTL prevents redundant calls to open-meteo.com
-  - **Fixed duplicate settings queries**: TV display component was using different query keys than TV standalone, causing double API fetches for settings. Unified query keys so TanStack Query deduplicates
-  - **Reduced weather polling**: Client-side weather refetch interval increased from 10 min to 30 min (server cache handles freshness)
-  - **Impact**: With 10 TVs, external API calls reduced from ~80/hour to ~2/hour (prayer: 1/hour, weather: 4/hour cached)
-- **February 17, 2026**: TV Display performance optimization for Android TV dongles:
-  - **Isolated Clock component**: Date/time extracted into `memo` component - prevents full TVDisplay re-render every second
-  - **CSS blink animation**: Replaced React setInterval-driven blink (10 state changes per cycle) with CSS `@keyframes tv-blink` - zero React re-renders during blink
-  - **Debounced WebSocket refetch**: All patient events consolidated with 300ms debounce, uses `invalidateQueries` for smarter refetch
-  - **Eliminated duplicate WebSocket**: TV standalone no longer creates 2 simultaneous socket connections - `useWebSocket(disabled)` parameter prevents extra connection
-  - **Memoized prayer time highlighting**: `computeHighlighting()` wrapped in `useMemo` with 5-minute update interval instead of per-render
-  - **Lazy audio loading**: Removed bulk preloading of all 13 audio presets on TV unlock - audio now loads on-demand and caches after first use
-- **February 12, 2026**: WebSocket real-time updates for TV standalone:
-  - TV standalone page (`/tv/:token`) now connects via WebSocket for instant updates (~1s vs 30s polling)
-  - Server `tv:join` handler validates token/PIN and joins TV to correct clinic room
-  - 30s polling retained as fallback when WebSocket disconnects
-- **February 11, 2026**: Standalone TV Display page (`/tv/:token`):
-  - No login required - Smart TV opens URL directly via unique token
-  - **Short PIN system**: 6-digit PIN (e.g., `/tv/482916`) easy to type on TV remote
-  - Both short PIN and long token accepted on all TV endpoints
-  - Token-based API endpoints for all data (patients, settings, media, themes)
-  - Lightweight polling: 30s patients, 2min settings, 3min media
-  - Landing page with fullscreen button, auto-updates
-  - TV Link generator in Settings > System tab shows short PIN prominently
-  - Rate limit exempt for long token only; PIN-based access rate-limited for security
-  - Token-based media file serving with 24-hour cache
-- **January 10, 2026**: Critical bandwidth fix for staff pages:
-  - Dashboard, Queue, Dispensary pages now use `/api/settings/tv` (10KB) instead of `/api/settings` (223KB) = 95% reduction
-  - Logo fetched separately with 1-hour HTTP cache (saves 211KB per request)
-  - Settings polling reduced to 60s (was default aggressive polling)
-  - Expected daily bandwidth reduction: ~40 GB/day for 5 clinics
-- **January 3, 2026**: Major bandwidth optimization update:
-  - Added rate limiting (300 req/min general, 30 req/min for legacy endpoints)
-  - Disabled aggressive refetching (refetchOnWindowFocus, refetchOnMount) to prevent burst traffic
-  - WebSocket reconnection backoff increased from 1-5s to 2-30s with jitter
-  - Legacy endpoints now return lightweight payloads only
-  - Traffic logging middleware added (controlled by TRAFFIC_LOGGING env var)
-- **November 20, 2025**: Fixed timezone issue for daily reset - All date-based operations now use Malaysia timezone (UTC+8) instead of UTC. Daily reset at midnight Malaysia time now works correctly for:
-  - Dashboard stats (Waiting, Called, Completed counts)
-  - Next patient number (resets to #001)
-  - Recent history filtering
-  - Today's patient queries
-- **November 18, 2025**: Fixed TV Display history logic - History section now shows recent calling history (2nd, 3rd, 4th most recently called patients) instead of completed patients. Rolling list behavior with max 3 items.
-- **November 18, 2025**: Added Settings button to Dashboard header for easier TV accessibility (Smart TVs cannot scroll sidebar).
-- **November 18, 2025**: Implemented TV Mode manual toggle with 2-3x bigger fonts (patient name: 14rem, room name: 5rem) for Smart TV visibility. Cross-tab sync via custom events + localStorage.
-
 ## System Architecture
 
 ### Frontend
 - **Framework**: React 18 with TypeScript (Vite).
-- **UI/UX**: Shadcn/ui (Radix UI) and Tailwind CSS with Material Design principles. Custom theme system supporting light/dark modes.
+- **UI/UX**: Shadcn/ui (Radix UI) and Tailwind CSS with Material Design principles, custom theme system with light/dark modes.
+  - **TV Display**: Optimized for Smart TVs with a light theme, white background, dark text, 2-3x larger fonts, and high contrast. Includes a manual toggle in settings for "TV Mode" which syncs across tabs via local storage.
 - **State Management**: TanStack Query for server state, React hooks for local state.
 - **Routing**: Wouter.
-- **Real-time Updates**: WebSocket-driven with targeted `refetchQueries` for instant updates, with 30-second polling as fallback.
-- **Custom Hooks**: `useTvPatients` hook consolidates TV display data from lightweight `/api/patients/tv` endpoint (currentPatient, queueWaiting, queueHistory).
+- **Real-time Updates**: WebSocket-driven with targeted `refetchQueries` for instant updates, 30-second polling as fallback.
+- **Performance**: Isolated Clock component, CSS blink animations, debounced WebSocket refetching, lazy audio loading, and memoized prayer time highlighting for TV display optimization.
 
 ### Backend
 - **Server**: Express.js with TypeScript.
 - **Database**: Neon PostgreSQL with serverless driver, Drizzle ORM.
-  - **Autoscaling**: Min 0.25 CU, Max 1 CU.
-  - **Connection Pooling**: Max 10 connections, 30s idle timeout.
-  - **Server-Side Caching**: Tiered TTL (2.5s for dynamic data, 30s for static data) with auto-invalidation on mutations.
-  - **Automated Cleanup**: Deletes completed patients older than 24 hours on startup.
-  - **Auto-Complete Dispensary Scheduler**: Runs every 5 minutes to complete patients in dispensary >90 minutes, with multi-tenant support and mutex guarding.
-- **API**: RESTful endpoints (`/api` prefix).
-- **Storage**: Abstracted interface (memory/database implementations).
-- **Session Management**: Express sessions with PostgreSQL store.
+  - **Configuration**: Autoscaling (Min 0.25 CU, Max 1 CU), connection pooling (Max 10 connections, 30s idle timeout), database keepalives.
+  - **Caching**: Server-side caching with tiered TTLs (2.5s for dynamic data, 30s for static data) and auto-invalidation on mutations.
+  - **Cleanup**: Automated cleanup of completed patients older than 24 hours on startup.
+  - **Dispensary**: Auto-Complete Dispensary Scheduler runs every 5 minutes with multi-tenant support and mutex guarding.
+- **API**: RESTful endpoints (`/api` prefix) with rate limiting (300 req/min general, 30 req/min for legacy endpoints) and traffic logging.
+- **Storage**: Abstracted interface for memory/database implementations.
+- **Session Management**: Express sessions with PostgreSQL store, including impersonation functionality for administrators.
+- **Reliability**: DB retry logic for critical operations, robust error handling for unhandled rejections and uncaught exceptions.
 
 ### Database Schema
 Key entities: Users (auth/roles), Windows (rooms/stations), Patients (queue management, status, priority), Settings (configurable parameters).
 
 ### Core Features
-- **Named Patient Registration**: Automatic queue numbering.
-- **Priority Patient Management**: Visual indicators and dedicated display.
-- **Real-time Queue Management**: Live status and position updates.
-- **Multi-window Support**: Flexible room/station assignment.
-- **TV Display Mode**: Full-screen display for calling, includes Islamic prayer times.
-  - **TV Mode Toggle**: Manual toggle in Settings page for Smart TV browsers (localStorage-based).
-  - **TV Optimizations**: Light theme with white background + dark text, 2-3x larger fonts using responsive clamp(), high contrast for TV visibility.
-  - **Cross-tab Sync**: Custom events + storage events for instant updates across browser tabs.
-  - **SSR-safe**: Browser guards prevent crashes in non-browser environments.
+- **Patient Management**: Named patient registration with automatic queue numbering, priority patient management, real-time queue management, multi-window support.
+- **TV Display Mode**: Full-screen display for calling, including Islamic prayer times, and a standalone TV Display page (`/tv/:token`) with short PIN access and WebSocket real-time updates.
 - **Audio Integration**: Configurable sound alerts and text-to-speech.
 - **Theme Customization**: Medical blue color scheme, accessibility-focused.
-- **Auto-Complete Dispensary**: Prevents queue congestion by automatically completing inactive patients.
-- **Security**: Role-based authentication (admin/user), secure session handling, BCrypt password hashing.
-
-### Performance Optimizations
-- **Bandwidth Reduction**: 
-  - **Lightweight TV endpoint** (`/api/patients/tv`) with TvQueueItem DTO achieving **85% payload reduction** (~70KB → ~10KB for 10 patients)
-  - **Dashboard optimization**: Replaced heavy `/api/dashboard/current-call` + `/api/dashboard/history` endpoints (~71KB total) with single lightweight `/api/patients/tv` endpoint (~10KB)
-  - **Media endpoint optimization** (`/api/display`): **99.9% payload reduction** by excluding base64 `data` field (~3MB → ~3KB)
-    - Frontend loads media via `/api/media/:id/file` with 1-year HTTP cache headers
-    - **Expected monthly savings**: ~1,290GB/month (43GB/day) with 10+ devices
-  - **Total bandwidth reduction**: From ~76GB/month → ~12-15GB/month (80-84% reduction)
-  - Reduced TV display polling from 3s to 30s
-  - Tiered server-side caching (2.5s for patients, 30s for settings)
-  - Active patients endpoint (`/api/patients/active`) excluding completed patients for smaller payloads
-  - Response compression (Gzip)
-  - Dual-cache WebSocket synchronization
-- **CPU/Database Load Reduction**: 
-  - Automatic data cleanup (completed patients >24 hours)
-  - Server-side caching reducing DB queries by ~60%
-  - **WebSocket optimizations**: 
-    - Targeted `refetchQueries` on specific endpoints (patients, patients/tv, windows) for instant real-time updates
-    - Reconnect only refetches essential queries (prevents bandwidth spike from heavy endpoints)
-  - Database connection pooling (max 10 connections, 30s idle timeout)
-  - Optimized SQL queries with LEFT JOIN for window names
-  - Auto-Complete Dispensary Scheduler (every 5 minutes)
-- **Scalability**: Documented support for Neon read replicas for further CPU optimization.
-- **Rate Limiting**: 
-  - General API: 300 req/min per IP (supports 10+ TV devices)
-  - Legacy endpoints: 30 req/min with lightweight payloads only
-  - TV endpoints exempt from rate limiting for reliability
-- **Traffic Logging**: 
-  - Enable with `TRAFFIC_LOGGING=true` env var
-  - Logs: method, path, status, response size, duration
-  - Example: `REQ GET /api/patients/tv 200 size=842 bytes dur=12ms`
+- **Security**: Role-based authentication (admin/user), secure session handling, BCrypt password hashing, admin impersonation.
+- **System Health**: Stuck room self-healing to clear windows referencing deleted patients, user online/offline status tracking.
+- **Bandwidth Optimization**: Lightweight TV endpoint (`/api/patients/tv`) for 85% payload reduction, media endpoint optimization for 99.9% payload reduction, reduced polling intervals, and Gzip compression.
+- **Timezone Management**: All date-based operations use Malaysia timezone (UTC+8) for daily resets and history filtering.
 
 ## External Dependencies
 
@@ -178,4 +70,7 @@ Key entities: Users (auth/roles), Windows (rooms/stations), Patients (queue mana
 - **react-hook-form**: Form state management.
 - **@hookform/resolvers**: Form validation resolvers.
 - **zod**: Schema validation.
-```
+
+### External APIs
+- **aladhan.com**: For prayer times (server-side cached).
+- **open-meteo.com**: For weather data (server-side cached).

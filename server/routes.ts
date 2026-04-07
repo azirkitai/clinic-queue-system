@@ -177,6 +177,9 @@ declare module 'express-session' {
     userId?: string;
     username?: string;
     role?: string;
+    originalAdminId?: string;
+    originalAdminUsername?: string;
+    originalAdminRole?: string;
   }
 }
 
@@ -372,6 +375,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ success: true, message: "Logout successful" });
     });
+  });
+
+  app.post("/api/auth/impersonate/:userId", requireAuth, async (req, res) => {
+    try {
+      if (req.session.role !== 'admin' && !req.session.originalAdminId) {
+        return res.status(403).json({ error: "Only admin can impersonate users" });
+      }
+      
+      if (req.session.originalAdminId) {
+        return res.status(400).json({ error: "Already impersonating. Stop current impersonation first." });
+      }
+      
+      const targetUserId = req.params.userId;
+      const targetUser = await storage.getUser(targetUserId);
+      if (!targetUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      req.session.originalAdminId = req.session.userId;
+      req.session.originalAdminUsername = req.session.username;
+      req.session.originalAdminRole = req.session.role;
+      
+      req.session.userId = targetUser.id;
+      req.session.username = targetUser.username;
+      req.session.role = targetUser.role;
+      
+      res.json({
+        success: true,
+        user: {
+          id: targetUser.id,
+          username: targetUser.username,
+          role: targetUser.role,
+          clinicName: "",
+          clinicLocation: ""
+        },
+        impersonating: true,
+        originalAdmin: req.session.originalAdminUsername
+      });
+    } catch (error) {
+      console.error("Impersonate error:", error);
+      res.status(500).json({ error: "Failed to impersonate user" });
+    }
+  });
+
+  app.post("/api/auth/stop-impersonate", requireAuth, async (req, res) => {
+    try {
+      if (!req.session.originalAdminId) {
+        return res.status(400).json({ error: "Not currently impersonating" });
+      }
+      
+      req.session.userId = req.session.originalAdminId;
+      req.session.username = req.session.originalAdminUsername;
+      req.session.role = req.session.originalAdminRole;
+      
+      delete req.session.originalAdminId;
+      delete req.session.originalAdminUsername;
+      delete req.session.originalAdminRole;
+      
+      const adminUser = await storage.getUser(req.session.userId!);
+      
+      res.json({
+        success: true,
+        user: {
+          id: adminUser!.id,
+          username: adminUser!.username,
+          role: adminUser!.role,
+          clinicName: "",
+          clinicLocation: ""
+        },
+        impersonating: false
+      });
+    } catch (error) {
+      console.error("Stop impersonate error:", error);
+      res.status(500).json({ error: "Failed to stop impersonation" });
+    }
   });
 
   app.post("/api/auth/change-password", requireAuth, async (req, res) => {
@@ -617,7 +695,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "User not found" });
       }
       
-      res.json({
+      const response: any = {
         user: {
           id: user.id,
           username: user.username,
@@ -625,7 +703,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           clinicName: "",
           clinicLocation: ""
         }
-      });
+      };
+      
+      if (req.session.originalAdminId) {
+        response.impersonating = true;
+        response.originalAdmin = req.session.originalAdminUsername;
+      }
+      
+      res.json(response);
     } catch (error) {
       console.error("Auth check error:", error);
       res.status(500).json({ error: "Internal server error" });

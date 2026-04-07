@@ -8,6 +8,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
 // Import pages
@@ -60,13 +61,27 @@ function AuthenticatedApp() {
     "--sidebar-width-icon": "4rem",   // default icon width
   };
 
+  const { isImpersonating, originalAdmin, user, stopImpersonate } = useAuth();
+
   return (
     <SidebarProvider style={style as React.CSSProperties}>
       <div className="flex h-screen w-full">
-        {/* Hide sidebar when in fullscreen */}
         {!isFullscreen && <AppSidebar />}
         <div className="flex flex-col flex-1">
-          {/* Hide header when in fullscreen */}
+          {isImpersonating && (
+            <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-amber-500 text-white text-sm" style={{zIndex: 9999}}>
+              <span>Viewing as <strong>{user?.username}</strong> (admin: {originalAdmin})</span>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-white text-white bg-transparent"
+                onClick={stopImpersonate}
+                data-testid="button-stop-impersonate"
+              >
+                Back to Admin
+              </Button>
+            </div>
+          )}
           {!isFullscreen && (
             <header className="flex items-center justify-between p-2 border-b bg-background">
               <SidebarTrigger data-testid="button-sidebar-toggle" />

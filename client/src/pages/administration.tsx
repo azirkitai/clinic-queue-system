@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Shield, UserPlus, Trash2, Edit, Users, Monitor, Circle } from "lucide-react";
+import { Shield, UserPlus, Trash2, Edit, Users, Monitor, Circle, LogIn } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import type { User, InsertUser } from "@shared/schema";
 
 type UserWithOnline = User & { isOnline: boolean };
@@ -30,15 +31,30 @@ function formatLastLogin(date: string | Date | null | undefined): string {
 
 export default function Administration() {
   const { toast } = useToast();
+  const { user: currentUser, impersonate } = useAuth();
   const [newUser, setNewUser] = useState({
     username: "",
     password: "",
     role: "user" as "admin" | "user"
   });
   const [editingUser, setEditingUser] = useState<string | null>(null);
+  const [impersonating, setImpersonating] = useState<string | null>(null);
 
-  // Real admin check would require authentication system
-  const isCurrentUserAdmin = true; // Implement proper auth check
+  const isCurrentUserAdmin = true;
+
+  const handleImpersonate = async (userId: string) => {
+    setImpersonating(userId);
+    try {
+      await impersonate(userId);
+    } catch (error) {
+      toast({
+        title: "Impersonate Failed",
+        description: "Failed to impersonate user",
+        variant: "destructive",
+      });
+      setImpersonating(null);
+    }
+  };
 
   const { data: users = [], isLoading } = useQuery<UserWithOnline[]>({
     queryKey: ['/api/users'],
@@ -298,7 +314,18 @@ export default function Administration() {
                           </Badge>
                         </div>
                         
-                        <div className="flex items-center space-x-1 pt-2">
+                        <div className="flex items-center flex-wrap gap-1 pt-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleImpersonate(user.id)}
+                            disabled={user.id === currentUser?.id || impersonating === user.id}
+                            title={`View as ${user.username}`}
+                            data-testid={`button-impersonate-${user.id}`}
+                          >
+                            <LogIn className="h-4 w-4 mr-1" />
+                            {impersonating === user.id ? "Switching..." : "View As"}
+                          </Button>
                           <Button
                             size="sm"
                             variant="outline"

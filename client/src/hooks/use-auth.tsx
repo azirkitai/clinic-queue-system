@@ -13,9 +13,13 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isImpersonating: boolean;
+  originalAdmin: string | null;
   login: (user: User) => void;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  impersonate: (userId: string) => Promise<void>;
+  stopImpersonate: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,8 +39,9 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isImpersonating, setIsImpersonating] = useState(false);
+  const [originalAdmin, setOriginalAdmin] = useState<string | null>(null);
 
-  // Check if user is authenticated on app start (skip for TV standalone pages)
   useEffect(() => {
     const path = window.location.pathname;
     if (path.startsWith('/tv/') || path.startsWith('/qr-auth/')) {
@@ -46,7 +51,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     checkAuth();
   }, []);
 
-  // Periodic session check - detect expired sessions on Smart TVs
   useEffect(() => {
     if (!user) return;
 
@@ -56,13 +60,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (res.status === 401) {
           console.log('[AUTH] Session expired - detected by periodic check');
           setUser(null);
+          setIsImpersonating(false);
+          setOriginalAdmin(null);
         }
       } catch (error) {
-        // Network error - don't clear user, might be temporary
       }
     };
 
-    const intervalId = setInterval(checkSession, 5 * 60 * 1000); // Check every 5 minutes
+    const intervalId = setInterval(checkSession, 5 * 60 * 1000);
     return () => clearInterval(intervalId);
   }, [user]);
 
@@ -72,10 +77,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const result = await response.json();
       if (result.user) {
         setUser(result.user);
+        setIsImpersonating(!!result.impersonating);
+        setOriginalAdmin(result.originalAdmin || null);
       }
     } catch (error) {
-      // User not authenticated - this is fine, just clear state
       setUser(null);
+      setIsImpersonating(false);
+      setOriginalAdmin(null);
     } finally {
       setIsLoading(false);
     }
@@ -92,6 +100,40 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error("Logout error:", error);
     } finally {
       setUser(null);
+      setIsImpersonating(false);
+      setOriginalAdmin(null);
+    }
+  };
+
+  const impersonate = async (userId: string) => {
+    try {
+      const response = await apiRequest("POST", `/api/auth/impersonate/${userId}`);
+      const result = await response.json();
+      if (result.success) {
+        setUser(result.user);
+        setIsImpersonating(true);
+        setOriginalAdmin(result.originalAdmin);
+        window.location.href = '/';
+      }
+    } catch (error) {
+      console.error("Impersonate error:", error);
+      throw error;
+    }
+  };
+
+  const stopImpersonate = async () => {
+    try {
+      const response = await apiRequest("POST", "/api/auth/stop-impersonate");
+      const result = await response.json();
+      if (result.success) {
+        setUser(result.user);
+        setIsImpersonating(false);
+        setOriginalAdmin(null);
+        window.location.href = '/administration';
+      }
+    } catch (error) {
+      console.error("Stop impersonate error:", error);
+      throw error;
     }
   };
 
@@ -99,9 +141,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     isAuthenticated: !!user,
     isLoading,
+    isImpersonating,
+    originalAdmin,
     login,
     logout,
     checkAuth,
+    impersonate,
+    stopImpersonate,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
