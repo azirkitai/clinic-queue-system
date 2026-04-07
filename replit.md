@@ -7,6 +7,13 @@ This project is a comprehensive clinic patient calling system designed to enhanc
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+- **April 7, 2026**: User online/offline status + last login tracking:
+  - **Schema**: Added `lastLoginAt` timestamp field to users table
+  - **Login tracking**: Login route records `lastLoginAt` timestamp on successful authentication
+  - **Online presence**: WebSocket connection tracking via `onlineUsers` Map in websocket.ts (multi-tab safe with Set<socketId>)
+  - **API enhancement**: GET `/api/users` now returns `isOnline` boolean for each user
+  - **Admin UI**: User list shows green/grey dot for online/offline status, relative last login time ("5m ago", "2h ago", etc.)
+  - **Stats cards**: 5-column grid (Total, Online Now, Active, Admins, Regular) with 30s auto-refresh
 - **April 7, 2026**: Stuck room self-healing + dashboard dispensary counter:
   - **Self-healing helper**: `clearStuckWindows(userId)` detects and clears rooms referencing deleted/non-existent patients
   - **Bulk delete fix**: `clear-completed` and `clear-old-completed` endpoints now auto-clear stuck windows after deleting patients

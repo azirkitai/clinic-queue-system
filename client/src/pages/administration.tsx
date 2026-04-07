@@ -5,11 +5,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Shield, UserPlus, Trash2, Edit, Users, Monitor } from "lucide-react";
+import { Shield, UserPlus, Trash2, Edit, Users, Monitor, Circle } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { User, InsertUser } from "@shared/schema";
+
+type UserWithOnline = User & { isOnline: boolean };
+
+function formatLastLogin(date: string | Date | null | undefined): string {
+  if (!date) return "Never";
+  const d = new Date(date);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "Just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDays = Math.floor(diffHr / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return d.toLocaleDateString("en-MY", { day: "numeric", month: "short" });
+}
 
 export default function Administration() {
   const { toast } = useToast();
@@ -23,9 +40,9 @@ export default function Administration() {
   // Real admin check would require authentication system
   const isCurrentUserAdmin = true; // Implement proper auth check
 
-  // Fetch users from database
-  const { data: users = [], isLoading } = useQuery<User[]>({
+  const { data: users = [], isLoading } = useQuery<UserWithOnline[]>({
     queryKey: ['/api/users'],
+    refetchInterval: 30000,
   });
 
   // Create user mutation
@@ -253,8 +270,14 @@ export default function Administration() {
                     >
                       <div className="flex items-center space-x-3">
                         <div>
-                          <div className="font-medium" data-testid={`text-username-${user.id}`}>
+                          <div className="flex items-center gap-2 font-medium" data-testid={`text-username-${user.id}`}>
+                            <Circle
+                              className={`h-2.5 w-2.5 fill-current ${user.isOnline ? "text-green-500" : "text-muted-foreground/40"}`}
+                            />
                             {user.username}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5" data-testid={`text-last-login-${user.id}`}>
+                            {user.isOnline ? "Online now" : `Last login: ${formatLastLogin(user.lastLoginAt)}`}
                           </div>
                         </div>
                       </div>
@@ -314,8 +337,7 @@ export default function Administration() {
         </div>
       </div>
 
-      {/* System Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -329,10 +351,21 @@ export default function Administration() {
         
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+            <CardTitle className="text-sm font-medium">Online Now</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600" data-testid="text-active-users">
+            <div className="text-2xl font-bold text-green-600" data-testid="text-online-users">
+              {users.filter(u => u.isOnline).length}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Active</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600" data-testid="text-active-users">
               {users.filter(u => u.isActive).length}
             </div>
           </CardContent>
@@ -343,7 +376,7 @@ export default function Administration() {
             <CardTitle className="text-sm font-medium">Admins</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600" data-testid="text-admin-users">
+            <div className="text-2xl font-bold text-purple-600" data-testid="text-admin-users">
               {users.filter(u => u.role === "admin").length}
             </div>
           </CardContent>
@@ -351,10 +384,10 @@ export default function Administration() {
         
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Regular Users</CardTitle>
+            <CardTitle className="text-sm font-medium">Regular</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600" data-testid="text-regular-users">
+            <div className="text-2xl font-bold" data-testid="text-regular-users">
               {users.filter(u => u.role === "user").length}
             </div>
           </CardContent>

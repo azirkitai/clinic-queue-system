@@ -7,6 +7,7 @@ import { storage } from "./storage";
 import { insertPatientSchema, insertUserSchema, insertTextGroupSchema, insertThemeSchema, insertQrSessionSchema } from "@shared/schema";
 import { createHash, randomBytes } from "crypto";
 import { z } from "zod";
+import { getOnlineUserIds } from "./websocket";
 
 async function withReadRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 500): Promise<T> {
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -337,10 +338,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(500).json({ error: "Internal server error" });
         }
         
-        // Store user info in session
         req.session.userId = user.id;
         req.session.username = user.username;
         req.session.role = user.role;
+        
+        storage.updateLastLogin(user.id).catch(err => 
+          console.error("[LOGIN] Failed to update lastLoginAt:", err)
+        );
         
         res.json({
           success: true,
@@ -1162,9 +1166,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const users = await storage.getUsers();
+      const onlineIds = getOnlineUserIds();
       
-      // Remove sensitive data like passwords from response
-      const sanitizedUsers = users.map(sanitizeUser);
+      const sanitizedUsers = users.map(u => ({
+        ...sanitizeUser(u),
+        isOnline: onlineIds.includes(u.id),
+      }));
       res.json(sanitizedUsers);
     } catch (error) {
       console.error("Error fetching users:", error);

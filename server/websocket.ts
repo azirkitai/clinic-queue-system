@@ -8,6 +8,18 @@ interface AuthenticatedSocket extends Socket {
   clinicRoom?: string;
 }
 
+// Track online users: userId -> Set of socket IDs
+const onlineUsers = new Map<string, Set<string>>();
+
+export function getOnlineUserIds(): string[] {
+  return Array.from(onlineUsers.keys());
+}
+
+export function isUserOnline(userId: string): boolean {
+  const sockets = onlineUsers.get(userId);
+  return !!sockets && sockets.size > 0;
+}
+
 /**
  * Setup WebSocket server with multi-tenant isolation
  * Each clinic gets isolated rooms based on userId to prevent cross-tenant communication
@@ -58,11 +70,14 @@ export function setupWebSocket(io: Server) {
     // console.log removed (emoji)
 
     if (socket.userId && socket.clinicRoom) {
-      // Join clinic-specific room for tenant isolation
       socket.join(socket.clinicRoom);
-      // console.log removed (emoji)
       
-      // Emit welcome message to confirm room join
+      // Track online status
+      if (!onlineUsers.has(socket.userId)) {
+        onlineUsers.set(socket.userId, new Set());
+      }
+      onlineUsers.get(socket.userId)!.add(socket.id);
+      
       socket.emit("clinic:joined", {
         clinicId: socket.userId,
         room: socket.clinicRoom,
@@ -198,12 +213,15 @@ export function setupWebSocket(io: Server) {
     // REMOVED: Client-controlled qr:authorized and qr:finalized events
     // These are now server-authoritative and emitted from API endpoints
 
-    // Handle disconnection
     socket.on("disconnect", (reason) => {
-      // console.log removed (emoji)
-      
-      if (socket.clinicRoom) {
-        // console.log removed (emoji)
+      if (socket.userId) {
+        const sockets = onlineUsers.get(socket.userId);
+        if (sockets) {
+          sockets.delete(socket.id);
+          if (sockets.size === 0) {
+            onlineUsers.delete(socket.userId);
+          }
+        }
       }
     });
 

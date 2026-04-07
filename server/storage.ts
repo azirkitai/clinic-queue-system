@@ -64,6 +64,7 @@ export interface IStorage {
   updateUser(userId: string, updates: Partial<User>): Promise<User | undefined>;
   deleteUser(userId: string): Promise<boolean>;
   toggleUserStatus(userId: string): Promise<User | undefined>;
+  updateLastLogin(userId: string): Promise<void>;
   // Authentication methods
   authenticateUser(username: string, password: string): Promise<User | null>;
   // TV Token methods
@@ -313,17 +314,21 @@ export class MemStorage implements IStorage {
   }
 
   async toggleUserStatus(userId: string): Promise<User | undefined> {
-    // First get the current user
     const currentUser = await this.getUser(userId);
     if (!currentUser) return undefined;
 
-    // Toggle the isActive status
     const result = await db.update(users)
       .set({ isActive: !currentUser.isActive })
       .where(eq(users.id, userId))
       .returning();
     
     return result[0];
+  }
+
+  async updateLastLogin(userId: string): Promise<void> {
+    await db.update(users)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(users.id, userId));
   }
 
   // Authentication method - verify user credentials
@@ -1729,6 +1734,12 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return result[0];
+  }
+
+  async updateLastLogin(userId: string): Promise<void> {
+    await db.update(users)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(users.id, userId));
   }
 
   // TV Token methods - use database query for efficiency
