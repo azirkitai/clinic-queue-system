@@ -23,7 +23,7 @@ export function getDisplayName(fullName: string | null | undefined): string {
 
   const boMatch = trimmed.match(/^B\/O\s+(.+)/i);
   if (boMatch) {
-    return `BABY OF ${shortenName(boMatch[1])}`;
+    return `B/O ${shortenName(boMatch[1])}`;
   }
 
   return shortenName(trimmed);
