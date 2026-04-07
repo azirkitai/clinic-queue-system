@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { type Patient, type Setting } from "@shared/schema";
 import { audioSystem } from "@/lib/audio-system";
+import { useWebSocket } from "@/hooks/use-websocket";
 
 interface Window {
   id: string;
@@ -30,6 +31,8 @@ interface QueuePatient extends Omit<Patient, 'status' | 'trackingHistory' | 'win
 export default function Queue() {
   const [selectedWindow, setSelectedWindow] = useState<string>("");
   const { toast } = useToast();
+
+  useWebSocket();
 
   // Fetch active patients (excludes completed for lighter payloads)
   const { data: patients = [], isLoading: patientsLoading, refetch: refetchPatients } = useQuery<Patient[]>({
