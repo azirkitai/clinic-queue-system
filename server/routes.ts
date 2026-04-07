@@ -1632,8 +1632,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     'marqueeBackgroundMode', 'marqueeBackgroundGradient', 'marqueeTextMode', 'marqueeTextGradient',
     // Modal
     'modalBackgroundColor', 'modalBorderColor', 'modalTextColor',
-    // Clinic (NOTE: clinicLogo EXCLUDED - it's 211KB base64! TV gets it via /api/media with caching)
-    'showClinicLogo', 'clinicName',
+    // Clinic (logo is hardcoded in frontend - no need for clinicLogo or showClinicLogo settings)
+    'clinicName',
     // Header
     'headerBackgroundMode', 'headerBackgroundColor', 'headerBackgroundGradient',
     'headerTextMode', 'headerTextColor', 'headerTextGradient',

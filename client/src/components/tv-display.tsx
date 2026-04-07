@@ -302,9 +302,9 @@ export function TVDisplay({
   const modalBorderColor = settingsObj.modalBorderColor || '#fbbf24';
   const modalTextColor = settingsObj.modalTextColor || '#ffffff';
 
-  // ✅ Logo hardcoded directly - no API call, no database storage needed
+  // ✅ Logo hardcoded directly - always shown, no API call, no database storage needed
   const clinicLogo = CLINIC_LOGO;
-  const showClinicLogo = settingsObj.showClinicLogo === 'true';
+  const showClinicLogo = true;
   
   // Helper function to get background style based on mode (solid vs gradient)
   const getBackgroundStyle = (mode: string | undefined, solidColor: string, gradientValue: string, fallbackColor: string) => {
