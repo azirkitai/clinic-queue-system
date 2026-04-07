@@ -35,7 +35,7 @@ export function getTtsName(fullName: string | null | undefined): string {
 
   const boMatch = trimmed.match(/^B\/O\s+(.+)/i);
   if (boMatch) {
-    return `Baby of ${boMatch[1].trim()}`;
+    return `Baby off ${boMatch[1].trim()}`;
   }
 
   return trimmed;
