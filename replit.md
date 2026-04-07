@@ -7,6 +7,13 @@ This project is a comprehensive clinic patient calling system designed to enhanc
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+- **April 7, 2026**: Connection stability + long-running reliability fixes:
+  - **Database keepalive**: Pool pings every 4 minutes to prevent Neon serverless from dropping idle connections
+  - **Pool error handler**: `pool.on('error')` catches unexpected disconnects and logs them instead of crashing
+  - **DB retry logic**: Critical operations (call patient, create patient, update window) auto-retry up to 2x on connection errors
+  - **Session store error logging**: `connect-pg-simple` errors now logged with `[SESSION STORE]` prefix for debugging
+  - **Process-level error handlers**: `unhandledRejection` and `uncaughtException` caught and logged instead of silent crash
+  - **Removed clinic logo settings**: Logo upload card and showClinicLogo toggle removed from Settings (logo is hardcoded)
 - **April 7, 2026**: Hardcoded clinic logo + External API billing optimization:
   - **Hardcoded clinic logo**: Logo base64 moved from database to `client/src/lib/clinic-logo.ts` - eliminates logo API calls entirely (saves 211KB per fetch, removes `/api/settings/logo` and `/api/tv/:token/logo` dependency)
 - **April 7, 2026**: External API billing optimization:

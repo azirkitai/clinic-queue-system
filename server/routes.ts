@@ -8,7 +8,30 @@ import { insertPatientSchema, insertUserSchema, insertTextGroupSchema, insertThe
 import { createHash, randomBytes } from "crypto";
 import { z } from "zod";
 
-// Global Socket.IO server instance for server-authoritative events
+async function withReadRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 500): Promise<T> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      const isRetryable = 
+        err.code === 'ECONNRESET' ||
+        err.code === 'ETIMEDOUT' ||
+        err.code === '57P01' ||
+        err.message?.includes('Connection terminated') ||
+        err.message?.includes('ECONNRESET') ||
+        err.message?.includes('ETIMEDOUT');
+      
+      if (attempt < retries && isRetryable) {
+        console.warn(`[DB RETRY] Attempt ${attempt + 1} failed: ${err.message}. Retrying in ${delayMs}ms...`);
+        await new Promise(r => setTimeout(r, delayMs * (attempt + 1)));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error('withReadRetry exhausted');
+}
+
 let globalIo: SocketIOServer | null = null;
 
 export function setGlobalIo(io: SocketIOServer) {
@@ -668,7 +691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(cached);
       }
       
-      const tvPatients = await storage.getTvPatients(req.session.userId);
+      const tvPatients = await withReadRetry(() => storage.getTvPatients(req.session.userId));
       
       // Cache the result (same TTL as active patients)
       setCache('tv-patients', req.session.userId, tvPatients);
@@ -732,12 +755,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Patient not found" });
       }
       
-      // Update window assignment if needed
       if (windowId && status === "called") {
         await storage.updateWindowPatient(windowId, req.session.userId, id);
       } else if (status === "completed" || status === "requeue" || status === "dispensary") {
-        // Clear patient from window
-        const windows = await storage.getWindows(req.session.userId);
+        const windows = await withReadRetry(() => storage.getWindows(req.session.userId));
         const currentWindow = windows.find(w => w.currentPatientId === id);
         if (currentWindow) {
           await storage.updateWindowPatient(currentWindow.id, req.session.userId, undefined);
@@ -3112,7 +3133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(cached);
       }
       
-      const tvPatients = await storage.getTvPatients(user.id);
+      const tvPatients = await withReadRetry(() => storage.getTvPatients(user.id));
       setCache('tv-patients', user.id, tvPatients);
       
       res.json(tvPatients);

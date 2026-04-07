@@ -7,8 +7,18 @@ import { Server } from "socket.io";
 import { registerRoutes, setGlobalIo } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupWebSocket } from "./websocket";
+import { startDatabaseKeepalive } from "./db";
 import path from "path";
 import fs from "fs";
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[PROCESS] Unhandled Rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[PROCESS] Uncaught Exception:', err.message, err.stack);
+  setTimeout(() => process.exit(1), 1000);
+});
 
 const app = express();
 
@@ -58,14 +68,18 @@ if (PUBLIC_OBJECT_SEARCH_PATHS) {
   }
 }
 
-// Session configuration
 const PgSession = connectPgSimple(session);
+const sessionStore = new PgSession({
+  conString: process.env.DATABASE_URL,
+  tableName: 'user_sessions',
+  createTableIfMissing: true,
+  pruneSessionInterval: 60 * 15,
+  errorLog: (err: Error) => {
+    console.error('[SESSION STORE] Error:', err.message);
+  },
+});
 app.use(session({
-  store: new PgSession({
-    conString: process.env.DATABASE_URL,
-    tableName: 'user_sessions',
-    createTableIfMissing: true,
-  }),
+  store: sessionStore,
   secret: process.env.SESSION_SECRET || 'clinic-management-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
@@ -73,7 +87,7 @@ app.use(session({
   cookie: {
     secure: false,
     httpOnly: true,
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    maxAge: 30 * 24 * 60 * 60 * 1000,
     sameSite: 'lax',
   },
 }));
@@ -129,8 +143,9 @@ app.use((req, res, next) => {
   // Setup WebSocket handlers with tenant isolation
   setupWebSocket(io);
   
-  // Register API routes (but use httpServer instead of app.listen)
   await registerRoutes(app);
+  
+  startDatabaseKeepalive();
 
   // AUTO-CLEANUP: Delete old completed patients on startup to reduce database size
   // This runs once when server starts to ensure old data doesn't accumulate
