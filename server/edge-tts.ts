@@ -74,8 +74,9 @@ router.post("/synthesize", async (req, res) => {
     const tts = new EdgeTTS({
       voice: voiceConfig.voice,
       lang: voiceConfig.lang,
-      outputFormat: "audio-24khz-48kbitrate-mono-mp3",
-      rate: "-10%",
+      outputFormat: "audio-24khz-96kbitrate-mono-mp3",
+      rate: "+0%",
+      pitch: "+0Hz",
       timeout: 15000,
     });
 
