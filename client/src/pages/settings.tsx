@@ -280,7 +280,7 @@ export default function Settings() {
     queryKey: ['/api/settings'],
     staleTime: 5 * 60 * 1000, // 5 minutes - admin page doesn't need real-time updates
     refetchOnWindowFocus: false, // Disable aggressive refetching
-    refetchOnMount: false, // Don't refetch on every mount
+    refetchOnMount: 'always', // Always refetch on mount to show latest saved data
   });
 
   // Convert settings array to object for easier access
