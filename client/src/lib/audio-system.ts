@@ -321,16 +321,28 @@ export class AudioSystem {
   private currentPronunciations: TtsPronunciationRule[] = [];
 
   private applyPronunciations(text: string, lang: 'ms-MY' | 'en-US'): string {
-    if (!this.currentPronunciations || this.currentPronunciations.length === 0) return text;
+    if (!this.currentPronunciations || this.currentPronunciations.length === 0) {
+      console.log('[TTS] No pronunciation rules to apply');
+      return text;
+    }
     let result = text;
     const sorted = [...this.currentPronunciations].sort((a, b) => b.original.length - a.original.length);
+    console.log(`[TTS] Applying ${sorted.length} pronunciation rules to: "${text}" (lang: ${lang})`);
     for (const rule of sorted) {
       const replacement = lang === 'en-US' ? rule.replacementEN : rule.replacementBM;
-      if (!rule.original || !replacement) continue;
+      if (!rule.original || !replacement) {
+        console.log(`[TTS] Skipping rule: original="${rule.original}", replacement="${replacement}"`);
+        continue;
+      }
       const escaped = rule.original.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
       const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+      const before = result;
       result = result.replace(regex, replacement);
+      if (before !== result) {
+        console.log(`[TTS] Rule applied: "${rule.original}" → "${replacement}" | Result: "${result}"`);
+      }
     }
+    console.log(`[TTS] Final text after pronunciations: "${result}"`);
     return result;
   }
 
@@ -350,6 +362,7 @@ export class AudioSystem {
       if (room) parts.push(`please proceed to ${room}`);
       text = parts.join(', ');
     }
+    console.log(`[TTS] buildTtsText: raw="${callInfo.patientName}" → name="${name}" → text="${text}" | pronunciations loaded: ${this.currentPronunciations?.length || 0}`);
     return this.applyPronunciations(text, lang);
   }
 

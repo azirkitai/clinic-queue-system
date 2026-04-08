@@ -1865,7 +1865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Sound
     'enableSound', 'volume', 'presetKey',
     // TTS Voice Announcement
-    'ttsEnabled', 'ttsLanguage', 'ttsRate',
+    'ttsEnabled', 'ttsLanguage', 'ttsRate', 'ttsVoiceGender', 'ttsPronunciations',
   ]);
 
   app.get("/api/settings/tv", async (req, res) => {
