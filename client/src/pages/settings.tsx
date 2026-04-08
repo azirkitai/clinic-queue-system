@@ -2642,6 +2642,22 @@ export default function Settings() {
                       </p>
                     </div>
                   )}
+
+                  {currentSettings.ttsPronunciations.length > 0 && (
+                    <Button
+                      onClick={handleSaveSound}
+                      disabled={saveSettingsMutation.isPending}
+                      className="w-full"
+                      data-testid="button-save-pronunciations"
+                    >
+                      {saveSettingsMutation.isPending ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Simpan Sebutan / Save Pronunciations
+                    </Button>
+                  )}
                 </div>
 
                 <div className="space-y-2">
