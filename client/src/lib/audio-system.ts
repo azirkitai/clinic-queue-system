@@ -25,6 +25,8 @@ import kliaChime from "@assets/klia-chime-flight-announcement-bahasa-melayu-engl
 
 export type TtsLanguageType = 'ms-MY' | 'en-US' | 'both';
 
+export type TtsVoiceGenderType = 'FEMALE' | 'MALE';
+
 export interface AudioSettings {
   enableSound: boolean;
   volume: number;
@@ -33,6 +35,7 @@ export interface AudioSettings {
   ttsEnabled?: boolean;
   ttsLanguage?: TtsLanguageType;
   ttsRate?: number;
+  ttsVoiceGender?: TtsVoiceGenderType;
 }
 
 export interface CallInfo {
@@ -325,11 +328,13 @@ export class AudioSystem {
     }
   }
 
+  private currentGender: TtsVoiceGenderType = 'FEMALE';
+
   private async synthesizeFromServer(text: string, language: 'ms-MY' | 'en-US'): Promise<string> {
     const response = await fetch('/api/tts/synthesize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, language }),
+      body: JSON.stringify({ text, language, gender: this.currentGender }),
     });
 
     if (!response.ok) {
@@ -383,6 +388,7 @@ export class AudioSystem {
 
   private async prefetchTtsAudio(callInfo: CallInfo, settings: AudioSettings): Promise<Array<{ content: string }> | null> {
     const lang = settings.ttsLanguage || 'ms-MY';
+    this.currentGender = settings.ttsVoiceGender || 'FEMALE';
     try {
       if (lang === 'both') {
         const [msAudio, enAudio] = await Promise.all([
@@ -404,6 +410,7 @@ export class AudioSystem {
     if (!settings.ttsEnabled) return;
 
     const lang = settings.ttsLanguage || 'ms-MY';
+    this.currentGender = settings.ttsVoiceGender || 'FEMALE';
 
     try {
       if (lang === 'both') {

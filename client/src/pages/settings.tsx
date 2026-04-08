@@ -45,6 +45,7 @@ interface SettingsState {
   ttsEnabled: boolean;
   ttsLanguage: 'ms-MY' | 'en-US' | 'both';
   ttsRate: number;
+  ttsVoiceGender: 'FEMALE' | 'MALE';
   // Individual section colors
   headerTextColor: string;
   headerTextMode: 'solid' | 'gradient';
@@ -315,6 +316,7 @@ export default function Settings() {
     ttsEnabled: false,
     ttsLanguage: 'ms-MY' as 'ms-MY' | 'en-US' | 'both',
     ttsRate: 0.9,
+    ttsVoiceGender: 'FEMALE' as 'FEMALE' | 'MALE',
     // Individual section colors with defaults
     headerTextColor: '#ffffff',
     headerTextMode: 'solid' as 'solid' | 'gradient',
@@ -397,6 +399,7 @@ export default function Settings() {
         ttsEnabled: settingsObj.ttsEnabled === 'true',
         ttsLanguage: (settingsObj.ttsLanguage as 'ms-MY' | 'en-US' | 'both') || 'ms-MY',
         ttsRate: parseFloat(settingsObj.ttsRate || '0.9'),
+        ttsVoiceGender: (settingsObj.ttsVoiceGender as 'FEMALE' | 'MALE') || 'FEMALE',
         // Individual section colors with defaults
         headerTextColor: settingsObj.headerTextColor || '#ffffff',
         headerTextMode: (settingsObj.headerTextMode as 'solid' | 'gradient') || 'solid',
@@ -496,7 +499,7 @@ export default function Settings() {
     // Clinic name text
     settingsObj.clinicNameTextColor, settingsObj.clinicNameTextMode, settingsObj.clinicNameTextGradient,
     // TTS settings
-    settingsObj.ttsEnabled, settingsObj.ttsLanguage, settingsObj.ttsRate
+    settingsObj.ttsEnabled, settingsObj.ttsLanguage, settingsObj.ttsRate, settingsObj.ttsVoiceGender
   ]);
 
   const handleRefresh = () => {
@@ -686,6 +689,7 @@ export default function Settings() {
       { key: 'ttsEnabled', value: currentSettings.ttsEnabled.toString(), category: 'audio' },
       { key: 'ttsLanguage', value: currentSettings.ttsLanguage, category: 'audio' },
       { key: 'ttsRate', value: currentSettings.ttsRate.toString(), category: 'audio' },
+      { key: 'ttsVoiceGender', value: currentSettings.ttsVoiceGender, category: 'audio' },
     ];
     
     await saveSettingsMutation.mutateAsync(settingsToSave);
@@ -767,6 +771,7 @@ export default function Settings() {
       { key: 'ttsEnabled', value: currentSettings.ttsEnabled.toString(), category: 'audio' },
       { key: 'ttsLanguage', value: currentSettings.ttsLanguage, category: 'audio' },
       { key: 'ttsRate', value: currentSettings.ttsRate.toString(), category: 'audio' },
+      { key: 'ttsVoiceGender', value: currentSettings.ttsVoiceGender, category: 'audio' },
     ];
     
     await saveSettingsMutation.mutateAsync(allSettingsToSave);
@@ -879,6 +884,7 @@ export default function Settings() {
         ttsEnabled: currentSettings.ttsEnabled,
         ttsLanguage: currentSettings.ttsLanguage,
         ttsRate: currentSettings.ttsRate,
+        ttsVoiceGender: currentSettings.ttsVoiceGender,
       });
 
       toast({
@@ -893,7 +899,7 @@ export default function Settings() {
         variant: "destructive",
       });
     }
-  }, [currentSettings.enableSound, currentSettings.presetKey, currentSettings.volume, currentSettings.ttsEnabled, currentSettings.ttsLanguage, currentSettings.ttsRate, toast]);
+  }, [currentSettings.enableSound, currentSettings.presetKey, currentSettings.volume, currentSettings.ttsEnabled, currentSettings.ttsLanguage, currentSettings.ttsRate, currentSettings.ttsVoiceGender, toast]);
 
   // Active settings tab state
   const [activeTab, setActiveTab] = useState("media");
@@ -2460,6 +2466,27 @@ export default function Settings() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label>Suara / Voice</Label>
+                  <Select
+                    value={currentSettings.ttsVoiceGender}
+                    onValueChange={(value) => updateSoundSetting('ttsVoiceGender', value)}
+                  >
+                    <SelectTrigger data-testid="select-tts-voice-gender">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FEMALE">Perempuan / Female (Yasmin / Jenny)</SelectItem>
+                      <SelectItem value="MALE">Lelaki / Male (Osman / Guy)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {currentSettings.ttsVoiceGender === 'FEMALE' 
+                      ? 'BM: Yasmin, EN: Jenny' 
+                      : 'BM: Osman, EN: Guy'}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
                   <Label>Test Custom Voice / Cuba Suara</Label>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
@@ -2500,6 +2527,7 @@ export default function Settings() {
                         ttsEnabled: true,
                         ttsLanguage: currentSettings.ttsLanguage,
                         ttsRate: currentSettings.ttsRate,
+                        ttsVoiceGender: currentSettings.ttsVoiceGender,
                       }, {
                         patientName: ttsTestName || "Ahmad Bin Ali",
                         windowName: ttsTestRoom || "Bilik 1",

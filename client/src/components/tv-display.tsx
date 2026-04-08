@@ -779,6 +779,7 @@ export function TVDisplay({
         ttsEnabled: (settingsObj.ttsEnabled ?? 'false') === 'true',
         ttsLanguage: (settingsObj.ttsLanguage as any) || 'ms-MY',
         ttsRate: parseFloat(settingsObj.ttsRate || '0.9'),
+        ttsVoiceGender: (settingsObj.ttsVoiceGender as any) || 'FEMALE',
       };
 
       if (!disableAudio && (audioSettings.enableSound || audioSettings.ttsEnabled)) {
