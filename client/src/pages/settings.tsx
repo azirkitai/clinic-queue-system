@@ -46,7 +46,7 @@ interface SettingsState {
   ttsLanguage: 'ms-MY' | 'en-US' | 'both';
   ttsRate: number;
   ttsVoiceGender: 'FEMALE' | 'MALE';
-  ttsPronunciations: Array<{ original: string; replacement: string }>;
+  ttsPronunciations: Array<{ original: string; replacementBM: string; replacementEN: string }>;
   // Individual section colors
   headerTextColor: string;
   headerTextMode: 'solid' | 'gradient';
@@ -318,7 +318,7 @@ export default function Settings() {
     ttsLanguage: 'ms-MY' as 'ms-MY' | 'en-US' | 'both',
     ttsRate: 0.9,
     ttsVoiceGender: 'FEMALE' as 'FEMALE' | 'MALE',
-    ttsPronunciations: [] as Array<{ original: string; replacement: string }>,
+    ttsPronunciations: [] as Array<{ original: string; replacementBM: string; replacementEN: string }>,
     // Individual section colors with defaults
     headerTextColor: '#ffffff',
     headerTextMode: 'solid' as 'solid' | 'gradient',
@@ -402,7 +402,7 @@ export default function Settings() {
         ttsLanguage: (settingsObj.ttsLanguage as 'ms-MY' | 'en-US' | 'both') || 'ms-MY',
         ttsRate: parseFloat(settingsObj.ttsRate || '0.9'),
         ttsVoiceGender: (settingsObj.ttsVoiceGender as 'FEMALE' | 'MALE') || 'FEMALE',
-        ttsPronunciations: settingsObj.ttsPronunciations ? (() => { try { return JSON.parse(settingsObj.ttsPronunciations); } catch { return []; } })() : [],
+        ttsPronunciations: settingsObj.ttsPronunciations ? (() => { try { const parsed = JSON.parse(settingsObj.ttsPronunciations); return parsed.map((r: any) => ({ original: r.original || '', replacementBM: r.replacementBM || r.replacement || '', replacementEN: r.replacementEN || r.replacement || '' })); } catch { return []; } })() : [],
         // Individual section colors with defaults
         headerTextColor: settingsObj.headerTextColor || '#ffffff',
         headerTextMode: (settingsObj.headerTextMode as 'solid' | 'gradient') || 'solid',
@@ -2504,7 +2504,7 @@ export default function Settings() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const updated = [...currentSettings.ttsPronunciations, { original: '', replacement: '' }];
+                        const updated = [...currentSettings.ttsPronunciations, { original: '', replacementBM: '', replacementEN: '' }];
                         updateSoundSetting('ttsPronunciations', updated);
                       }}
                       data-testid="button-add-pronunciation"
@@ -2515,73 +2515,120 @@ export default function Settings() {
                   </div>
 
                   {currentSettings.ttsPronunciations.length > 0 ? (
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 text-xs text-muted-foreground font-medium">
-                        <span>Text Asal</span>
-                        <span>TTS Baca Sebagai</span>
-                        <span className="w-9"></span>
-                        <span className="w-9"></span>
-                      </div>
+                    <div className="space-y-3">
                       {currentSettings.ttsPronunciations.map((rule, index) => (
-                        <div key={index} className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 items-center">
-                          <Input
-                            value={rule.original}
-                            onChange={(e) => {
-                              const updated = [...currentSettings.ttsPronunciations];
-                              updated[index] = { ...updated[index], original: e.target.value };
-                              updateSoundSetting('ttsPronunciations', updated);
-                            }}
-                            placeholder="MOHD"
-                            data-testid={`input-pronunciation-original-${index}`}
-                          />
-                          <Input
-                            value={rule.replacement}
-                            onChange={(e) => {
-                              const updated = [...currentSettings.ttsPronunciations];
-                              updated[index] = { ...updated[index], replacement: e.target.value };
-                              updateSoundSetting('ttsPronunciations', updated);
-                            }}
-                            placeholder="Mohamed"
-                            data-testid={`input-pronunciation-replacement-${index}`}
-                          />
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={async () => {
-                              if (!rule.replacement) return;
-                              try {
-                                const lang = currentSettings.ttsLanguage === 'en-US' ? 'en-US' : 'ms-MY';
-                                const gender = currentSettings.ttsVoiceGender || 'FEMALE';
-                                const response = await fetch('/api/tts/synthesize', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ text: rule.replacement, language: lang, gender }),
-                                });
-                                if (response.ok) {
-                                  const data = await response.json();
-                                  const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
-                                  audio.volume = (currentSettings.volume || 70) / 100;
-                                  await audio.play();
-                                }
-                              } catch (error) {
-                                console.error('Pronunciation test error:', error);
-                              }
-                            }}
-                            data-testid={`button-play-pronunciation-${index}`}
-                          >
-                            <Volume2 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              const updated = currentSettings.ttsPronunciations.filter((_, i) => i !== index);
-                              updateSoundSetting('ttsPronunciations', updated);
-                            }}
-                            data-testid={`button-delete-pronunciation-${index}`}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                        <div key={index} className="p-3 rounded-md border space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex-1">
+                              <Label className="text-xs text-muted-foreground">Text Asal</Label>
+                              <Input
+                                value={rule.original}
+                                onChange={(e) => {
+                                  const updated = [...currentSettings.ttsPronunciations];
+                                  updated[index] = { ...updated[index], original: e.target.value };
+                                  updateSoundSetting('ttsPronunciations', updated);
+                                }}
+                                placeholder="MOHD"
+                                data-testid={`input-pronunciation-original-${index}`}
+                              />
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="mt-5"
+                              onClick={() => {
+                                const updated = currentSettings.ttsPronunciations.filter((_, i) => i !== index);
+                                updateSoundSetting('ttsPronunciations', updated);
+                              }}
+                              data-testid={`button-delete-pronunciation-${index}`}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-xs text-muted-foreground">BM Baca Sebagai</Label>
+                              <div className="flex gap-1">
+                                <Input
+                                  value={rule.replacementBM}
+                                  onChange={(e) => {
+                                    const updated = [...currentSettings.ttsPronunciations];
+                                    updated[index] = { ...updated[index], replacementBM: e.target.value };
+                                    updateSoundSetting('ttsPronunciations', updated);
+                                  }}
+                                  placeholder="Mohamed"
+                                  data-testid={`input-pronunciation-bm-${index}`}
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={async () => {
+                                    if (!rule.replacementBM) return;
+                                    try {
+                                      const gender = currentSettings.ttsVoiceGender || 'FEMALE';
+                                      const response = await fetch('/api/tts/synthesize', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ text: rule.replacementBM, language: 'ms-MY', gender }),
+                                      });
+                                      if (response.ok) {
+                                        const data = await response.json();
+                                        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+                                        audio.volume = (currentSettings.volume || 70) / 100;
+                                        await audio.play();
+                                      }
+                                    } catch (error) {
+                                      console.error('BM pronunciation test error:', error);
+                                    }
+                                  }}
+                                  data-testid={`button-play-bm-${index}`}
+                                >
+                                  <Volume2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">EN Baca Sebagai</Label>
+                              <div className="flex gap-1">
+                                <Input
+                                  value={rule.replacementEN}
+                                  onChange={(e) => {
+                                    const updated = [...currentSettings.ttsPronunciations];
+                                    updated[index] = { ...updated[index], replacementEN: e.target.value };
+                                    updateSoundSetting('ttsPronunciations', updated);
+                                  }}
+                                  placeholder="Mohammed"
+                                  data-testid={`input-pronunciation-en-${index}`}
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={async () => {
+                                    if (!rule.replacementEN) return;
+                                    try {
+                                      const gender = currentSettings.ttsVoiceGender || 'FEMALE';
+                                      const response = await fetch('/api/tts/synthesize', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ text: rule.replacementEN, language: 'en-US', gender }),
+                                      });
+                                      if (response.ok) {
+                                        const data = await response.json();
+                                        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+                                        audio.volume = (currentSettings.volume || 70) / 100;
+                                        await audio.play();
+                                      }
+                                    } catch (error) {
+                                      console.error('EN pronunciation test error:', error);
+                                    }
+                                  }}
+                                  data-testid={`button-play-en-${index}`}
+                                >
+                                  <Volume2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -2591,7 +2638,7 @@ export default function Settings() {
                         Tiada peraturan sebutan. Tekan "Tambah" untuk mula.
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Contoh: MOHD → Mohamed, DR → Doktor, NUR → Noor
+                        Contoh: MOHD → BM: Mohamed / EN: Mohammed
                       </p>
                     </div>
                   )}

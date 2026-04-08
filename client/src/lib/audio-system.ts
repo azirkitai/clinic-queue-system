@@ -29,7 +29,8 @@ export type TtsVoiceGenderType = 'FEMALE' | 'MALE';
 
 export interface TtsPronunciationRule {
   original: string;
-  replacement: string;
+  replacementBM: string;
+  replacementEN: string;
 }
 
 export interface AudioSettings {
@@ -319,15 +320,16 @@ export class AudioSystem {
 
   private currentPronunciations: TtsPronunciationRule[] = [];
 
-  private applyPronunciations(text: string): string {
+  private applyPronunciations(text: string, lang: 'ms-MY' | 'en-US'): string {
     if (!this.currentPronunciations || this.currentPronunciations.length === 0) return text;
     let result = text;
     const sorted = [...this.currentPronunciations].sort((a, b) => b.original.length - a.original.length);
     for (const rule of sorted) {
-      if (!rule.original || !rule.replacement) continue;
+      const replacement = lang === 'en-US' ? rule.replacementEN : rule.replacementBM;
+      if (!rule.original || !replacement) continue;
       const escaped = rule.original.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
       const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
-      result = result.replace(regex, rule.replacement);
+      result = result.replace(regex, replacement);
     }
     return result;
   }
@@ -348,7 +350,7 @@ export class AudioSystem {
       if (room) parts.push(`please proceed to ${room}`);
       text = parts.join(', ');
     }
-    return this.applyPronunciations(text);
+    return this.applyPronunciations(text, lang);
   }
 
   private currentGender: TtsVoiceGenderType = 'FEMALE';
