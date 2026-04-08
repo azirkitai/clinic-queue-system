@@ -780,7 +780,7 @@ export function TVDisplay({
         ttsLanguage: (settingsObj.ttsLanguage as any) || 'ms-MY',
         ttsRate: parseFloat(settingsObj.ttsRate || '0.9'),
         ttsVoiceGender: (settingsObj.ttsVoiceGender as any) || 'FEMALE',
-        ttsPronunciations: settingsObj.ttsPronunciations ? (() => { try { return JSON.parse(settingsObj.ttsPronunciations); } catch { return []; } })() : [],
+        ttsPronunciations: settingsObj.ttsPronunciations ? (() => { try { const parsed = JSON.parse(settingsObj.ttsPronunciations); return parsed.map((r: any) => ({ original: r.original || '', replacementBM: r.replacementBM || r.replacement || '', replacementEN: r.replacementEN || r.replacement || '' })); } catch { return []; } })() : [],
       };
 
       if (!disableAudio && (audioSettings.enableSound || audioSettings.ttsEnabled)) {
