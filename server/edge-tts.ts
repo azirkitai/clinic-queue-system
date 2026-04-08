@@ -74,7 +74,7 @@ router.post("/synthesize", async (req, res) => {
     const tts = new EdgeTTS({
       voice: voiceConfig.voice,
       lang: voiceConfig.lang,
-      outputFormat: "audio-24khz-96kbitrate-mono-mp3",
+      outputFormat: "audio-48khz-192kbitrate-mono-mp3",
       rate: "+0%",
       pitch: "+0Hz",
       timeout: 15000,
@@ -97,6 +97,11 @@ router.post("/synthesize", async (req, res) => {
     console.error("[TTS] Synthesis error:", error);
     res.status(500).json({ error: "TTS synthesis failed" });
   }
+});
+
+router.post("/clear-cache", async (_req, res) => {
+  ttsCache.clear();
+  res.json({ success: true, message: "TTS cache cleared" });
 });
 
 console.log("[TTS] Edge TTS initialized (free neural voices - Yasmin/Osman for BM, Jenny/Guy for EN)");
