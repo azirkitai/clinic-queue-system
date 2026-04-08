@@ -46,6 +46,7 @@ interface SettingsState {
   ttsLanguage: 'ms-MY' | 'en-US' | 'both';
   ttsRate: number;
   ttsVoiceGender: 'FEMALE' | 'MALE';
+  ttsPronunciations: Array<{ original: string; replacement: string }>;
   // Individual section colors
   headerTextColor: string;
   headerTextMode: 'solid' | 'gradient';
@@ -317,6 +318,7 @@ export default function Settings() {
     ttsLanguage: 'ms-MY' as 'ms-MY' | 'en-US' | 'both',
     ttsRate: 0.9,
     ttsVoiceGender: 'FEMALE' as 'FEMALE' | 'MALE',
+    ttsPronunciations: [] as Array<{ original: string; replacement: string }>,
     // Individual section colors with defaults
     headerTextColor: '#ffffff',
     headerTextMode: 'solid' as 'solid' | 'gradient',
@@ -400,6 +402,7 @@ export default function Settings() {
         ttsLanguage: (settingsObj.ttsLanguage as 'ms-MY' | 'en-US' | 'both') || 'ms-MY',
         ttsRate: parseFloat(settingsObj.ttsRate || '0.9'),
         ttsVoiceGender: (settingsObj.ttsVoiceGender as 'FEMALE' | 'MALE') || 'FEMALE',
+        ttsPronunciations: settingsObj.ttsPronunciations ? (() => { try { return JSON.parse(settingsObj.ttsPronunciations); } catch { return []; } })() : [],
         // Individual section colors with defaults
         headerTextColor: settingsObj.headerTextColor || '#ffffff',
         headerTextMode: (settingsObj.headerTextMode as 'solid' | 'gradient') || 'solid',
@@ -499,7 +502,7 @@ export default function Settings() {
     // Clinic name text
     settingsObj.clinicNameTextColor, settingsObj.clinicNameTextMode, settingsObj.clinicNameTextGradient,
     // TTS settings
-    settingsObj.ttsEnabled, settingsObj.ttsLanguage, settingsObj.ttsRate, settingsObj.ttsVoiceGender
+    settingsObj.ttsEnabled, settingsObj.ttsLanguage, settingsObj.ttsRate, settingsObj.ttsVoiceGender, settingsObj.ttsPronunciations
   ]);
 
   const handleRefresh = () => {
@@ -690,6 +693,7 @@ export default function Settings() {
       { key: 'ttsLanguage', value: currentSettings.ttsLanguage, category: 'audio' },
       { key: 'ttsRate', value: currentSettings.ttsRate.toString(), category: 'audio' },
       { key: 'ttsVoiceGender', value: currentSettings.ttsVoiceGender, category: 'audio' },
+      { key: 'ttsPronunciations', value: JSON.stringify(currentSettings.ttsPronunciations), category: 'audio' },
     ];
     
     await saveSettingsMutation.mutateAsync(settingsToSave);
@@ -772,6 +776,7 @@ export default function Settings() {
       { key: 'ttsLanguage', value: currentSettings.ttsLanguage, category: 'audio' },
       { key: 'ttsRate', value: currentSettings.ttsRate.toString(), category: 'audio' },
       { key: 'ttsVoiceGender', value: currentSettings.ttsVoiceGender, category: 'audio' },
+      { key: 'ttsPronunciations', value: JSON.stringify(currentSettings.ttsPronunciations), category: 'audio' },
     ];
     
     await saveSettingsMutation.mutateAsync(allSettingsToSave);
@@ -885,6 +890,7 @@ export default function Settings() {
         ttsLanguage: currentSettings.ttsLanguage,
         ttsRate: currentSettings.ttsRate,
         ttsVoiceGender: currentSettings.ttsVoiceGender,
+        ttsPronunciations: currentSettings.ttsPronunciations,
       });
 
       toast({
@@ -899,7 +905,7 @@ export default function Settings() {
         variant: "destructive",
       });
     }
-  }, [currentSettings.enableSound, currentSettings.presetKey, currentSettings.volume, currentSettings.ttsEnabled, currentSettings.ttsLanguage, currentSettings.ttsRate, currentSettings.ttsVoiceGender, toast]);
+  }, [currentSettings.enableSound, currentSettings.presetKey, currentSettings.volume, currentSettings.ttsEnabled, currentSettings.ttsLanguage, currentSettings.ttsRate, currentSettings.ttsVoiceGender, currentSettings.ttsPronunciations, toast]);
 
   // Active settings tab state
   const [activeTab, setActiveTab] = useState("media");
@@ -2486,6 +2492,83 @@ export default function Settings() {
                   </p>
                 </div>
 
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <Label>Sebutan / Pronunciation Rules</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Tukar text supaya TTS baca dengan betul
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const updated = [...currentSettings.ttsPronunciations, { original: '', replacement: '' }];
+                        updateSoundSetting('ttsPronunciations', updated);
+                      }}
+                      data-testid="button-add-pronunciation"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Tambah
+                    </Button>
+                  </div>
+
+                  {currentSettings.ttsPronunciations.length > 0 ? (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs text-muted-foreground font-medium">
+                        <span>Text Asal</span>
+                        <span>TTS Baca Sebagai</span>
+                        <span className="w-9"></span>
+                      </div>
+                      {currentSettings.ttsPronunciations.map((rule, index) => (
+                        <div key={index} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
+                          <Input
+                            value={rule.original}
+                            onChange={(e) => {
+                              const updated = [...currentSettings.ttsPronunciations];
+                              updated[index] = { ...updated[index], original: e.target.value };
+                              updateSoundSetting('ttsPronunciations', updated);
+                            }}
+                            placeholder="MOHD"
+                            data-testid={`input-pronunciation-original-${index}`}
+                          />
+                          <Input
+                            value={rule.replacement}
+                            onChange={(e) => {
+                              const updated = [...currentSettings.ttsPronunciations];
+                              updated[index] = { ...updated[index], replacement: e.target.value };
+                              updateSoundSetting('ttsPronunciations', updated);
+                            }}
+                            placeholder="Mohamed"
+                            data-testid={`input-pronunciation-replacement-${index}`}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              const updated = currentSettings.ttsPronunciations.filter((_, i) => i !== index);
+                              updateSoundSetting('ttsPronunciations', updated);
+                            }}
+                            data-testid={`button-delete-pronunciation-${index}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-md border border-dashed text-center">
+                      <p className="text-xs text-muted-foreground">
+                        Tiada peraturan sebutan. Tekan "Tambah" untuk mula.
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Contoh: MOHD → Mohamed, DR → Doktor, NUR → Noor
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 <div className="space-y-2">
                   <Label>Test Custom Voice / Cuba Suara</Label>
                   <div className="grid grid-cols-2 gap-2">
@@ -2528,6 +2611,7 @@ export default function Settings() {
                         ttsLanguage: currentSettings.ttsLanguage,
                         ttsRate: currentSettings.ttsRate,
                         ttsVoiceGender: currentSettings.ttsVoiceGender,
+                        ttsPronunciations: currentSettings.ttsPronunciations,
                       }, {
                         patientName: ttsTestName || "Ahmad Bin Ali",
                         windowName: ttsTestRoom || "Bilik 1",

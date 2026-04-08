@@ -780,6 +780,7 @@ export function TVDisplay({
         ttsLanguage: (settingsObj.ttsLanguage as any) || 'ms-MY',
         ttsRate: parseFloat(settingsObj.ttsRate || '0.9'),
         ttsVoiceGender: (settingsObj.ttsVoiceGender as any) || 'FEMALE',
+        ttsPronunciations: settingsObj.ttsPronunciations ? (() => { try { return JSON.parse(settingsObj.ttsPronunciations); } catch { return []; } })() : [],
       };
 
       if (!disableAudio && (audioSettings.enableSound || audioSettings.ttsEnabled)) {

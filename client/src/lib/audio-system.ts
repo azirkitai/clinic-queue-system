@@ -27,6 +27,11 @@ export type TtsLanguageType = 'ms-MY' | 'en-US' | 'both';
 
 export type TtsVoiceGenderType = 'FEMALE' | 'MALE';
 
+export interface TtsPronunciationRule {
+  original: string;
+  replacement: string;
+}
+
 export interface AudioSettings {
   enableSound: boolean;
   volume: number;
@@ -36,6 +41,7 @@ export interface AudioSettings {
   ttsLanguage?: TtsLanguageType;
   ttsRate?: number;
   ttsVoiceGender?: TtsVoiceGenderType;
+  ttsPronunciations?: TtsPronunciationRule[];
 }
 
 export interface CallInfo {
@@ -311,21 +317,38 @@ export class AudioSystem {
     return windowName;
   }
 
+  private currentPronunciations: TtsPronunciationRule[] = [];
+
+  private applyPronunciations(text: string): string {
+    if (!this.currentPronunciations || this.currentPronunciations.length === 0) return text;
+    let result = text;
+    const sorted = [...this.currentPronunciations].sort((a, b) => b.original.length - a.original.length);
+    for (const rule of sorted) {
+      if (!rule.original || !rule.replacement) continue;
+      const escaped = rule.original.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+      result = result.replace(regex, rule.replacement);
+    }
+    return result;
+  }
+
   private buildTtsText(callInfo: CallInfo, lang: 'ms-MY' | 'en-US'): string {
     const name = getTtsName(callInfo.patientName, lang);
     const room = this.translateRoomName(callInfo.windowName || '', lang);
 
+    let text: string;
     if (lang === 'ms-MY') {
       const parts: string[] = [];
       if (name) parts.push(name);
       if (room) parts.push(`sila ke ${room}`);
-      return parts.join(', ');
+      text = parts.join(', ');
     } else {
       const parts: string[] = [];
       if (name) parts.push(name);
       if (room) parts.push(`please proceed to ${room}`);
-      return parts.join(', ');
+      text = parts.join(', ');
     }
+    return this.applyPronunciations(text);
   }
 
   private currentGender: TtsVoiceGenderType = 'FEMALE';
@@ -389,6 +412,7 @@ export class AudioSystem {
   private async prefetchTtsAudio(callInfo: CallInfo, settings: AudioSettings): Promise<Array<{ content: string }> | null> {
     const lang = settings.ttsLanguage || 'ms-MY';
     this.currentGender = settings.ttsVoiceGender || 'FEMALE';
+    this.currentPronunciations = settings.ttsPronunciations || [];
     try {
       if (lang === 'both') {
         const [msAudio, enAudio] = await Promise.all([
@@ -411,6 +435,7 @@ export class AudioSystem {
 
     const lang = settings.ttsLanguage || 'ms-MY';
     this.currentGender = settings.ttsVoiceGender || 'FEMALE';
+    this.currentPronunciations = settings.ttsPronunciations || [];
 
     try {
       if (lang === 'both') {
