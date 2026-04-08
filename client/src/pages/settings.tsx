@@ -2495,7 +2495,7 @@ export default function Settings() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div>
-                      <Label>Sebutan / Pronunciation Rules</Label>
+                      <Label>Sebutan / Pronunciation Rules ({currentSettings.ttsPronunciations.length})</Label>
                       <p className="text-xs text-muted-foreground">
                         Tukar text supaya TTS baca dengan betul
                       </p>
@@ -2516,13 +2516,14 @@ export default function Settings() {
 
                   {currentSettings.ttsPronunciations.length > 0 ? (
                     <div className="space-y-2">
-                      <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs text-muted-foreground font-medium">
+                      <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 text-xs text-muted-foreground font-medium">
                         <span>Text Asal</span>
                         <span>TTS Baca Sebagai</span>
                         <span className="w-9"></span>
+                        <span className="w-9"></span>
                       </div>
                       {currentSettings.ttsPronunciations.map((rule, index) => (
-                        <div key={index} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
+                        <div key={index} className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 items-center">
                           <Input
                             value={rule.original}
                             onChange={(e) => {
@@ -2543,6 +2544,33 @@ export default function Settings() {
                             placeholder="Mohamed"
                             data-testid={`input-pronunciation-replacement-${index}`}
                           />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={async () => {
+                              if (!rule.replacement) return;
+                              try {
+                                const lang = currentSettings.ttsLanguage === 'en-US' ? 'en-US' : 'ms-MY';
+                                const gender = currentSettings.ttsVoiceGender || 'FEMALE';
+                                const response = await fetch('/api/tts/synthesize', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ text: rule.replacement, language: lang, gender }),
+                                });
+                                if (response.ok) {
+                                  const data = await response.json();
+                                  const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+                                  audio.volume = (currentSettings.volume || 70) / 100;
+                                  await audio.play();
+                                }
+                              } catch (error) {
+                                console.error('Pronunciation test error:', error);
+                              }
+                            }}
+                            data-testid={`button-play-pronunciation-${index}`}
+                          >
+                            <Volume2 className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
