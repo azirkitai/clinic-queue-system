@@ -218,6 +218,7 @@ export default function Settings() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [ttsTestName, setTtsTestName] = useState("");
   const [ttsTestRoom, setTtsTestRoom] = useState("");
+  const [editingPronunciationIndex, setEditingPronunciationIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // TV Mode state (separate from Settings API - stored in localStorage)
@@ -2515,122 +2516,177 @@ export default function Settings() {
                   </div>
 
                   {currentSettings.ttsPronunciations.length > 0 ? (
-                    <div className="space-y-3">
-                      {currentSettings.ttsPronunciations.map((rule, index) => (
-                        <div key={index} className="p-3 rounded-md border space-y-2">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex-1">
+                    <div className="space-y-2">
+                      <div className="rounded-md border overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b bg-muted/50">
+                              <th className="text-left px-3 py-2 font-medium text-xs text-muted-foreground">#</th>
+                              <th className="text-left px-3 py-2 font-medium text-xs text-muted-foreground">Text Asal</th>
+                              <th className="text-left px-3 py-2 font-medium text-xs text-muted-foreground">BM</th>
+                              <th className="text-left px-3 py-2 font-medium text-xs text-muted-foreground">EN</th>
+                              <th className="text-right px-3 py-2 font-medium text-xs text-muted-foreground w-24">Tindakan</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {currentSettings.ttsPronunciations.map((rule, index) => (
+                              <tr key={index} className="border-b last:border-b-0" data-testid={`row-pronunciation-${index}`}>
+                                <td className="px-3 py-2 text-xs text-muted-foreground">{index + 1}</td>
+                                <td className="px-3 py-2 font-mono font-semibold">{rule.original || '-'}</td>
+                                <td className="px-3 py-2">{rule.replacementBM || '-'}</td>
+                                <td className="px-3 py-2">{rule.replacementEN || '-'}</td>
+                                <td className="px-3 py-2 text-right">
+                                  <div className="flex items-center justify-end gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={async () => {
+                                        const text = rule.replacementBM || rule.replacementEN;
+                                        if (!text) return;
+                                        try {
+                                          const gender = currentSettings.ttsVoiceGender || 'FEMALE';
+                                          const lang = rule.replacementBM ? 'ms-MY' : 'en-US';
+                                          const response = await fetch('/api/tts/synthesize', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ text, language: lang, gender }),
+                                          });
+                                          if (response.ok) {
+                                            const data = await response.json();
+                                            const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+                                            audio.volume = (currentSettings.volume || 70) / 100;
+                                            await audio.play();
+                                          }
+                                        } catch (error) {
+                                          console.error('Pronunciation test error:', error);
+                                        }
+                                      }}
+                                      data-testid={`button-play-pronunciation-${index}`}
+                                    >
+                                      <Volume2 className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => setEditingPronunciationIndex(index)}
+                                      data-testid={`button-edit-pronunciation-${index}`}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => {
+                                        const updated = currentSettings.ttsPronunciations.filter((_, i) => i !== index);
+                                        updateSoundSetting('ttsPronunciations', updated);
+                                      }}
+                                      data-testid={`button-delete-pronunciation-${index}`}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {editingPronunciationIndex !== null && editingPronunciationIndex < currentSettings.ttsPronunciations.length && (() => {
+                        const editRule = currentSettings.ttsPronunciations[editingPronunciationIndex];
+                        return (
+                          <div className="p-3 rounded-md border bg-muted/30 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-sm font-medium">Edit Sebutan #{editingPronunciationIndex + 1}</Label>
+                              <Button variant="ghost" size="icon" onClick={() => setEditingPronunciationIndex(null)} data-testid="button-close-edit-pronunciation">
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <div>
                               <Label className="text-xs text-muted-foreground">Text Asal</Label>
                               <Input
-                                value={rule.original}
+                                value={editRule.original}
                                 onChange={(e) => {
                                   const updated = [...currentSettings.ttsPronunciations];
-                                  updated[index] = { ...updated[index], original: e.target.value };
+                                  updated[editingPronunciationIndex] = { ...updated[editingPronunciationIndex], original: e.target.value };
                                   updateSoundSetting('ttsPronunciations', updated);
                                 }}
                                 placeholder="MOHD"
-                                data-testid={`input-pronunciation-original-${index}`}
+                                data-testid="input-edit-pronunciation-original"
                               />
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="mt-5"
-                              onClick={() => {
-                                const updated = currentSettings.ttsPronunciations.filter((_, i) => i !== index);
-                                updateSoundSetting('ttsPronunciations', updated);
-                              }}
-                              data-testid={`button-delete-pronunciation-${index}`}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-xs text-muted-foreground">BM Baca Sebagai</Label>
+                                <div className="flex gap-1">
+                                  <Input
+                                    value={editRule.replacementBM}
+                                    onChange={(e) => {
+                                      const updated = [...currentSettings.ttsPronunciations];
+                                      updated[editingPronunciationIndex] = { ...updated[editingPronunciationIndex], replacementBM: e.target.value };
+                                      updateSoundSetting('ttsPronunciations', updated);
+                                    }}
+                                    placeholder="Mohamed"
+                                    data-testid="input-edit-pronunciation-bm"
+                                  />
+                                  <Button variant="ghost" size="icon" onClick={async () => {
+                                    if (!editRule.replacementBM) return;
+                                    try {
+                                      const gender = currentSettings.ttsVoiceGender || 'FEMALE';
+                                      const response = await fetch('/api/tts/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: editRule.replacementBM, language: 'ms-MY', gender }) });
+                                      if (response.ok) { const data = await response.json(); const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`); audio.volume = (currentSettings.volume || 70) / 100; await audio.play(); }
+                                    } catch (error) { console.error('BM test error:', error); }
+                                  }} data-testid="button-test-edit-bm">
+                                    <Volume2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                              <div>
+                                <Label className="text-xs text-muted-foreground">EN Baca Sebagai</Label>
+                                <div className="flex gap-1">
+                                  <Input
+                                    value={editRule.replacementEN}
+                                    onChange={(e) => {
+                                      const updated = [...currentSettings.ttsPronunciations];
+                                      updated[editingPronunciationIndex] = { ...updated[editingPronunciationIndex], replacementEN: e.target.value };
+                                      updateSoundSetting('ttsPronunciations', updated);
+                                    }}
+                                    placeholder="Mohammed"
+                                    data-testid="input-edit-pronunciation-en"
+                                  />
+                                  <Button variant="ghost" size="icon" onClick={async () => {
+                                    if (!editRule.replacementEN) return;
+                                    try {
+                                      const gender = currentSettings.ttsVoiceGender || 'FEMALE';
+                                      const response = await fetch('/api/tts/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: editRule.replacementEN, language: 'en-US', gender }) });
+                                      if (response.ok) { const data = await response.json(); const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`); audio.volume = (currentSettings.volume || 70) / 100; await audio.play(); }
+                                    } catch (error) { console.error('EN test error:', error); }
+                                  }} data-testid="button-test-edit-en">
+                                    <Volume2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                            <Button size="sm" onClick={() => setEditingPronunciationIndex(null)} data-testid="button-done-edit-pronunciation">
+                              <Check className="h-4 w-4 mr-1" /> Selesai
                             </Button>
                           </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <Label className="text-xs text-muted-foreground">BM Baca Sebagai</Label>
-                              <div className="flex gap-1">
-                                <Input
-                                  value={rule.replacementBM}
-                                  onChange={(e) => {
-                                    const updated = [...currentSettings.ttsPronunciations];
-                                    updated[index] = { ...updated[index], replacementBM: e.target.value };
-                                    updateSoundSetting('ttsPronunciations', updated);
-                                  }}
-                                  placeholder="Mohamed"
-                                  data-testid={`input-pronunciation-bm-${index}`}
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={async () => {
-                                    if (!rule.replacementBM) return;
-                                    try {
-                                      const gender = currentSettings.ttsVoiceGender || 'FEMALE';
-                                      const response = await fetch('/api/tts/synthesize', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ text: rule.replacementBM, language: 'ms-MY', gender }),
-                                      });
-                                      if (response.ok) {
-                                        const data = await response.json();
-                                        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
-                                        audio.volume = (currentSettings.volume || 70) / 100;
-                                        await audio.play();
-                                      }
-                                    } catch (error) {
-                                      console.error('BM pronunciation test error:', error);
-                                    }
-                                  }}
-                                  data-testid={`button-play-bm-${index}`}
-                                >
-                                  <Volume2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                            <div>
-                              <Label className="text-xs text-muted-foreground">EN Baca Sebagai</Label>
-                              <div className="flex gap-1">
-                                <Input
-                                  value={rule.replacementEN}
-                                  onChange={(e) => {
-                                    const updated = [...currentSettings.ttsPronunciations];
-                                    updated[index] = { ...updated[index], replacementEN: e.target.value };
-                                    updateSoundSetting('ttsPronunciations', updated);
-                                  }}
-                                  placeholder="Mohammed"
-                                  data-testid={`input-pronunciation-en-${index}`}
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={async () => {
-                                    if (!rule.replacementEN) return;
-                                    try {
-                                      const gender = currentSettings.ttsVoiceGender || 'FEMALE';
-                                      const response = await fetch('/api/tts/synthesize', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ text: rule.replacementEN, language: 'en-US', gender }),
-                                      });
-                                      if (response.ok) {
-                                        const data = await response.json();
-                                        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
-                                        audio.volume = (currentSettings.volume || 70) / 100;
-                                        await audio.play();
-                                      }
-                                    } catch (error) {
-                                      console.error('EN pronunciation test error:', error);
-                                    }
-                                  }}
-                                  data-testid={`button-play-en-${index}`}
-                                >
-                                  <Volume2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })()}
+
+                      <Button
+                        onClick={handleSaveSound}
+                        disabled={saveSettingsMutation.isPending}
+                        className="w-full"
+                        data-testid="button-save-pronunciations"
+                      >
+                        {saveSettingsMutation.isPending ? (
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4 mr-2" />
+                        )}
+                        Simpan Sebutan / Save Pronunciations
+                      </Button>
                     </div>
                   ) : (
                     <div className="p-3 rounded-md border border-dashed text-center">
@@ -2641,22 +2697,6 @@ export default function Settings() {
                         Contoh: MOHD → BM: Mohamed / EN: Mohammed
                       </p>
                     </div>
-                  )}
-
-                  {currentSettings.ttsPronunciations.length > 0 && (
-                    <Button
-                      onClick={handleSaveSound}
-                      disabled={saveSettingsMutation.isPending}
-                      className="w-full"
-                      data-testid="button-save-pronunciations"
-                    >
-                      {saveSettingsMutation.isPending ? (
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Save className="h-4 w-4 mr-2" />
-                      )}
-                      Simpan Sebutan / Save Pronunciations
-                    </Button>
                   )}
                 </div>
 
