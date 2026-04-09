@@ -1063,14 +1063,14 @@ export default function Settings() {
               {currentSettings.dashboardMediaType === "combine" && (
                 <div className="mt-2 p-3 rounded-md border bg-muted/30">
                   <p className="text-xs text-muted-foreground">
-                    Gambar yang di-upload akan dipapar sebagai slideshow. Audio dari YouTube akan dimainkan di latar belakang (video tidak dipapar).
+                    Uploaded images will be displayed as a slideshow. YouTube audio will play in the background (video will not be shown).
                   </p>
                 </div>
               )}
 
               {(currentSettings.dashboardMediaType === "youtube" || currentSettings.dashboardMediaType === "combine") && (
                 <div className="mt-4 space-y-2">
-                  <Label htmlFor="youtube-url">YouTube URL {currentSettings.dashboardMediaType === "combine" ? "(Audio Sahaja)" : ""}:</Label>
+                  <Label htmlFor="youtube-url">YouTube URL {currentSettings.dashboardMediaType === "combine" ? "(Audio Only)" : ""}:</Label>
                   <Input
                     id="youtube-url"
                     type="url"
@@ -1100,7 +1100,7 @@ export default function Settings() {
                           </div>
                           <p className="text-sm text-green-700">
                             {currentSettings.dashboardMediaType === "combine"
-                              ? "Audio dari video ini akan dimainkan di latar belakang TV display."
+                              ? "Audio from this video will play in the background on the TV display."
                               : "This video will be displayed on the dashboard as background."}
                           </p>
                         </div>
