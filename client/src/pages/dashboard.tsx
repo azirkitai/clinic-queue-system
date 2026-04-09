@@ -260,7 +260,7 @@ export default function Dashboard() {
           clinicName={clinicName}
           mediaItems={activeMedia.map(media => ({
             url: media.url || `/api/media/${media.id}/file`,
-            type: media.url?.includes('youtube') || media.url?.includes('youtu.be') ? 'youtube' : media.type,
+            type: media.type === 'youtube-audio' ? 'youtube-audio' : (media.url?.includes('youtube') || media.url?.includes('youtu.be') ? 'youtube' : media.type),
             name: media.name
           }))}
           isFullscreen={true}
@@ -452,7 +452,7 @@ export default function Dashboard() {
                 clinicName={clinicName}
                 mediaItems={activeMedia.map(media => ({
                   url: media.url || `/api/media/${media.id}/file`,
-                  type: media.url?.includes('youtube') || media.url?.includes('youtu.be') ? 'youtube' : media.type,
+                  type: media.type === 'youtube-audio' ? 'youtube-audio' : (media.url?.includes('youtube') || media.url?.includes('youtu.be') ? 'youtube' : media.type),
                   name: media.name
                 }))}
                 showPrayerTimes={showPrayerTimes}

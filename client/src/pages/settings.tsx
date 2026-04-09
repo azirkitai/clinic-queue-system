@@ -20,7 +20,7 @@ import type { PresetSoundKeyType } from "@shared/schema";
 
 interface SettingsState {
   mediaType: string;
-  dashboardMediaType: string; // "own" or "youtube"
+  dashboardMediaType: string; // "own", "youtube", or "combine"
   youtubeUrl: string; // YouTube video URL
   theme: string;
   showPrayerTimes: boolean;
@@ -1018,7 +1018,7 @@ export default function Settings() {
             {/* Show in Dashboard Section */}
             <div className="space-y-4">
               <Label className="text-base font-semibold">Media Options for Dashboard:</Label>
-              <div className="flex space-x-6">
+              <div className="flex flex-wrap gap-4">
                 <div className="flex items-center space-x-2">
                   <input
                     type="radio"
@@ -1030,7 +1030,7 @@ export default function Settings() {
                     className="w-4 h-4 text-blue-600"
                     data-testid="radio-own-media"
                   />
-                  <Label htmlFor="own-media">Upload Images (PNG/JPEG)</Label>
+                  <Label htmlFor="own-media">Upload Images</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <input
@@ -1045,11 +1045,32 @@ export default function Settings() {
                   />
                   <Label htmlFor="youtube-media">YouTube Video</Label>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="combine-media"
+                    name="dashboardMedia"
+                    value="combine"
+                    checked={currentSettings.dashboardMediaType === "combine"}
+                    onChange={(e) => updateDisplaySetting('dashboardMediaType', e.target.value)}
+                    className="w-4 h-4 text-blue-600"
+                    data-testid="radio-combine-media"
+                  />
+                  <Label htmlFor="combine-media">Combine (Image + YouTube Audio)</Label>
+                </div>
               </div>
 
-              {currentSettings.dashboardMediaType === "youtube" && (
+              {currentSettings.dashboardMediaType === "combine" && (
+                <div className="mt-2 p-3 rounded-md border bg-muted/30">
+                  <p className="text-xs text-muted-foreground">
+                    Gambar yang di-upload akan dipapar sebagai slideshow. Audio dari YouTube akan dimainkan di latar belakang (video tidak dipapar).
+                  </p>
+                </div>
+              )}
+
+              {(currentSettings.dashboardMediaType === "youtube" || currentSettings.dashboardMediaType === "combine") && (
                 <div className="mt-4 space-y-2">
-                  <Label htmlFor="youtube-url">YouTube URL:</Label>
+                  <Label htmlFor="youtube-url">YouTube URL {currentSettings.dashboardMediaType === "combine" ? "(Audio Sahaja)" : ""}:</Label>
                   <Input
                     id="youtube-url"
                     type="url"
@@ -1063,16 +1084,24 @@ export default function Settings() {
                       <div className="flex items-start space-x-4">
                         <div className="flex-shrink-0">
                           <div className="w-20 h-15 bg-gray-200 rounded flex items-center justify-center">
-                            <Monitor className="h-8 w-8 text-gray-400" />
+                            {currentSettings.dashboardMediaType === "combine" ? (
+                              <Volume2 className="h-8 w-8 text-gray-400" />
+                            ) : (
+                              <Monitor className="h-8 w-8 text-gray-400" />
+                            )}
                           </div>
                         </div>
                         <div className="flex-grow">
                           <div className="flex items-center space-x-2 mb-2">
                             <Star className="h-4 w-4 text-yellow-500" />
-                            <span className="font-medium text-green-800">Active YouTube Video</span>
+                            <span className="font-medium text-green-800">
+                              {currentSettings.dashboardMediaType === "combine" ? "Active YouTube Audio" : "Active YouTube Video"}
+                            </span>
                           </div>
                           <p className="text-sm text-green-700">
-                            This video will be displayed on the dashboard as background.
+                            {currentSettings.dashboardMediaType === "combine"
+                              ? "Audio dari video ini akan dimainkan di latar belakang TV display."
+                              : "This video will be displayed on the dashboard as background."}
                           </p>
                         </div>
                       </div>
@@ -1082,8 +1111,8 @@ export default function Settings() {
               )}
             </div>
 
-            {/* Media Gallery Section - Only show if "own" media is selected */}
-            {currentSettings.dashboardMediaType === "own" && (
+            {/* Media Gallery Section - Show if "own" or "combine" media is selected */}
+            {(currentSettings.dashboardMediaType === "own" || currentSettings.dashboardMediaType === "combine") && (
               <div className="space-y-4">
                 <Label className="text-base font-semibold">Media Gallery:</Label>
                 

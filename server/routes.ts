@@ -2508,7 +2508,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dashboardMediaType = mediaTypeSetting?.value || "own";
       const youtubeUrl = youtubeUrlSetting?.value || "";
 
-      // If YouTube is selected and URL is provided, return YouTube media
       if (dashboardMediaType === "youtube" && youtubeUrl) {
         const youtubeMedia = [{
           id: "youtube-video",
@@ -2522,10 +2521,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           uploadedAt: new Date()
         }];
         res.json(youtubeMedia);
-      } else {
-        // Otherwise return regular uploaded media
+      } else if (dashboardMediaType === "combine") {
         const activeMedia = await storage.getActiveMedia(req.session.userId);
-        // ✅ BANDWIDTH OPTIMIZATION: Exclude base64 data field (frontend loads via /api/media/:id/file)
+        const lightweightMedia = activeMedia.map(({ data, ...rest }) => rest);
+        if (youtubeUrl) {
+          lightweightMedia.push({
+            id: "youtube-audio",
+            name: "YouTube Audio",
+            filename: "youtube-audio",
+            url: youtubeUrl,
+            type: "youtube-audio" as any,
+            mimeType: "audio/youtube",
+            size: 0,
+            isActive: true,
+            uploadedAt: new Date()
+          });
+        }
+        res.json(lightweightMedia);
+      } else {
+        const activeMedia = await storage.getActiveMedia(req.session.userId);
         const lightweightMedia = activeMedia.map(({ data, ...rest }) => rest);
         res.json(lightweightMedia);
       }
@@ -3359,6 +3373,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           uploadedAt: new Date()
         }];
         res.json(youtubeMedia);
+      } else if (dashboardMediaType === "combine") {
+        const activeMedia = await storage.getActiveMedia(user.id);
+        const lightweightMedia = activeMedia.map(({ data, ...rest }: any) => rest);
+        if (youtubeUrl) {
+          lightweightMedia.push({
+            id: "youtube-audio",
+            name: "YouTube Audio",
+            filename: "youtube-audio",
+            url: youtubeUrl,
+            type: "youtube-audio",
+            mimeType: "audio/youtube",
+            size: 0,
+            isActive: true,
+            uploadedAt: new Date()
+          });
+        }
+        res.json(lightweightMedia);
       } else {
         const activeMedia = await storage.getActiveMedia(user.id);
         const lightweightMedia = activeMedia.map(({ data, ...rest }: any) => rest);

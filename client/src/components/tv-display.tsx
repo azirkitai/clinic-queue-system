@@ -95,7 +95,7 @@ interface WeatherResponse {
 
 interface MediaItem {
   url: string;
-  type: "image" | "video" | "youtube";
+  type: "image" | "video" | "youtube" | "youtube-audio";
   name?: string;
 }
 
@@ -861,20 +861,21 @@ export function TVDisplay({
     }
   }, [queueHistory, isFullscreen]);
 
+  const youtubeAudioItemEarly = mediaItems.find(m => m.type === 'youtube-audio');
+  const visibleMediaItems = mediaItems.filter(m => m.type !== 'youtube-audio');
+
   // Media slideshow management 
   useEffect(() => {
-    if (mediaItems.length > 1) {
+    if (visibleMediaItems.length > 1) {
       mediaTimerRef.current = setInterval(() => {
-        // Start fade out
         setIsMediaVisible(false);
         
-        // After fade out completes, switch media and fade in
         fadeTimerRef.current = setTimeout(() => {
-          setCurrentMediaIndex((prev) => (prev + 1) % mediaItems.length);
+          setCurrentMediaIndex((prev) => (prev + 1) % visibleMediaItems.length);
           setIsMediaVisible(true);
-        }, 500); // 500ms fade out duration
+        }, 500);
         
-      }, 10000); // Change media every 10 seconds
+      }, 10000);
       
       return () => {
         if (mediaTimerRef.current) {
@@ -885,7 +886,7 @@ export function TVDisplay({
         }
       };
     }
-  }, [mediaItems.length]);
+  }, [visibleMediaItems.length]);
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -925,8 +926,19 @@ export function TVDisplay({
     return url;
   };
 
-  // Get current media item
-  const currentMedia = mediaItems.length > 0 ? mediaItems[currentMediaIndex] : null;
+  const getYouTubeAudioEmbedUrl = (url: string): string => {
+    let videoId = '';
+    if (url.includes('youtube.com/watch')) {
+      videoId = url.split('v=')[1]?.split('&')[0] || '';
+    } else if (url.includes('youtube.com/live/')) {
+      videoId = url.split('live/')[1]?.split('?')[0] || '';
+    } else if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1]?.split('?')[0] || '';
+    }
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}`;
+  };
+
+  const currentMedia = visibleMediaItems.length > 0 ? visibleMediaItems[currentMediaIndex % visibleMediaItems.length] : null;
 
   // Fixed 1920×1080 stage styling (only for fullscreen)
   const stageStyle = isFullscreen ? {
@@ -1015,9 +1027,9 @@ export function TVDisplay({
           )}
           
           {/* Media indicator dots */}
-          {mediaItems.length > 1 && (
+          {visibleMediaItems.length > 1 && (
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-              {mediaItems.map((_, index) => (
+              {visibleMediaItems.map((_, index) => (
                 <div
                   key={index}
                   className="w-3 h-3 rounded-full transition-all duration-300"
@@ -1440,7 +1452,15 @@ export function TVDisplay({
     </>
   );
 
-  // Conditional wrapper: fullscreen uses viewport-centered 1920×1080 stage with black background
+  const youtubeAudioIframe = youtubeAudioItemEarly ? (
+    <iframe
+      src={getYouTubeAudioEmbedUrl(youtubeAudioItemEarly.url)}
+      style={{ position: 'fixed', width: '1px', height: '1px', top: '-10px', left: '-10px', opacity: 0, pointerEvents: 'none' }}
+      allow="autoplay"
+      data-testid="youtube-audio-iframe"
+    />
+  ) : null;
+
   if (isFullscreen) {
     return (
       <div className="fixed inset-0 overflow-hidden" style={{ backgroundColor: '#000000' }}>
@@ -1452,16 +1472,17 @@ export function TVDisplay({
           data-testid="tv-display">
           {renderContent()}
         </div>
+        {youtubeAudioIframe}
       </div>
     );
   }
 
-  // Non-fullscreen: regular responsive layout
   return (
     <div className={wrapperClass}
          style={stageStyle} 
          data-testid="tv-display">
       {renderContent()}
+      {youtubeAudioIframe}
     </div>
   );
 }

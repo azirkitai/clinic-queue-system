@@ -440,7 +440,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
           clinicName={clinicName}
           mediaItems={activeMedia.map((m: any) => ({
             url: m.url || `/api/tv/${token}/media/${m.id}/file`,
-            type: m.url?.includes('youtube') || m.url?.includes('youtu.be') ? 'youtube' : m.type,
+            type: m.type === 'youtube-audio' ? 'youtube-audio' : (m.url?.includes('youtube') || m.url?.includes('youtu.be') ? 'youtube' : m.type),
             name: m.name
           }))}
           isFullscreen={true}
