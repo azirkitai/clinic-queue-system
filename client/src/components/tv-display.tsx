@@ -630,6 +630,7 @@ export function TVDisplay({
   const ytAudioIframeRef = useRef<HTMLIFrameElement | null>(null);
   const ytAudioReadyRef = useRef(false);
   const ytAudioDuckedRef = useRef(false);
+  const ytAudioOriginalSrcRef = useRef<string>('');
 
 
   // Auto-scale 1920×1080 stage to fit any screen size (VIEWPORT-CENTERED APPROACH)
@@ -1511,23 +1512,19 @@ export function TVDisplay({
     const duckStart = () => {
       ytAudioDuckedRef.current = true;
       const iframe = ytAudioIframeRef.current;
-      if (iframe?.contentWindow) {
-        iframe.contentWindow.postMessage(JSON.stringify({
-          event: 'command', func: 'setVolume', args: [0]
-        }), '*');
+      if (iframe) {
+        if (!ytAudioOriginalSrcRef.current) {
+          ytAudioOriginalSrcRef.current = iframe.src;
+        }
+        iframe.src = 'about:blank';
       }
     };
 
     const duckEnd = () => {
       ytAudioDuckedRef.current = false;
       const iframe = ytAudioIframeRef.current;
-      if (iframe?.contentWindow) {
-        iframe.contentWindow.postMessage(JSON.stringify({
-          event: 'command', func: 'setVolume', args: [youtubeAudioVolume]
-        }), '*');
-        iframe.contentWindow.postMessage(JSON.stringify({
-          event: 'command', func: 'unMute', args: []
-        }), '*');
+      if (iframe && ytAudioOriginalSrcRef.current) {
+        iframe.src = ytAudioOriginalSrcRef.current;
       }
     };
 
