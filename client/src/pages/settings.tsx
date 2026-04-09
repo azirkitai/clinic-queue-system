@@ -22,6 +22,7 @@ interface SettingsState {
   mediaType: string;
   dashboardMediaType: string; // "own", "youtube", or "combine"
   youtubeUrl: string; // YouTube video URL
+  youtubeAudioVolume: number; // 0-100 volume for YouTube audio in combine mode
   theme: string;
   showPrayerTimes: boolean;
   showWeather: boolean;
@@ -295,6 +296,7 @@ export default function Settings() {
     mediaType: 'image',
     dashboardMediaType: 'own',
     youtubeUrl: '',
+    youtubeAudioVolume: 50,
     theme: 'blue',
     showPrayerTimes: false,
     showWeather: false,
@@ -379,6 +381,7 @@ export default function Settings() {
         mediaType: settingsObj.mediaType || 'image',
         dashboardMediaType: settingsObj.dashboardMediaType || 'own',
         youtubeUrl: settingsObj.youtubeUrl || '',
+        youtubeAudioVolume: Number(settingsObj.youtubeAudioVolume) || 50,
         theme: settingsObj.theme || 'blue',
         showPrayerTimes: settingsObj.showPrayerTimes === 'true',
         showWeather: settingsObj.showWeather === 'true',
@@ -625,6 +628,7 @@ export default function Settings() {
       { key: 'clinicName', value: currentSettings.clinicName, category: 'display' },
       { key: 'dashboardMediaType', value: currentSettings.dashboardMediaType, category: 'display' },
       { key: 'youtubeUrl', value: currentSettings.youtubeUrl, category: 'display' },
+      { key: 'youtubeAudioVolume', value: String(currentSettings.youtubeAudioVolume), category: 'display' },
       // Individual section colors with gradient support
       { key: 'headerTextColor', value: currentSettings.headerTextColor, category: 'display' },
       { key: 'headerTextMode', value: currentSettings.headerTextMode, category: 'display' },
@@ -717,6 +721,7 @@ export default function Settings() {
       { key: 'clinicName', value: currentSettings.clinicName, category: 'display' },
       { key: 'dashboardMediaType', value: currentSettings.dashboardMediaType, category: 'display' },
       { key: 'youtubeUrl', value: currentSettings.youtubeUrl, category: 'display' },
+      { key: 'youtubeAudioVolume', value: String(currentSettings.youtubeAudioVolume), category: 'display' },
       { key: 'headerTextColor', value: currentSettings.headerTextColor, category: 'display' },
       { key: 'headerTextMode', value: currentSettings.headerTextMode, category: 'display' },
       { key: 'headerTextGradient', value: currentSettings.headerTextGradient, category: 'display' },
@@ -1069,16 +1074,41 @@ export default function Settings() {
               )}
 
               {(currentSettings.dashboardMediaType === "youtube" || currentSettings.dashboardMediaType === "combine") && (
-                <div className="mt-4 space-y-2">
-                  <Label htmlFor="youtube-url">YouTube URL {currentSettings.dashboardMediaType === "combine" ? "(Audio Only)" : ""}:</Label>
-                  <Input
-                    id="youtube-url"
-                    type="url"
-                    value={currentSettings.youtubeUrl}
-                    onChange={(e) => updateDisplaySetting('youtubeUrl', e.target.value)}
-                    placeholder="https://www.youtube.com/watch?v=..."
-                    data-testid="input-youtube-url"
-                  />
+                <div className="mt-4 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="youtube-url">YouTube URL {currentSettings.dashboardMediaType === "combine" ? "(Audio Only)" : ""}:</Label>
+                    <Input
+                      id="youtube-url"
+                      type="url"
+                      value={currentSettings.youtubeUrl}
+                      onChange={(e) => updateDisplaySetting('youtubeUrl', e.target.value)}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      data-testid="input-youtube-url"
+                    />
+                  </div>
+
+                  {currentSettings.dashboardMediaType === "combine" && (
+                    <div className="space-y-2">
+                      <Label>YouTube Audio Volume: {currentSettings.youtubeAudioVolume}%</Label>
+                      <div className="flex items-center gap-3">
+                        <Volume2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="5"
+                          value={currentSettings.youtubeAudioVolume}
+                          onChange={(e) => updateDisplaySetting('youtubeAudioVolume', Number(e.target.value))}
+                          className="flex-1 h-2 rounded-lg appearance-none cursor-pointer accent-primary"
+                          data-testid="input-youtube-audio-volume"
+                        />
+                        <span className="text-sm text-muted-foreground w-10 text-right">{currentSettings.youtubeAudioVolume}%</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Audio will auto-play when TV display is started. No manual unmute needed.
+                      </p>
+                    </div>
+                  )}
                   {currentSettings.youtubeUrl && (
                     <div className="mt-4 p-4 border-2 border-green-200 rounded-lg bg-green-50">
                       <div className="flex items-start space-x-4">

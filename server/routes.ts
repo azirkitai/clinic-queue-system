@@ -1863,7 +1863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // History
     'historyNameColor', 'historyNameMode', 'historyNameGradient',
     // Sound
-    'enableSound', 'volume', 'presetKey',
+    'enableSound', 'volume', 'presetKey', 'youtubeAudioVolume',
     // TTS Voice Announcement
     'ttsEnabled', 'ttsLanguage', 'ttsRate', 'ttsVoiceGender', 'ttsPronunciations',
   ]);

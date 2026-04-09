@@ -292,6 +292,8 @@ export function TVDisplay({
     return acc;
   }, {});
 
+  const youtubeAudioVolume = parseInt(settingsObj.youtubeAudioVolume || '50', 10);
+
   // Extract marquee settings with fallbacks
   const enableMarquee = settingsObj.enableMarquee === 'true';
   const marqueeText = settingsObj.marqueeText || "Welcome to the Health Clinic";
@@ -625,6 +627,8 @@ export function TVDisplay({
   const blinkTimerRef = useRef<NodeJS.Timeout | null>(null);
   const mediaTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fadeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const ytAudioIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const ytAudioReadyRef = useRef(false);
 
 
   // Auto-scale 1920×1080 stage to fit any screen size (VIEWPORT-CENTERED APPROACH)
@@ -864,6 +868,50 @@ export function TVDisplay({
   const youtubeAudioItemEarly = mediaItems.find(m => m.type === 'youtube-audio');
   const visibleMediaItems = mediaItems.filter(m => m.type !== 'youtube-audio');
 
+  // YouTube Audio: listen for API ready and set volume/unmute
+  useEffect(() => {
+    if (!youtubeAudioItemEarly) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== 'https://www.youtube.com') return;
+      try {
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (data.event === 'onReady' || data.event === 'initialDelivery' || data.info?.playerState !== undefined) {
+          ytAudioReadyRef.current = true;
+          const iframe = ytAudioIframeRef.current;
+          if (iframe?.contentWindow) {
+            iframe.contentWindow.postMessage(JSON.stringify({
+              event: 'command', func: 'setVolume', args: [youtubeAudioVolume]
+            }), '*');
+            iframe.contentWindow.postMessage(JSON.stringify({
+              event: 'command', func: 'unMute', args: []
+            }), '*');
+          }
+        }
+      } catch {}
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    // Also try to set volume after a delay (fallback if ready event missed)
+    const fallbackTimer = setTimeout(() => {
+      const iframe = ytAudioIframeRef.current;
+      if (iframe?.contentWindow) {
+        iframe.contentWindow.postMessage(JSON.stringify({
+          event: 'command', func: 'setVolume', args: [youtubeAudioVolume]
+        }), '*');
+        iframe.contentWindow.postMessage(JSON.stringify({
+          event: 'command', func: 'unMute', args: []
+        }), '*');
+      }
+    }, 3000);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      clearTimeout(fallbackTimer);
+    };
+  }, [youtubeAudioItemEarly?.url, youtubeAudioVolume]);
+
   // Media slideshow management 
   useEffect(() => {
     if (visibleMediaItems.length > 1) {
@@ -935,7 +983,7 @@ export function TVDisplay({
     } else if (url.includes('youtu.be/')) {
       videoId = url.split('youtu.be/')[1]?.split('?')[0] || '';
     }
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}`;
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
   };
 
   const currentMedia = visibleMediaItems.length > 0 ? visibleMediaItems[currentMediaIndex % visibleMediaItems.length] : null;
@@ -1454,6 +1502,7 @@ export function TVDisplay({
 
   const youtubeAudioIframe = youtubeAudioItemEarly ? (
     <iframe
+      ref={ytAudioIframeRef}
       src={getYouTubeAudioEmbedUrl(youtubeAudioItemEarly.url)}
       style={{ position: 'fixed', width: '1px', height: '1px', top: '-10px', left: '-10px', opacity: 0, pointerEvents: 'none' }}
       allow="autoplay"
