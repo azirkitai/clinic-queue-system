@@ -15,6 +15,7 @@ import { GradientPicker } from "@/components/ui/gradient-picker";
 import type { Setting, Media, Theme } from "@shared/schema";
 import { audioSystem } from "@/lib/audio-system";
 import { TvLayoutPreview } from "@/components/tv-layout-preview";
+import { useAuth } from "@/hooks/use-auth";
 
 import type { PresetSoundKeyType } from "@shared/schema";
 
@@ -215,6 +216,8 @@ function TvLinkCard() {
 
 export default function Settings() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [unsavedChanges, setUnsavedChanges] = useState<string[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [ttsTestName, setTtsTestName] = useState("");
@@ -2552,7 +2555,7 @@ export default function Settings() {
                   </p>
                 </div>
 
-                <div className="space-y-3">
+                {isAdmin && <div className="space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div>
                       <Label>Sebutan / Pronunciation Rules ({currentSettings.ttsPronunciations.length})</Label>
@@ -2757,7 +2760,7 @@ export default function Settings() {
                       </p>
                     </div>
                   )}
-                </div>
+                </div>}
 
                 <div className="space-y-2">
                   <Label>Test Custom Voice / Cuba Suara</Label>
