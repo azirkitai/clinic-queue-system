@@ -629,6 +629,7 @@ export function TVDisplay({
   const fadeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const ytAudioIframeRef = useRef<HTMLIFrameElement | null>(null);
   const ytAudioReadyRef = useRef(false);
+  const ytAudioDuckedRef = useRef(false);
 
 
   // Auto-scale 1920×1080 stage to fit any screen size (VIEWPORT-CENTERED APPROACH)
@@ -868,9 +869,20 @@ export function TVDisplay({
   const youtubeAudioItemEarly = mediaItems.find(m => m.type === 'youtube-audio');
   const visibleMediaItems = mediaItems.filter(m => m.type !== 'youtube-audio');
 
-  // YouTube Audio: listen for API ready and set volume/unmute
   useEffect(() => {
-    if (!youtubeAudioItemEarly) return;
+    if (!isFullscreen || !youtubeAudioItemEarly) return;
+
+    const applyVolume = () => {
+      const iframe = ytAudioIframeRef.current;
+      if (!iframe?.contentWindow) return;
+      const vol = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
+      iframe.contentWindow.postMessage(JSON.stringify({
+        event: 'command', func: 'setVolume', args: [vol]
+      }), '*');
+      iframe.contentWindow.postMessage(JSON.stringify({
+        event: 'command', func: 'unMute', args: []
+      }), '*');
+    };
 
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== 'https://www.youtube.com') return;
@@ -878,39 +890,22 @@ export function TVDisplay({
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
         if (data.event === 'onReady' || data.event === 'initialDelivery' || data.info?.playerState !== undefined) {
           ytAudioReadyRef.current = true;
-          const iframe = ytAudioIframeRef.current;
-          if (iframe?.contentWindow) {
-            iframe.contentWindow.postMessage(JSON.stringify({
-              event: 'command', func: 'setVolume', args: [youtubeAudioVolume]
-            }), '*');
-            iframe.contentWindow.postMessage(JSON.stringify({
-              event: 'command', func: 'unMute', args: []
-            }), '*');
-          }
+          applyVolume();
         }
       } catch {}
     };
 
     window.addEventListener('message', handleMessage);
 
-    // Also try to set volume after a delay (fallback if ready event missed)
     const fallbackTimer = setTimeout(() => {
-      const iframe = ytAudioIframeRef.current;
-      if (iframe?.contentWindow) {
-        iframe.contentWindow.postMessage(JSON.stringify({
-          event: 'command', func: 'setVolume', args: [youtubeAudioVolume]
-        }), '*');
-        iframe.contentWindow.postMessage(JSON.stringify({
-          event: 'command', func: 'unMute', args: []
-        }), '*');
-      }
+      applyVolume();
     }, 3000);
 
     return () => {
       window.removeEventListener('message', handleMessage);
       clearTimeout(fallbackTimer);
     };
-  }, [youtubeAudioItemEarly?.url, youtubeAudioVolume]);
+  }, [isFullscreen, youtubeAudioItemEarly?.url, youtubeAudioVolume]);
 
   // Media slideshow management 
   useEffect(() => {
@@ -1500,7 +1495,7 @@ export function TVDisplay({
     </>
   );
 
-  const youtubeAudioIframe = youtubeAudioItemEarly ? (
+  const youtubeAudioIframe = (isFullscreen && youtubeAudioItemEarly) ? (
     <iframe
       ref={ytAudioIframeRef}
       src={getYouTubeAudioEmbedUrl(youtubeAudioItemEarly.url)}
@@ -1509,6 +1504,40 @@ export function TVDisplay({
       data-testid="youtube-audio-iframe"
     />
   ) : null;
+
+  useEffect(() => {
+    if (!isFullscreen || !youtubeAudioItemEarly) return;
+
+    const duckStart = () => {
+      ytAudioDuckedRef.current = true;
+      const iframe = ytAudioIframeRef.current;
+      if (iframe?.contentWindow) {
+        iframe.contentWindow.postMessage(JSON.stringify({
+          event: 'command', func: 'setVolume', args: [0]
+        }), '*');
+      }
+    };
+
+    const duckEnd = () => {
+      ytAudioDuckedRef.current = false;
+      const iframe = ytAudioIframeRef.current;
+      if (iframe?.contentWindow) {
+        iframe.contentWindow.postMessage(JSON.stringify({
+          event: 'command', func: 'setVolume', args: [youtubeAudioVolume]
+        }), '*');
+        iframe.contentWindow.postMessage(JSON.stringify({
+          event: 'command', func: 'unMute', args: []
+        }), '*');
+      }
+    };
+
+    audioSystem.setDuckingCallbacks(duckStart, duckEnd);
+
+    return () => {
+      audioSystem.clearDuckingCallbacks();
+      ytAudioDuckedRef.current = false;
+    };
+  }, [isFullscreen, youtubeAudioItemEarly?.url, youtubeAudioVolume]);
 
   if (isFullscreen) {
     return (
@@ -1531,7 +1560,6 @@ export function TVDisplay({
          style={stageStyle} 
          data-testid="tv-display">
       {renderContent()}
-      {youtubeAudioIframe}
     </div>
   );
 }

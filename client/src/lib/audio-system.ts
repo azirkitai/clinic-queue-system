@@ -58,6 +58,8 @@ export class AudioSystem {
   private forceHTMLAudio: boolean = false; // Force HTMLAudio mode for TV displays
   private audioQueue: Array<{ callInfo: CallInfo; settings: AudioSettings }> = [];
   private isPlayingSequence: boolean = false;
+  private onDuckStart: (() => void) | null = null;
+  private onDuckEnd: (() => void) | null = null;
   
   // Centralized preset definitions
   private static readonly PRESET_DEFS: Array<{key: PresetSoundKeyType, name: string, src: string}> = [
@@ -471,6 +473,16 @@ export class AudioSystem {
     }
   }
 
+  public setDuckingCallbacks(onDuckStart: () => void, onDuckEnd: () => void): void {
+    this.onDuckStart = onDuckStart;
+    this.onDuckEnd = onDuckEnd;
+  }
+
+  public clearDuckingCallbacks(): void {
+    this.onDuckStart = null;
+    this.onDuckEnd = null;
+  }
+
   public async playCallingSequence(callInfo: CallInfo, settings: AudioSettings): Promise<void> {
     this.audioQueue.push({ callInfo, settings });
     if (!this.isPlayingSequence) {
@@ -481,6 +493,12 @@ export class AudioSystem {
   private async processAudioQueue(): Promise<void> {
     if (this.isPlayingSequence || this.audioQueue.length === 0) return;
     this.isPlayingSequence = true;
+
+    try {
+      this.onDuckStart?.();
+    } catch (e) {
+      console.error('Duck start error:', e);
+    }
 
     while (this.audioQueue.length > 0) {
       const item = this.audioQueue.shift()!;
@@ -511,6 +529,12 @@ export class AudioSystem {
     }
 
     this.isPlayingSequence = false;
+
+    try {
+      this.onDuckEnd?.();
+    } catch (e) {
+      console.error('Duck end error:', e);
+    }
   }
 
   // Get available preset sounds from centralized definitions
