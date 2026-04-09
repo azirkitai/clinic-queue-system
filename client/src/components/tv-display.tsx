@@ -790,12 +790,33 @@ export function TVDisplay({
       };
 
       if (!disableAudio && (audioSettings.enableSound || audioSettings.ttsEnabled)) {
+        const iframe = ytAudioIframeRef.current;
+        if (isFullscreen && iframe && iframe.src && iframe.src !== 'about:blank') {
+          ytAudioOriginalSrcRef.current = iframe.src;
+          iframe.src = 'about:blank';
+          console.log('🔇 YouTube audio ducked for calling sequence');
+        }
+
         audioSystem.playCallingSequence({
           patientName: currentPatient.name,
           patientNumber: parseInt(currentPatient.number, 10),
           windowName: currentPatient.room
-        }, audioSettings).catch(error => {
+        }, audioSettings).then(() => {
+          if (isFullscreen && ytAudioOriginalSrcRef.current) {
+            const iframeNow = ytAudioIframeRef.current;
+            if (iframeNow) {
+              iframeNow.src = ytAudioOriginalSrcRef.current;
+              console.log('🔊 YouTube audio restored after calling sequence');
+            }
+          }
+        }).catch(error => {
           console.error('Failed to play calling sound:', error);
+          if (isFullscreen && ytAudioOriginalSrcRef.current) {
+            const iframeNow = ytAudioIframeRef.current;
+            if (iframeNow) {
+              iframeNow.src = ytAudioOriginalSrcRef.current;
+            }
+          }
         });
       }
       
@@ -1505,36 +1526,6 @@ export function TVDisplay({
       data-testid="youtube-audio-iframe"
     />
   ) : null;
-
-  useEffect(() => {
-    if (!isFullscreen || !youtubeAudioItemEarly) return;
-
-    const duckStart = () => {
-      ytAudioDuckedRef.current = true;
-      const iframe = ytAudioIframeRef.current;
-      if (iframe) {
-        if (!ytAudioOriginalSrcRef.current) {
-          ytAudioOriginalSrcRef.current = iframe.src;
-        }
-        iframe.src = 'about:blank';
-      }
-    };
-
-    const duckEnd = () => {
-      ytAudioDuckedRef.current = false;
-      const iframe = ytAudioIframeRef.current;
-      if (iframe && ytAudioOriginalSrcRef.current) {
-        iframe.src = ytAudioOriginalSrcRef.current;
-      }
-    };
-
-    audioSystem.setDuckingCallbacks(duckStart, duckEnd);
-
-    return () => {
-      audioSystem.clearDuckingCallbacks();
-      ytAudioDuckedRef.current = false;
-    };
-  }, [isFullscreen, youtubeAudioItemEarly?.url, youtubeAudioVolume]);
 
   if (isFullscreen) {
     return (
