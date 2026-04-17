@@ -129,6 +129,61 @@ function invalidateCache(userId: string, pattern?: string, immediate: boolean = 
   }
 }
 
+// Invalidate a cache pattern across ALL users (e.g. when admin updates a globally-shared setting)
+function invalidateAllUsersCache(pattern: string): void {
+  for (const [key] of Array.from(apiCache.entries())) {
+    if (key.includes(pattern)) {
+      apiCache.delete(key);
+    }
+  }
+}
+
+// ===== Shared (clinic-wide) pronunciation rules =====
+// `ttsPronunciations` is owned by the admin user and shared across all accounts.
+// Helpers below let any settings endpoint overlay the admin's value transparently,
+// while only admins are allowed to write/delete the key.
+let _adminUserIdCache: { id: string | null; expires: number } | null = null;
+async function getAdminUserId(): Promise<string | null> {
+  const now = Date.now();
+  if (_adminUserIdCache && _adminUserIdCache.expires > now) {
+    return _adminUserIdCache.id;
+  }
+  try {
+    const { db } = await import('./db');
+    const { users } = await import('@shared/schema');
+    const { eq } = await import('drizzle-orm');
+    const rows = await db.select({ id: users.id }).from(users).where(eq(users.role, 'admin')).limit(1);
+    const id = rows[0]?.id ?? null;
+    _adminUserIdCache = { id, expires: now + 5 * 60_000 };
+    return id;
+  } catch (err) {
+    console.error('[shared-pron] failed to look up admin user:', err);
+    return null;
+  }
+}
+
+async function isUserAdmin(userId: string): Promise<boolean> {
+  try {
+    const u = await storage.getUser(userId);
+    return u?.role === 'admin';
+  } catch {
+    return false;
+  }
+}
+
+// Replace any per-user `ttsPronunciations` entry with the admin's shared value.
+async function overlayAdminPronunciations<T extends { key: string }>(
+  settings: T[],
+  requestingUserId: string,
+): Promise<T[]> {
+  const adminId = await getAdminUserId();
+  if (!adminId || adminId === requestingUserId) return settings;
+  const adminSetting = await storage.getSetting('ttsPronunciations', adminId);
+  const filtered = settings.filter(s => s.key !== 'ttsPronunciations');
+  if (adminSetting) filtered.push(adminSetting as unknown as T);
+  return filtered;
+}
+
 // Periodic cache cleanup (every 10 seconds) - use longest TTL as cleanup threshold
 setInterval(() => {
   const now = Date.now();
@@ -1885,7 +1940,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Previous: getSettings() fetched ALL settings (~220KB), then filtered client-side
       // Now: getTvSettings() fetches only ~40 keys (~10KB) directly from database
       const tvSettingsKeys = Array.from(TV_SETTINGS_KEYS);
-      const tvSettings = await storage.getTvSettings(req.session.userId, tvSettingsKeys);
+      const tvSettingsRaw = await storage.getTvSettings(req.session.userId, tvSettingsKeys);
+      const tvSettings = await overlayAdminPronunciations(tvSettingsRaw, req.session.userId);
       
       setCache('settings-tv', req.session.userId, tvSettings);
       res.json(tvSettings);
@@ -1909,7 +1965,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(cached);
       }
       
-      const settings = await storage.getSettings(req.session.userId);
+      const settingsRaw = await storage.getSettings(req.session.userId);
+      const settings = await overlayAdminPronunciations(settingsRaw, req.session.userId);
       
       // Cache the result
       setCache('settings', req.session.userId, settings);
@@ -1930,7 +1987,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const { category } = req.params;
-      const settings = await storage.getSettingsByCategory(category, req.session.userId);
+      const settingsRaw = await storage.getSettingsByCategory(category, req.session.userId);
+      const settings = await overlayAdminPronunciations(settingsRaw, req.session.userId);
       res.json(settings);
     } catch (error) {
       console.error("Error fetching settings by category:", error);
@@ -1967,7 +2025,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const { key } = req.params;
-      const setting = await storage.getSetting(key, req.session.userId);
+      // ttsPronunciations is shared globally — always read the admin's value
+      const lookupUserId = key === 'ttsPronunciations'
+        ? (await getAdminUserId()) ?? req.session.userId
+        : req.session.userId;
+      const setting = await storage.getSetting(key, lookupUserId);
       if (!setting) {
         return res.status(404).json({ error: "Setting not found" });
       }
@@ -1992,17 +2054,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.session.userId) {
         return res.status(401).json({ error: "Session inactive" });
       }
+
+      // ttsPronunciations is shared clinic-wide — only admins can change it,
+      // and the write always lands on the admin user's row.
+      let writeUserId = req.session.userId;
+      if (key === 'ttsPronunciations') {
+        if (!(await isUserAdmin(req.session.userId))) {
+          return res.status(403).json({ error: "Only admins can edit pronunciation rules" });
+        }
+        writeUserId = (await getAdminUserId()) ?? req.session.userId;
+      }
       
       // Try to update existing setting first
-      let setting = await storage.updateSetting(key, value, req.session.userId);
+      let setting = await storage.updateSetting(key, value, writeUserId);
       
       // If setting doesn't exist, create new one
       if (!setting) {
-        setting = await storage.setSetting(key, value, category, req.session.userId);
+        setting = await storage.setSetting(key, value, category, writeUserId);
       }
 
       // Invalidate cache after updating setting
       invalidateCache(req.session.userId);
+      // Shared keys must invalidate every user's settings cache
+      if (key === 'ttsPronunciations') {
+        invalidateAllUsersCache('settings');
+      }
       
       // Notify all connected clients about settings update
       if (globalIo) {
@@ -2030,6 +2106,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Settings array is required" });
       }
 
+      const isAdmin = await isUserAdmin(req.session.userId);
+      const adminId = await getAdminUserId();
+      let touchedSharedKey = false;
+
       const updatedSettings = [];
       for (const settingData of settings) {
         const { key, value, category } = settingData;
@@ -2037,12 +2117,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           continue; // Skip invalid settings
         }
 
+        // Shared key: only admins can write, and the write goes to the admin user
+        let writeUserId = req.session.userId;
+        if (key === 'ttsPronunciations') {
+          if (!isAdmin) {
+            // Silently skip for non-admins so other settings in the batch still apply
+            continue;
+          }
+          writeUserId = adminId ?? req.session.userId;
+          touchedSharedKey = true;
+        }
+
         // Try to update existing setting first
-        let setting = await storage.updateSetting(key, value, req.session.userId);
+        let setting = await storage.updateSetting(key, value, writeUserId);
         
         // If setting doesn't exist, create new one
         if (!setting) {
-          setting = await storage.setSetting(key, value, category, req.session.userId);
+          setting = await storage.setSetting(key, value, category, writeUserId);
         }
         
         updatedSettings.push(setting);
@@ -2050,6 +2141,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Invalidate cache after updating settings
       invalidateCache(req.session.userId);
+      if (touchedSharedKey) {
+        invalidateAllUsersCache('settings');
+      }
       
       // Notify all connected clients about settings update
       if (globalIo) {
@@ -2075,7 +2169,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const { key } = req.params;
-      const deleted = await storage.deleteSetting(key, req.session.userId);
+
+      // Shared key: only admins can delete, and the deletion targets the admin row
+      let deleteUserId = req.session.userId;
+      if (key === 'ttsPronunciations') {
+        if (!(await isUserAdmin(req.session.userId))) {
+          return res.status(403).json({ error: "Only admins can edit pronunciation rules" });
+        }
+        deleteUserId = (await getAdminUserId()) ?? req.session.userId;
+      }
+
+      const deleted = await storage.deleteSetting(key, deleteUserId);
       
       if (!deleted) {
         return res.status(404).json({ error: "Setting not found" });
@@ -2083,6 +2187,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Invalidate cache immediately after deleting setting (destructive action)
       invalidateCache(req.session.userId, undefined, true);
+      if (key === 'ttsPronunciations') {
+        invalidateAllUsersCache('settings');
+      }
       
       res.json({ success: true });
     } catch (error) {
@@ -3251,7 +3358,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // ✅ CRITICAL FIX: Fetch only TV-needed keys from database (excludes clinicLogo)
       const tvSettingsKeys = Array.from(TV_SETTINGS_KEYS);
-      const settings = await storage.getTvSettings(user.id, tvSettingsKeys);
+      const settingsRaw = await storage.getTvSettings(user.id, tvSettingsKeys);
+      const settings = await overlayAdminPronunciations(settingsRaw, user.id);
       res.json(settings);
     } catch (error) {
       console.error("Error fetching TV settings:", error);
