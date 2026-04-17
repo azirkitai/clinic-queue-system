@@ -8,6 +8,7 @@ import { registerRoutes, setGlobalIo } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupWebSocket } from "./websocket";
 import { startDatabaseKeepalive } from "./db";
+import { startEodScheduler } from "./eod-scheduler";
 import path from "path";
 import fs from "fs";
 
@@ -247,6 +248,10 @@ app.use((req, res, next) => {
   // Then run every 5 minutes
   setInterval(runAutoComplete, AUTO_COMPLETE_INTERVAL_MS);
   console.log('[AUTO-COMPLETE] Scheduler started - running every 5 minutes');
+
+  // EOD SCHEDULER: auto end-of-day reset at 12am Malaysia time per tenant,
+  // with 10-min warning + smart 30-min postpone if recent activity.
+  startEodScheduler(io);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

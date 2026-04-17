@@ -89,6 +89,8 @@ export interface IStorage {
   deleteOldCompletedPatients(userId: string, hoursOld: number): Promise<number>; // Delete completed patients older than X hours
   deleteAllCompletedPatients(userId: string): Promise<number>; // Delete ALL completed patients regardless of time
   autoCompleteOldDispensaryPatients(): Promise<{ userId: string; patientIds: string[]; count: number }[]>; // Auto-complete dispensary patients older than 60 minutes (all tenants)
+  autoCloseAllPendingPatients(userId: string, reason?: string): Promise<{ count: number; patientIds: string[] }>; // End-of-day: force-complete every non-completed patient
+  hasRecentActivity(userId: string, sinceMs: number): Promise<boolean>; // True if any patient was registered or called after `sinceMs`
   
   // Window methods
   getWindows(userId: string): Promise<Window[]>;
@@ -817,6 +819,55 @@ export class MemStorage implements IStorage {
     }
     
     return results;
+  }
+
+  async autoCloseAllPendingPatients(userId: string, reason: string = 'Auto-closed end of day'): Promise<{ count: number; patientIds: string[] }> {
+    const now = new Date();
+    const patientIds: string[] = [];
+    for (const patient of Array.from(this.patients.values())) {
+      if (patient.userId !== userId) continue;
+      if (patient.archivedAt) continue;
+      if (patient.status === 'completed') continue;
+
+      const trackingHistory: any[] = Array.isArray(patient.trackingHistory) ? [...(patient.trackingHistory as any[])] : [];
+      trackingHistory.push({
+        timestamp: now.toISOString(),
+        action: 'completed',
+        reason,
+      });
+      this.patients.set(patient.id, {
+        ...patient,
+        status: 'completed',
+        completedAt: now,
+        readyForDispensary: false,
+        requeueReason: reason,
+        trackingHistory,
+      });
+      patientIds.push(patient.id);
+    }
+
+    // Clear stuck windows that referenced any of these patients
+    for (const window of Array.from(this.windows.values())) {
+      if (window.userId !== userId) continue;
+      if (window.currentPatientId && patientIds.includes(window.currentPatientId)) {
+        this.windows.set(window.id, { ...window, currentPatientId: undefined });
+      }
+    }
+
+    if (patientIds.length > 0) {
+      console.log(`[EOD] Auto-closed ${patientIds.length} pending patient(s) for user ${userId}`);
+    }
+    return { count: patientIds.length, patientIds };
+  }
+
+  async hasRecentActivity(userId: string, sinceMs: number): Promise<boolean> {
+    const since = new Date(sinceMs);
+    for (const patient of Array.from(this.patients.values())) {
+      if (patient.userId !== userId) continue;
+      if (patient.registeredAt && patient.registeredAt >= since) return true;
+      if (patient.calledAt && patient.calledAt >= since) return true;
+    }
+    return false;
   }
 
   async getWindows(userId: string): Promise<Window[]> {
@@ -2420,6 +2471,85 @@ export class DatabaseStorage implements IStorage {
     }
     
     return results;
+  }
+
+  async autoCloseAllPendingPatients(userId: string, reason: string = 'Auto-closed end of day'): Promise<{ count: number; patientIds: string[] }> {
+    const now = new Date();
+
+    // Find every non-completed, non-archived patient for this tenant
+    const pending = await db.select({
+      id: schema.patients.id,
+      windowId: schema.patients.windowId,
+      trackingHistory: schema.patients.trackingHistory,
+    }).from(schema.patients)
+      .where(
+        and(
+          eq(schema.patients.userId, userId),
+          sql`${schema.patients.archivedAt} IS NULL`,
+          sql`${schema.patients.status} != 'completed'`,
+        ),
+      );
+
+    if (pending.length === 0) return { count: 0, patientIds: [] };
+
+    const patientIds = pending.map(p => p.id);
+    const hasAnyWindow = pending.some(p => !!p.windowId);
+
+    // Single batched UPDATE — append the same tracking entry to every row's
+    // existing trackingHistory using jsonb concat (cast back to json).
+    const appendEvent = JSON.stringify([{ timestamp: now.toISOString(), action: 'completed', reason }]);
+    try {
+      await db.update(schema.patients)
+        .set({
+          status: 'completed',
+          completedAt: now,
+          readyForDispensary: false,
+          requeueReason: reason,
+          trackingHistory: sql`(COALESCE(${schema.patients.trackingHistory}::jsonb, '[]'::jsonb) || ${appendEvent}::jsonb)::json`,
+        })
+        .where(
+          and(
+            eq(schema.patients.userId, userId),
+            inArray(schema.patients.id, patientIds),
+          ),
+        );
+    } catch (err) {
+      console.error(`[EOD] Batch auto-close failed for user ${userId}:`, err);
+      throw err;
+    }
+
+    // Clear any windows pointing at the just-closed patients
+    if (hasAnyWindow) {
+      try {
+        await db.update(schema.windows)
+          .set({ currentPatientId: null })
+          .where(
+            and(
+              eq(schema.windows.userId, userId),
+              inArray(schema.windows.currentPatientId, patientIds),
+            ),
+          );
+      } catch (err) {
+        console.error(`[EOD] Failed to clear windows for user ${userId}:`, err);
+      }
+    }
+
+    console.log(`[EOD] Auto-closed ${patientIds.length} pending patient(s) for user ${userId}`);
+    return { count: patientIds.length, patientIds };
+  }
+
+  async hasRecentActivity(userId: string, sinceMs: number): Promise<boolean> {
+    const sinceIso = new Date(sinceMs).toISOString();
+    const rows = await db.select({ id: schema.patients.id }).from(schema.patients)
+      .where(
+        and(
+          eq(schema.patients.userId, userId),
+          sql`${schema.patients.archivedAt} IS NULL`,
+          sql`(${schema.patients.registeredAt} >= ${sinceIso} OR ${schema.patients.calledAt} >= ${sinceIso})`,
+        ),
+      )
+      .limit(1);
+    return rows.length > 0;
   }
 
   // Media methods

@@ -546,6 +546,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // === End-of-day reset ===
+  // Inspect tenant's next scheduled reset
+  app.get("/api/system/eod-status", requireAuth, async (req, res) => {
+    try {
+      const { getEodStatus } = await import("./eod-scheduler");
+      res.json(getEodStatus(req.session.userId!));
+    } catch (error) {
+      console.error("[EOD] Status error:", error);
+      res.status(500).json({ error: "Failed to read status" });
+    }
+  });
+
+  // Admin-only: force a reset right now for the current tenant
+  app.post("/api/system/eod-reset", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ error: "Admin only" });
+      }
+      const { forceEodReset } = await import("./eod-scheduler");
+      const result = await forceEodReset(req.session.userId!);
+      res.json({ success: true, ...result });
+    } catch (error) {
+      console.error("[EOD] Force reset error:", error);
+      res.status(500).json({ error: "Failed to reset queue" });
+    }
+  });
+
   // Google Cloud Storage routes
   app.use("/api/gcs", requireAuth, gcsRouter);
   app.use("/api/tts", edgeTtsRouter);

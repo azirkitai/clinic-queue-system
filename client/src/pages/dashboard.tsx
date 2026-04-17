@@ -9,6 +9,7 @@ import { type Patient } from "@shared/schema";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useTvPatients } from "@/hooks/useTvPatients";
 import { useTheme } from "@/components/theme-provider";
+import { EodResetBanner } from "@/components/eod-reset-banner";
 
 interface QueueItem {
   id: string;
@@ -267,6 +268,9 @@ export default function Dashboard() {
           showPrayerTimes={showPrayerTimes}
           showWeather={showWeather}
         />
+        <div className="fixed top-0 left-0 right-0 z-[9998]">
+          <EodResetBanner variant="tv" />
+        </div>
         {/* Floating Exit Button - Appears on cursor hover */}
         <div 
           className="fixed top-4 right-4 z-[9999] transition-opacity duration-300"
@@ -288,6 +292,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 space-y-6">
+      <EodResetBanner variant="dashboard" />
       {/* Fullscreen Prompt Overlay */}
       {showFullscreenPrompt && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center">

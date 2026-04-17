@@ -5,6 +5,8 @@ import { TVDisplay } from "@/components/tv-display";
 import { Button } from "@/components/ui/button";
 import { Monitor, Copy, Check } from "lucide-react";
 import { type TvQueueItem } from "@shared/schema";
+import { EodResetBanner } from "@/components/eod-reset-banner";
+import { applyEodWarning, applyEodPostponed, applyEodCompleted } from "@/lib/eod-reset-store";
 
 interface QueueItem {
   id: string;
@@ -150,6 +152,18 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
 
     socket.on('settings:updated', () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tv/${token}/settings`] });
+    });
+
+    // End-of-day reset events
+    socket.on('system:eod-warning', (data: any) => {
+      applyEodWarning({ scheduledAt: data.scheduledAt, message: data.message });
+    });
+    socket.on('system:eod-postponed', (data: any) => {
+      applyEodPostponed({ scheduledAt: data.scheduledAt, postponeCount: data.postponeCount, message: data.message });
+    });
+    socket.on('system:eod-completed', (data: any) => {
+      applyEodCompleted({ count: data.count, forced: !!data.forced, reason: data.reason });
+      queryClient.invalidateQueries({ queryKey: [`/api/tv/${token}/patients`] });
     });
 
     socket.on('disconnect', (reason) => {
@@ -448,6 +462,9 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
           showWeather={showWeather}
           tvToken={token}
         />
+        <div className="fixed top-0 left-0 right-0 z-[9998]">
+          <EodResetBanner variant="tv" />
+        </div>
         <div
           className="fixed top-4 right-4 z-[9999] transition-opacity duration-300"
           style={{ opacity: showExitButton ? 1 : 0, pointerEvents: showExitButton ? 'auto' : 'none' }}

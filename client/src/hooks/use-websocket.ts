@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { queryClient } from '@/lib/queryClient';
+import { applyEodWarning, applyEodPostponed, applyEodCompleted } from '@/lib/eod-reset-store';
 
 let initialServerVersion: string | null = null;
 
@@ -303,6 +304,22 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       queryClient.invalidateQueries({ queryKey: ['/api/text-groups/active'] });
     });
 
+    // End-of-day reset events
+    socket.on('system:eod-warning', (data: any) => {
+      applyEodWarning({ scheduledAt: data.scheduledAt, message: data.message });
+    });
+    socket.on('system:eod-postponed', (data: any) => {
+      applyEodPostponed({ scheduledAt: data.scheduledAt, postponeCount: data.postponeCount, message: data.message });
+    });
+    socket.on('system:eod-completed', (data: any) => {
+      applyEodCompleted({ count: data.count, forced: !!data.forced, reason: data.reason });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] });
+    });
+
     // Force refresh - admin can trigger all connected browsers to reload
     socket.on('system:force-refresh', () => {
       console.log('[WS] Force refresh triggered by admin - reloading page...');
@@ -332,6 +349,9 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       socket.off('themes:updated');
       socket.off('text-groups:updated');
       socket.off('system:force-refresh');
+      socket.off('system:eod-warning');
+      socket.off('system:eod-postponed');
+      socket.off('system:eod-completed');
       socket.disconnect();
     };
   }, []); // ✅ Empty deps - only run once on mount

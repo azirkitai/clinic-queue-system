@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { queryClient } from '@/lib/queryClient';
+import { applyEodWarning, applyEodPostponed, applyEodCompleted } from '@/lib/eod-reset-store';
 
 interface UseWebSocketReturn {
   socket: Socket | null;
@@ -95,6 +96,21 @@ export function useWebSocket(disabled = false): UseWebSocketReturn {
     socketInstance.on('tv:connected', (data) => {
       console.log('📺 TV connected:', data);
       setLastEvent({ event: 'tv:connected', data, timestamp: new Date() });
+    });
+
+    // End-of-day reset events
+    socketInstance.on('system:eod-warning', (data: any) => {
+      applyEodWarning({ scheduledAt: data.scheduledAt, message: data.message });
+    });
+    socketInstance.on('system:eod-postponed', (data: any) => {
+      applyEodPostponed({ scheduledAt: data.scheduledAt, postponeCount: data.postponeCount, message: data.message });
+    });
+    socketInstance.on('system:eod-completed', (data: any) => {
+      applyEodCompleted({ count: data.count, forced: !!data.forced, reason: data.reason });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
     });
 
     // Error handling

@@ -24,6 +24,7 @@ Preferred communication style: Simple, everyday language.
   - **Caching**: Server-side caching with tiered TTLs (2.5s for dynamic data, 30s for static data) and auto-invalidation on mutations.
   - **Cleanup**: Automated cleanup of completed patients older than 24 hours on startup.
   - **Dispensary**: Auto-Complete Dispensary Scheduler runs every 5 minutes with multi-tenant support and mutex guarding.
+  - **End-of-Day Reset**: Per-tenant EOD scheduler (`server/eod-scheduler.ts`) ticks every 60s in Malaysia time. At 11:50pm broadcasts `system:eod-warning`, at 12:00am auto-closes every non-completed patient (`autoCloseAllPendingPatients`) tagged "Auto-closed end of day"; if any patient was registered/called in the last 10 min the reset is postponed by 30 min (broadcast `system:eod-postponed`, capped at 6 postpones). Admins can force a reset via `POST /api/system/eod-reset`. All notices are in English and rendered by `EodResetBanner` on the dashboard, fullscreen TV, and standalone TV pages.
 - **API**: RESTful endpoints (`/api` prefix) with rate limiting (300 req/min general, 30 req/min for legacy endpoints) and traffic logging.
 - **Storage**: Abstracted interface for memory/database implementations.
 - **Session Management**: Express sessions with PostgreSQL store, including impersonation functionality for administrators.
