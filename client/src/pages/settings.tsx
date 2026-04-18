@@ -1359,9 +1359,9 @@ export default function Settings() {
                 <Label className="text-xs">Clinic Name</Label>
                 <Input
                   type="text"
-                  value={currentSettings.clinicName || "MAIN CLINIC 24 HOURS"}
+                  value={currentSettings.clinicName || ""}
                   onChange={(e) => updateDisplaySetting('clinicName', e.target.value)}
-                  placeholder="Enter clinic name"
+                  placeholder="KLINIK UTAMA 24 JAM"
                   data-testid="input-clinic-name"
                   className="text-sm"
                 />
