@@ -329,15 +329,15 @@ export default function Settings() {
     headerTextColor: '#ffffff',
     headerTextMode: 'solid' as 'solid' | 'gradient',
     headerTextGradient: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-    headerBackgroundColor: '#1e40af',
+    headerBackgroundColor: '#0f172a',
     headerBackgroundMode: 'solid' as 'solid' | 'gradient',
-    headerBackgroundGradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    headerBackgroundGradient: 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)',
     callNameTextColor: '#ffffff',
     callNameTextMode: 'solid' as 'solid' | 'gradient',
     callNameTextGradient: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-    callBackgroundColor: '#16a34a',
+    callBackgroundColor: '#f09819',
     callBackgroundMode: 'solid' as 'solid' | 'gradient',
-    callBackgroundGradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+    callBackgroundGradient: 'linear-gradient(135deg, #ff512f 0%, #f09819 100%)',
     windowTextColor: '#ffffff',
     windowTextMode: 'solid' as 'solid' | 'gradient',
     windowTextGradient: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
@@ -349,32 +349,32 @@ export default function Settings() {
     prayerTimesTextColor: '#ffffff',
     prayerTimesTextMode: 'solid' as 'solid' | 'gradient',
     prayerTimesTextGradient: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-    prayerTimesBackgroundColor: '#7c3aed',
+    prayerTimesBackgroundColor: '#0f172a',
     prayerTimesBackgroundMode: 'solid' as 'solid' | 'gradient',
-    prayerTimesBackgroundGradient: 'linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)',
+    prayerTimesBackgroundGradient: 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)',
     prayerTimesHighlightColor: '#facc15',
     weatherTextColor: '#ffffff',
     weatherTextMode: 'solid' as 'solid' | 'gradient',
     weatherTextGradient: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-    weatherBackgroundColor: '#f97316',
+    weatherBackgroundColor: '#0f172a',
     weatherBackgroundMode: 'solid' as 'solid' | 'gradient',
-    weatherBackgroundGradient: 'linear-gradient(135deg, #fdcb6e 0%, #e84393 100%)',
+    weatherBackgroundGradient: 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)',
     queueTextColor: '#1f2937',
     queueTextMode: 'solid' as 'solid' | 'gradient',
     queueTextGradient: 'linear-gradient(135deg, #1f2937 0%, #4b5563 100%)',
-    queueBackgroundColor: '#f3f4f6',
+    queueBackgroundColor: '#0f172a',
     queueBackgroundMode: 'solid' as 'solid' | 'gradient',
-    queueBackgroundGradient: 'linear-gradient(135deg, #74b9ff 0%, #0984e3 100%)',
-    queueItemBackgroundColor: '#2563eb',
+    queueBackgroundGradient: 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)',
+    queueItemBackgroundColor: '#1e293b',
     queueItemBackgroundMode: 'solid' as 'solid' | 'gradient',
-    queueItemBackgroundGradient: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
+    queueItemBackgroundGradient: 'linear-gradient(135deg, #1e293b 0%, #0f766e 100%)',
     historyNameColor: '#facc15',
     historyNameMode: 'solid' as 'solid' | 'gradient',
     historyNameGradient: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
     queueHighlightColor: '#ef4444',
     queueBorderColor: '#d1d5db',
     marqueeBackgroundMode: 'solid' as 'solid' | 'gradient',
-    marqueeBackgroundGradient: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+    marqueeBackgroundGradient: 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)',
   });
 
   // Update settings state when data is loaded
@@ -414,15 +414,15 @@ export default function Settings() {
         headerTextColor: settingsObj.headerTextColor || '#ffffff',
         headerTextMode: (settingsObj.headerTextMode as 'solid' | 'gradient') || 'solid',
         headerTextGradient: settingsObj.headerTextGradient || 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-        headerBackgroundColor: settingsObj.headerBackgroundColor || '#1e40af',
+        headerBackgroundColor: settingsObj.headerBackgroundColor || '#0f172a',
         headerBackgroundMode: (settingsObj.headerBackgroundMode as 'solid' | 'gradient') || 'solid',
-        headerBackgroundGradient: settingsObj.headerBackgroundGradient || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        headerBackgroundGradient: settingsObj.headerBackgroundGradient || 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)',
         callNameTextColor: settingsObj.callNameTextColor || '#ffffff',
         callNameTextMode: (settingsObj.callNameTextMode as 'solid' | 'gradient') || 'solid',
         callNameTextGradient: settingsObj.callNameTextGradient || 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-        callBackgroundColor: settingsObj.callBackgroundColor || '#16a34a',
+        callBackgroundColor: settingsObj.callBackgroundColor || '#f09819',
         callBackgroundMode: (settingsObj.callBackgroundMode as 'solid' | 'gradient') || 'solid',
-        callBackgroundGradient: settingsObj.callBackgroundGradient || 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+        callBackgroundGradient: settingsObj.callBackgroundGradient || 'linear-gradient(135deg, #ff512f 0%, #f09819 100%)',
         windowTextColor: settingsObj.windowTextColor || '#ffffff',
         windowTextMode: (settingsObj.windowTextMode as 'solid' | 'gradient') || 'solid',
         windowTextGradient: settingsObj.windowTextGradient || 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
@@ -434,32 +434,32 @@ export default function Settings() {
         prayerTimesTextColor: settingsObj.prayerTimesTextColor || '#ffffff',
         prayerTimesTextMode: (settingsObj.prayerTimesTextMode as 'solid' | 'gradient') || 'solid',
         prayerTimesTextGradient: settingsObj.prayerTimesTextGradient || 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-        prayerTimesBackgroundColor: settingsObj.prayerTimesBackgroundColor || '#7c3aed',
+        prayerTimesBackgroundColor: settingsObj.prayerTimesBackgroundColor || '#0f172a',
         prayerTimesBackgroundMode: (settingsObj.prayerTimesBackgroundMode as 'solid' | 'gradient') || 'solid',
-        prayerTimesBackgroundGradient: settingsObj.prayerTimesBackgroundGradient || 'linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)',
+        prayerTimesBackgroundGradient: settingsObj.prayerTimesBackgroundGradient || 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)',
         prayerTimesHighlightColor: settingsObj.prayerTimesHighlightColor || '#facc15',
         weatherTextColor: settingsObj.weatherTextColor || '#ffffff',
         weatherTextMode: (settingsObj.weatherTextMode as 'solid' | 'gradient') || 'solid',
         weatherTextGradient: settingsObj.weatherTextGradient || 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-        weatherBackgroundColor: settingsObj.weatherBackgroundColor || '#f97316',
+        weatherBackgroundColor: settingsObj.weatherBackgroundColor || '#0f172a',
         weatherBackgroundMode: (settingsObj.weatherBackgroundMode as 'solid' | 'gradient') || 'solid',
-        weatherBackgroundGradient: settingsObj.weatherBackgroundGradient || 'linear-gradient(135deg, #fdcb6e 0%, #e84393 100%)',
+        weatherBackgroundGradient: settingsObj.weatherBackgroundGradient || 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)',
         queueTextColor: settingsObj.queueTextColor || '#1f2937',
         queueTextMode: (settingsObj.queueTextMode as 'solid' | 'gradient') || 'solid',
         queueTextGradient: settingsObj.queueTextGradient || 'linear-gradient(135deg, #1f2937 0%, #4b5563 100%)',
-        queueBackgroundColor: settingsObj.queueBackgroundColor || '#f3f4f6',
+        queueBackgroundColor: settingsObj.queueBackgroundColor || '#0f172a',
         queueBackgroundMode: (settingsObj.queueBackgroundMode as 'solid' | 'gradient') || 'solid',
-        queueBackgroundGradient: settingsObj.queueBackgroundGradient || 'linear-gradient(135deg, #74b9ff 0%, #0984e3 100%)',
-        queueItemBackgroundColor: settingsObj.queueItemBackgroundColor || '#2563eb',
+        queueBackgroundGradient: settingsObj.queueBackgroundGradient || 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)',
+        queueItemBackgroundColor: settingsObj.queueItemBackgroundColor || '#1e293b',
         queueItemBackgroundMode: (settingsObj.queueItemBackgroundMode as 'solid' | 'gradient') || 'solid',
-        queueItemBackgroundGradient: settingsObj.queueItemBackgroundGradient || 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
+        queueItemBackgroundGradient: settingsObj.queueItemBackgroundGradient || 'linear-gradient(135deg, #1e293b 0%, #0f766e 100%)',
         historyNameColor: settingsObj.historyNameColor || '#facc15',
         historyNameMode: (settingsObj.historyNameMode as 'solid' | 'gradient') || 'solid',
         historyNameGradient: settingsObj.historyNameGradient || 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
         queueHighlightColor: settingsObj.queueHighlightColor || '#ef4444',
         queueBorderColor: settingsObj.queueBorderColor || '#d1d5db',
         marqueeBackgroundMode: (settingsObj.marqueeBackgroundMode as 'solid' | 'gradient') || 'solid',
-        marqueeBackgroundGradient: settingsObj.marqueeBackgroundGradient || 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+        marqueeBackgroundGradient: settingsObj.marqueeBackgroundGradient || 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)',
       };
       
       setCurrentSettings(prev => {
@@ -1408,7 +1408,7 @@ export default function Settings() {
                 {currentSettings.headerBackgroundMode === 'solid' ? (
                   <Input
                     type="color"
-                    value={currentSettings.headerBackgroundColor || '#1e40af'}
+                    value={currentSettings.headerBackgroundColor || '#0f172a'}
                     onChange={(e) => updateDisplaySetting('headerBackgroundColor', e.target.value)}
                     data-testid="input-header-bg-color"
                   />
@@ -1586,7 +1586,7 @@ export default function Settings() {
                 {currentSettings.callBackgroundMode === 'solid' ? (
                   <Input
                     type="color"
-                    value={currentSettings.callBackgroundColor || '#16a34a'}
+                    value={currentSettings.callBackgroundColor || '#f09819'}
                     onChange={(e) => updateDisplaySetting('callBackgroundColor', e.target.value)}
                     data-testid="input-call-bg-color"
                   />
@@ -1798,7 +1798,7 @@ export default function Settings() {
                 {currentSettings.prayerTimesBackgroundMode === 'solid' ? (
                   <Input
                     type="color"
-                    value={currentSettings.prayerTimesBackgroundColor || '#7c3aed'}
+                    value={currentSettings.prayerTimesBackgroundColor || '#0f172a'}
                     onChange={(e) => updateDisplaySetting('prayerTimesBackgroundColor', e.target.value)}
                     data-testid="input-prayer-bg-color"
                   />
@@ -1928,7 +1928,7 @@ export default function Settings() {
                 {currentSettings.weatherBackgroundMode === 'solid' ? (
                   <Input
                     type="color"
-                    value={currentSettings.weatherBackgroundColor || '#f97316'}
+                    value={currentSettings.weatherBackgroundColor || '#0f172a'}
                     onChange={(e) => updateDisplaySetting('weatherBackgroundColor', e.target.value)}
                     data-testid="input-weather-bg-color"
                   />
@@ -2046,7 +2046,7 @@ export default function Settings() {
                   {currentSettings.queueBackgroundMode === 'solid' ? (
                     <Input
                       type="color"
-                      value={currentSettings.queueBackgroundColor || '#f3f4f6'}
+                      value={currentSettings.queueBackgroundColor || '#0f172a'}
                       onChange={(e) => updateDisplaySetting('queueBackgroundColor', e.target.value)}
                       className="w-12 p-0 border-2"
                       data-testid="input-queue-bg-color"
@@ -2097,7 +2097,7 @@ export default function Settings() {
               {currentSettings.queueItemBackgroundMode === 'solid' ? (
                 <Input
                   type="color"
-                  value={currentSettings.queueItemBackgroundColor || '#2563eb'}
+                  value={currentSettings.queueItemBackgroundColor || '#1e293b'}
                   onChange={(e) => updateDisplaySetting('queueItemBackgroundColor', e.target.value)}
                   data-testid="input-queue-item-bg-color"
                 />
