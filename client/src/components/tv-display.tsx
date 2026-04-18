@@ -118,7 +118,7 @@ export function TVDisplay({
   currentPatient,
   queueWaiting = [], // Not currently rendered (reserved for future use)
   queueHistory = [], // ✅ Recent calling history (2nd, 3rd, 4th most recent called patients)
-  clinicName = "MAIN CLINIC 24 HOURS",
+  clinicName = "",
   mediaItems = [],
   prayerTimes = [],
   isFullscreen = false,
