@@ -717,6 +717,8 @@ export function TVDisplay({
   const mediaTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fadeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const ytAudioIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const ytAudioContainerRef = useRef<HTMLDivElement | null>(null);
+  const ytAudioPlayerRef = useRef<any>(null);
   const ytAudioReadyRef = useRef(false);
   const ytAudioDuckedRef = useRef(false);
   const ytAudioOriginalSrcRef = useRef<string>('');
@@ -879,33 +881,32 @@ export function TVDisplay({
       };
 
       if (!disableAudio && (audioSettings.enableSound || audioSettings.ttsEnabled)) {
-        const iframe = ytAudioIframeRef.current;
-        if (isFullscreen && iframe && iframe.src && iframe.src !== 'about:blank') {
-          ytAudioOriginalSrcRef.current = iframe.src;
-          iframe.src = 'about:blank';
+        const player = ytAudioPlayerRef.current;
+        if (isFullscreen && player && ytAudioReadyRef.current) {
+          ytAudioDuckedRef.current = true;
+          try { player.setVolume(0); } catch {}
           console.log('🔇 YouTube audio ducked for calling sequence');
         }
+
+        const restoreAudio = () => {
+          ytAudioDuckedRef.current = false;
+          const playerNow = ytAudioPlayerRef.current;
+          if (isFullscreen && playerNow && ytAudioReadyRef.current) {
+            try {
+              playerNow.unMute();
+              playerNow.setVolume(youtubeAudioVolume);
+              console.log('🔊 YouTube audio restored, volume:', youtubeAudioVolume);
+            } catch {}
+          }
+        };
 
         audioSystem.playCallingSequence({
           patientName: currentPatient.name,
           patientNumber: parseInt(currentPatient.number, 10),
           windowName: currentPatient.room
-        }, audioSettings).then(() => {
-          if (isFullscreen && ytAudioOriginalSrcRef.current) {
-            const iframeNow = ytAudioIframeRef.current;
-            if (iframeNow) {
-              iframeNow.src = ytAudioOriginalSrcRef.current;
-              console.log('🔊 YouTube audio restored after calling sequence');
-            }
-          }
-        }).catch(error => {
+        }, audioSettings).then(restoreAudio).catch(error => {
           console.error('Failed to play calling sound:', error);
-          if (isFullscreen && ytAudioOriginalSrcRef.current) {
-            const iframeNow = ytAudioIframeRef.current;
-            if (iframeNow) {
-              iframeNow.src = ytAudioOriginalSrcRef.current;
-            }
-          }
+          restoreAudio();
         });
       }
       
@@ -980,70 +981,130 @@ export function TVDisplay({
   const youtubeAudioItemEarly = mediaItems.find(m => m.type === 'youtube-audio');
   const visibleMediaItems = mediaItems.filter(m => m.type !== 'youtube-audio');
 
+  // Load YouTube IFrame API script once
+  useEffect(() => {
+    if ((window as any).YT && (window as any).YT.Player) return;
+    if (document.getElementById('youtube-iframe-api-script')) return;
+    const tag = document.createElement('script');
+    tag.id = 'youtube-iframe-api-script';
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+  }, []);
+
+  // Extract YouTube video ID
+  const getYouTubeVideoId = (url: string): string => {
+    if (!url) return '';
+    if (url.includes('youtube.com/watch')) {
+      return url.split('v=')[1]?.split('&')[0] || '';
+    } else if (url.includes('youtube.com/live/')) {
+      return url.split('live/')[1]?.split('?')[0] || '';
+    } else if (url.includes('youtu.be/')) {
+      return url.split('youtu.be/')[1]?.split('?')[0] || '';
+    }
+    return '';
+  };
+
+  // Initialize YT.Player and manage volume
   useEffect(() => {
     if (!isFullscreen || !youtubeAudioItemEarly) return;
+    const videoId = getYouTubeVideoId(youtubeAudioItemEarly.url);
+    if (!videoId) return;
 
-    const sendListening = () => {
-      const iframe = ytAudioIframeRef.current;
-      if (!iframe?.contentWindow) return;
-      // YouTube IFrame API handshake: required before player responds to commands
-      iframe.contentWindow.postMessage(JSON.stringify({
-        event: 'listening',
-        id: 'queTAMA-yt-audio',
-        channel: 'widget'
-      }), 'https://www.youtube.com');
+    let cancelled = false;
+    let initIntervalId: any = null;
+
+    const createPlayer = () => {
+      if (cancelled) return;
+      const YT = (window as any).YT;
+      if (!YT || !YT.Player || !ytAudioContainerRef.current) return;
+
+      // Destroy old player if any
+      if (ytAudioPlayerRef.current) {
+        try { ytAudioPlayerRef.current.destroy(); } catch {}
+        ytAudioPlayerRef.current = null;
+      }
+      ytAudioReadyRef.current = false;
+
+      // Create a target div for YT.Player
+      ytAudioContainerRef.current.innerHTML = '<div id="yt-audio-player-target"></div>';
+
+      ytAudioPlayerRef.current = new YT.Player('yt-audio-player-target', {
+        videoId,
+        playerVars: {
+          autoplay: 1,
+          loop: 1,
+          playlist: videoId,
+          controls: 0,
+          enablejsapi: 1,
+        },
+        events: {
+          onReady: (e: any) => {
+            ytAudioReadyRef.current = true;
+            const vol = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
+            try {
+              e.target.unMute();
+              e.target.setVolume(vol);
+              e.target.playVideo();
+              console.log('🔊 [YT Audio] Player ready, volume set to:', vol);
+            } catch (err) {
+              console.error('🔊 [YT Audio] onReady error:', err);
+            }
+          },
+          onStateChange: (e: any) => {
+            // Re-apply volume on play
+            if (e.data === 1 && ytAudioPlayerRef.current) {
+              const vol = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
+              try {
+                ytAudioPlayerRef.current.unMute();
+                ytAudioPlayerRef.current.setVolume(vol);
+              } catch {}
+            }
+          },
+        },
+      });
     };
 
-    const applyVolume = () => {
-      const iframe = ytAudioIframeRef.current;
-      if (!iframe?.contentWindow) return;
-      const vol = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
-      iframe.contentWindow.postMessage(JSON.stringify({
-        event: 'command', func: 'setVolume', args: [vol], id: 'queTAMA-yt-audio', channel: 'widget'
-      }), 'https://www.youtube.com');
-      iframe.contentWindow.postMessage(JSON.stringify({
-        event: 'command', func: 'unMute', args: [], id: 'queTAMA-yt-audio', channel: 'widget'
-      }), 'https://www.youtube.com');
-      console.log('🔊 [YT Audio] setVolume sent:', vol);
-    };
-
-    const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== 'https://www.youtube.com') return;
-      try {
-        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-        if (data.event === 'onReady' || data.event === 'initialDelivery' || data.info?.playerState !== undefined) {
-          ytAudioReadyRef.current = true;
-          applyVolume();
+    // Wait for YT API to be ready
+    if ((window as any).YT && (window as any).YT.Player) {
+      createPlayer();
+    } else {
+      const prevCallback = (window as any).onYouTubeIframeAPIReady;
+      (window as any).onYouTubeIframeAPIReady = () => {
+        if (typeof prevCallback === 'function') prevCallback();
+        createPlayer();
+      };
+      // Fallback poll in case callback was missed
+      initIntervalId = setInterval(() => {
+        if ((window as any).YT && (window as any).YT.Player) {
+          clearInterval(initIntervalId);
+          createPlayer();
         }
-      } catch {}
-    };
-
-    window.addEventListener('message', handleMessage);
-
-    // Send listening handshake immediately and on iframe load events
-    sendListening();
-    const handshakeTimer1 = setTimeout(sendListening, 500);
-    const handshakeTimer2 = setTimeout(sendListening, 1500);
-
-    // Apply immediately if player already ready (volume slider change)
-    if (ytAudioReadyRef.current) {
-      applyVolume();
+      }, 200);
     }
 
-    // Repeat applyVolume a few times to ensure it lands after player is ready
-    const fallbackTimer1 = setTimeout(() => applyVolume(), 1000);
-    const fallbackTimer2 = setTimeout(() => applyVolume(), 3000);
-    const fallbackTimer3 = setTimeout(() => applyVolume(), 6000);
-
     return () => {
-      window.removeEventListener('message', handleMessage);
-      clearTimeout(handshakeTimer1);
-      clearTimeout(handshakeTimer2);
-      clearTimeout(fallbackTimer1);
-      clearTimeout(fallbackTimer2);
-      clearTimeout(fallbackTimer3);
+      cancelled = true;
+      if (initIntervalId) clearInterval(initIntervalId);
+      if (ytAudioPlayerRef.current) {
+        try { ytAudioPlayerRef.current.destroy(); } catch {}
+        ytAudioPlayerRef.current = null;
+      }
+      ytAudioReadyRef.current = false;
     };
-  }, [isFullscreen, youtubeAudioItemEarly?.url, youtubeAudioVolume]);
+  }, [isFullscreen, youtubeAudioItemEarly?.url]);
+
+  // Apply volume changes (slider) without recreating player
+  useEffect(() => {
+    if (!ytAudioPlayerRef.current || !ytAudioReadyRef.current) return;
+    const vol = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
+    try {
+      ytAudioPlayerRef.current.unMute();
+      ytAudioPlayerRef.current.setVolume(vol);
+      console.log('🔊 [YT Audio] Volume updated to:', vol);
+    } catch (err) {
+      console.error('🔊 [YT Audio] setVolume error:', err);
+    }
+  }, [youtubeAudioVolume]);
 
   // Media slideshow management 
   useEffect(() => {
@@ -1610,11 +1671,9 @@ export function TVDisplay({
   );
 
   const youtubeAudioIframe = (isFullscreen && youtubeAudioItemEarly) ? (
-    <iframe
-      ref={ytAudioIframeRef}
-      src={getYouTubeAudioEmbedUrl(youtubeAudioItemEarly.url)}
-      style={{ position: 'fixed', width: '1px', height: '1px', top: '-10px', left: '-10px', opacity: 0, pointerEvents: 'none' }}
-      allow="autoplay"
+    <div
+      ref={ytAudioContainerRef}
+      style={{ position: 'fixed', width: '1px', height: '1px', top: '-10px', left: '-10px', opacity: 0, pointerEvents: 'none', overflow: 'hidden' }}
       data-testid="youtube-audio-iframe"
     />
   ) : null;
