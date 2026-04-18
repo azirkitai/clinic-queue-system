@@ -330,37 +330,45 @@ export function TVDisplay({
     return { color: solidColor || fallbackColor };
   };
   
-  // Extract individual section settings — modern portal-style gradient palette by default
+  // Unified palette — all section backgrounds share the same slate-teal gradient
+  // for a consistent look. Accents (gold/orange) appear in highlight boxes & text.
+  const UNIFIED_BG_COLOR = '#0f172a';
+  const UNIFIED_BG_GRADIENT = 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)';
+  const ACCENT_BG_COLOR = '#f09819';
+  const ACCENT_BG_GRADIENT = 'linear-gradient(135deg, #ff512f 0%, #f09819 100%)';
+
   const headerBackgroundMode = settingsObj.headerBackgroundMode || 'gradient';
-  const headerBackgroundColor = settingsObj.headerBackgroundColor || '#0f172a';
-  const headerBackgroundGradient = settingsObj.headerBackgroundGradient || 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)';
+  const headerBackgroundColor = settingsObj.headerBackgroundColor || UNIFIED_BG_COLOR;
+  const headerBackgroundGradient = settingsObj.headerBackgroundGradient || UNIFIED_BG_GRADIENT;
   
+  // Calling box keeps a warm accent so it pops against the dark base
   const callBackgroundMode = settingsObj.callBackgroundMode || 'gradient';
-  const callBackgroundColor = settingsObj.callBackgroundColor || '#f09819';
-  const callBackgroundGradient = settingsObj.callBackgroundGradient || 'linear-gradient(135deg, #ff512f 0%, #f09819 100%)';
+  const callBackgroundColor = settingsObj.callBackgroundColor || ACCENT_BG_COLOR;
+  const callBackgroundGradient = settingsObj.callBackgroundGradient || ACCENT_BG_GRADIENT;
   
   const prayerTimesBackgroundMode = settingsObj.prayerTimesBackgroundMode || 'gradient';
-  const prayerTimesBackgroundColor = settingsObj.prayerTimesBackgroundColor || '#11998e';
-  const prayerTimesBackgroundGradient = settingsObj.prayerTimesBackgroundGradient || 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
+  const prayerTimesBackgroundColor = settingsObj.prayerTimesBackgroundColor || UNIFIED_BG_COLOR;
+  const prayerTimesBackgroundGradient = settingsObj.prayerTimesBackgroundGradient || UNIFIED_BG_GRADIENT;
   
   const weatherBackgroundMode = settingsObj.weatherBackgroundMode || 'gradient';
-  const weatherBackgroundColor = settingsObj.weatherBackgroundColor || '#f7971e';
-  const weatherBackgroundGradient = settingsObj.weatherBackgroundGradient || 'linear-gradient(135deg, #f7971e 0%, #ffd200 100%)';
+  const weatherBackgroundColor = settingsObj.weatherBackgroundColor || UNIFIED_BG_COLOR;
+  const weatherBackgroundGradient = settingsObj.weatherBackgroundGradient || UNIFIED_BG_GRADIENT;
   
-  const queueBackgroundMode = settingsObj.queueBackgroundMode || 'solid';
-  const queueBackgroundColor = settingsObj.queueBackgroundColor || '#f8fafc';
-  const queueBackgroundGradient = settingsObj.queueBackgroundGradient || 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
+  const queueBackgroundMode = settingsObj.queueBackgroundMode || 'gradient';
+  const queueBackgroundColor = settingsObj.queueBackgroundColor || UNIFIED_BG_COLOR;
+  const queueBackgroundGradient = settingsObj.queueBackgroundGradient || UNIFIED_BG_GRADIENT;
   
+  // Queue items get a subtle elevated tone of the same family
   const queueItemBackgroundMode = settingsObj.queueItemBackgroundMode || 'gradient';
-  const queueItemBackgroundColor = settingsObj.queueItemBackgroundColor || '#0072ff';
-  const queueItemBackgroundGradient = settingsObj.queueItemBackgroundGradient || 'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)';
+  const queueItemBackgroundColor = settingsObj.queueItemBackgroundColor || '#1e293b';
+  const queueItemBackgroundGradient = settingsObj.queueItemBackgroundGradient || 'linear-gradient(135deg, #1e293b 0%, #0f766e 100%)';
   
   const historyNameColor = settingsObj.historyNameColor || '#facc15';
   const historyNameMode = settingsObj.historyNameMode || 'gradient';
   const historyNameGradient = settingsObj.historyNameGradient || 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)';
   
   const marqueeBackgroundMode = settingsObj.marqueeBackgroundMode || 'gradient';
-  const marqueeBackgroundGradient = settingsObj.marqueeBackgroundGradient || 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)';
+  const marqueeBackgroundGradient = settingsObj.marqueeBackgroundGradient || UNIFIED_BG_GRADIENT;
   
   // Extract text color settings
   const headerTextMode = settingsObj.headerTextMode || 'solid';
