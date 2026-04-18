@@ -439,10 +439,6 @@ export function TVDisplay({
   const weatherBackgroundColor = settingsObj.weatherBackgroundColor || UNIFIED_BG_COLOR;
   const weatherBackgroundGradient = settingsObj.weatherBackgroundGradient || UNIFIED_BG_GRADIENT;
   
-  const queueBackgroundMode = settingsObj.queueBackgroundMode || 'gradient';
-  const queueBackgroundColor = settingsObj.queueBackgroundColor || UNIFIED_BG_COLOR;
-  const queueBackgroundGradient = settingsObj.queueBackgroundGradient || UNIFIED_BG_GRADIENT;
-  
   // Queue items get a subtle elevated tone of the same family
   const queueItemBackgroundMode = settingsObj.queueItemBackgroundMode || 'gradient';
   const queueItemBackgroundColor = settingsObj.queueItemBackgroundColor || '#1e293b';

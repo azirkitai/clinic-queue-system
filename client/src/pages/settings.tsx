@@ -2019,54 +2019,6 @@ export default function Settings() {
                 </div>
               </div>
 
-              {/* Background Color Section */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">List Background</Label>
-                <div className="flex items-center gap-2">
-                  <div className="flex border rounded-md">
-                    <Button
-                      variant={currentSettings.queueBackgroundMode === 'solid' ? 'default' : 'ghost'}
-                      size="sm"
-                      className="h-7 px-2 text-xs rounded-r-none"
-                      onClick={() => updateDisplaySetting('queueBackgroundMode', 'solid')}
-                      data-testid="button-queue-solid"
-                    >
-                      Solid
-                    </Button>
-                    <Button
-                      variant={currentSettings.queueBackgroundMode === 'gradient' ? 'default' : 'ghost'}
-                      size="sm"
-                      className="h-7 px-2 text-xs rounded-l-none border-l"
-                      onClick={() => updateDisplaySetting('queueBackgroundMode', 'gradient')}
-                      data-testid="button-queue-gradient"
-                    >
-                      <Brush className="h-3 w-3" />
-                    </Button>
-                  </div>
-                  {currentSettings.queueBackgroundMode === 'solid' ? (
-                    <Input
-                      type="color"
-                      value={currentSettings.queueBackgroundColor || '#0f172a'}
-                      onChange={(e) => updateDisplaySetting('queueBackgroundColor', e.target.value)}
-                      className="w-12 p-0 border-2"
-                      data-testid="input-queue-bg-color"
-                    />
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-12 p-0"
-                      onClick={() => setGradientPickers(prev => ({ ...prev, queue: true }))}
-                      data-testid="button-queue-gradient-picker"
-                      style={{
-                        background: currentSettings.queueBackgroundGradient,
-                        border: '2px solid #e5e7eb'
-                      }}
-                    >
-                    </Button>
-                  )}
-                </div>
-              </div>
             </div>
             
             {/* Queue Item Background Controls */}
