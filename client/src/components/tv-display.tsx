@@ -298,7 +298,7 @@ export function TVDisplay({
   const enableMarquee = settingsObj.enableMarquee === 'true';
   const marqueeText = settingsObj.marqueeText || "Welcome to the Health Clinic";
   const marqueeColor = settingsObj.marqueeColor || "#ffffff";
-  const marqueeBackgroundColor = settingsObj.marqueeBackgroundColor || "#1e40af";
+  const marqueeBackgroundColor = settingsObj.marqueeBackgroundColor || "#0f172a";
 
   // Extract modal highlight box settings
   const modalBackgroundColor = settingsObj.modalBackgroundColor || '#1e293b';
@@ -332,16 +332,16 @@ export function TVDisplay({
   
   // Extract individual section settings
   const headerBackgroundMode = settingsObj.headerBackgroundMode || 'solid';
-  const headerBackgroundColor = settingsObj.headerBackgroundColor || '#1e40af';
-  const headerBackgroundGradient = settingsObj.headerBackgroundGradient || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+  const headerBackgroundColor = settingsObj.headerBackgroundColor || '#0f172a';
+  const headerBackgroundGradient = settingsObj.headerBackgroundGradient || 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)';
   
   const callBackgroundMode = settingsObj.callBackgroundMode || 'solid';
   const callBackgroundColor = settingsObj.callBackgroundColor || '#16a34a';
   const callBackgroundGradient = settingsObj.callBackgroundGradient || 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
   
   const prayerTimesBackgroundMode = settingsObj.prayerTimesBackgroundMode || 'solid';
-  const prayerTimesBackgroundColor = settingsObj.prayerTimesBackgroundColor || '#7c3aed';
-  const prayerTimesBackgroundGradient = settingsObj.prayerTimesBackgroundGradient || 'linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)';
+  const prayerTimesBackgroundColor = settingsObj.prayerTimesBackgroundColor || '#0f766e';
+  const prayerTimesBackgroundGradient = settingsObj.prayerTimesBackgroundGradient || 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)';
   
   const weatherBackgroundMode = settingsObj.weatherBackgroundMode || 'solid';
   const weatherBackgroundColor = settingsObj.weatherBackgroundColor || '#f97316';
@@ -352,8 +352,8 @@ export function TVDisplay({
   const queueBackgroundGradient = settingsObj.queueBackgroundGradient || 'linear-gradient(135deg, #74b9ff 0%, #0984e3 100%)';
   
   const queueItemBackgroundMode = settingsObj.queueItemBackgroundMode || 'solid';
-  const queueItemBackgroundColor = settingsObj.queueItemBackgroundColor || '#2563eb';
-  const queueItemBackgroundGradient = settingsObj.queueItemBackgroundGradient || 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)';
+  const queueItemBackgroundColor = settingsObj.queueItemBackgroundColor || '#0ea5e9';
+  const queueItemBackgroundGradient = settingsObj.queueItemBackgroundGradient || 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)';
   
   const historyNameColor = settingsObj.historyNameColor || '#facc15';
   const historyNameMode = settingsObj.historyNameMode || 'solid';
@@ -1114,7 +1114,7 @@ export function TVDisplay({
       <div className={`${isFullscreen ? 'p-0 m-0 row-span-2' : 'p-4 row-span-2'} flex flex-col w-full h-full`}
            style={{
              color: '#ffffff',
-             ...getBackgroundStyle(headerBackgroundMode, headerBackgroundColor, headerBackgroundGradient, '#1d4ed8')
+             ...getBackgroundStyle(headerBackgroundMode, headerBackgroundColor, headerBackgroundGradient, '#0f172a')
            }}>
         {/* Header */}
         <div className={`text-center ${isFullscreen ? 'mb-2 pt-4 px-4' : 'mb-4'}`}>
@@ -1143,7 +1143,7 @@ export function TVDisplay({
           </h1>
           <div className="px-4 py-2 rounded-lg mt-2"
                style={{
-                 ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#1e40af'),
+                 ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#16a34a'),
                  color: '#ffffff'
                }}>
             <h2 className="font-bold" style={{ 
@@ -1158,7 +1158,7 @@ export function TVDisplay({
         {currentPatient ? (
           <div className={`${isFullscreen ? 'p-2 mx-4 rounded-md mb-2' : 'p-3 rounded-lg mb-3'} text-center`}
                style={{
-                 ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#2563eb')
+                 ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#16a34a')
                }}>
             <div className={`font-bold ${isBlinking ? 'tv-blink-active' : ''}`}
                  style={{ 
@@ -1186,7 +1186,7 @@ export function TVDisplay({
         ) : (
           <div className={`${isFullscreen ? 'p-2 mx-4 rounded-md mb-2' : 'p-3 rounded-lg mb-3'} text-center`}
                style={{
-                 ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#2563eb')
+                 ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#16a34a')
                }}>
             <div style={{ fontSize: 'var(--tv-fs-2xl, 48px)', color: '#ffffff' }}>N/A</div>
           </div>
