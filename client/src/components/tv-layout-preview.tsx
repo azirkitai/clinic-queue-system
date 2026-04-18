@@ -61,7 +61,6 @@ export function TvLayoutPreview({ highlight }: TvLayoutPreviewProps) {
   const callBg = getBg(s.callBackgroundMode || 'gradient', s.callBackgroundColor, s.callBackgroundGradient, ACCENT_BG_COLOR, ACCENT_BG_GRADIENT);
   const prayerBg = getBg(s.prayerTimesBackgroundMode || 'gradient', s.prayerTimesBackgroundColor, s.prayerTimesBackgroundGradient, UNIFIED_BG_COLOR, UNIFIED_BG_GRADIENT);
   const weatherBg = getBg(s.weatherBackgroundMode || 'gradient', s.weatherBackgroundColor, s.weatherBackgroundGradient, UNIFIED_BG_COLOR, UNIFIED_BG_GRADIENT);
-  const queueBg = getBg(s.queueBackgroundMode || 'gradient', s.queueBackgroundColor, s.queueBackgroundGradient, UNIFIED_BG_COLOR, UNIFIED_BG_GRADIENT);
   const queueItemBg = getBg(s.queueItemBackgroundMode || 'gradient', s.queueItemBackgroundColor, s.queueItemBackgroundGradient, '#1e293b', 'linear-gradient(135deg, #1e293b 0%, #0f766e 100%)');
   const marqueeBg = getBg(s.marqueeBackgroundMode || 'gradient', s.marqueeBackgroundColor, s.marqueeBackgroundGradient, UNIFIED_BG_COLOR, UNIFIED_BG_GRADIENT);
 
@@ -140,9 +139,7 @@ export function TvLayoutPreview({ highlight }: TvLayoutPreviewProps) {
             </div>
 
             {/* History list */}
-            <div className={`mx-0.5 mt-1 flex-1 overflow-hidden rounded-sm p-0.5 ${
-              is('queue') ? `${pulse} ${ring}` : ''
-            }`} style={queueBg}>
+            <div className="mx-0.5 mt-1 flex-1 overflow-hidden rounded-sm p-0.5 flex flex-col gap-px">
               {[1, 2, 3].map(i => (
                 <div key={i} className={`flex flex-col items-center rounded-sm mb-px py-px ${
                   is(['queueItem', 'queue']) ? `${pulse} ${ring}` : ''
