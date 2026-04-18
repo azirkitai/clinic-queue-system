@@ -1544,32 +1544,52 @@ export class DatabaseStorage implements IStorage {
   }
 
   private async initializeDefaultTheme() {
-    const existing = await db.select().from(schema.themes)
-      .where(eq(schema.themes.isActive, true))
+    const defaultPalette = {
+      primaryColor: "#0ea5e9",
+      secondaryColor: "#64748b",
+      callingColor: "#059669",
+      highlightBoxColor: "#f59e0b",
+      historyNameColor: "#475569",
+      clinicNameColor: "#0f172a",
+      modalBackgroundColor: "#0f172a",
+      modalBorderColor: "#facc15",
+      modalTextColor: "#ffffff",
+      callingGradient: null,
+      highlightBoxGradient: null,
+      historyNameGradient: null,
+      clinicNameGradient: null,
+      backgroundColor: "#ffffff",
+      backgroundGradient: null,
+      accentColor: "#e0f2fe",
+    };
+
+    const existingSystem = await db.select().from(schema.themes)
+      .where(and(
+        eq(schema.themes.userId, this.systemUserId),
+        eq(schema.themes.name, "Default Theme"),
+      ))
       .limit(1);
 
-    if (existing.length === 0) {
+    if (existingSystem.length === 0) {
       await db.insert(schema.themes).values({
         name: "Default Theme",
         isActive: true,
-        primaryColor: "#0ea5e9",
-        secondaryColor: "#64748b",
-        callingColor: "#059669",
-        highlightBoxColor: "#f59e0b",
-        historyNameColor: "#475569",
-        clinicNameColor: "#0f172a",
-        modalBackgroundColor: "#0f172a",
-        modalBorderColor: "#facc15",
-        modalTextColor: "#ffffff",
-        callingGradient: null,
-        highlightBoxGradient: null,
-        historyNameGradient: null,
-        clinicNameGradient: null,
-        backgroundColor: "#ffffff",
-        backgroundGradient: null,
-        accentColor: "#e0f2fe",
         userId: this.systemUserId,
+        ...defaultPalette,
       });
+      console.log("[THEME] Created system Default Theme with modern palette");
+    } else {
+      const current = existingSystem[0];
+      const isLegacyPalette =
+        current.primaryColor === "#3b82f6" &&
+        current.callingColor === "#3b82f6" &&
+        current.highlightBoxColor === "#ef4444";
+      if (isLegacyPalette) {
+        await db.update(schema.themes)
+          .set({ ...defaultPalette, updatedAt: new Date() })
+          .where(eq(schema.themes.id, current.id));
+        console.log("[THEME] Refreshed system Default Theme with modern palette");
+      }
     }
   }
 
