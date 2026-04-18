@@ -363,9 +363,9 @@ export function TVDisplay({
       if (!response.ok) throw new Error('Failed to fetch settings');
       return response.json();
     },
-    staleTime: 180000, // ✅ BANDWIDTH SAVE: Cache for 3 min - settings rarely change
-    refetchInterval: 180000, // ✅ BANDWIDTH SAVE: Poll every 3 min (was 60s = 3x reduction!)
-    refetchOnMount: false, // ❌ Disable - use cached data
+    staleTime: 3000, // ⚡ Volume slider needs fast sync — refetch every 5s if stale
+    refetchInterval: 5000, // ⚡ Poll every 5s so slider changes reach TV within 5s even if WS drops
+    refetchOnMount: 'always', // ⚡ Always get fresh settings when component mounts
     refetchOnWindowFocus: false, // ❌ Disable - prevents burst
   });
 
