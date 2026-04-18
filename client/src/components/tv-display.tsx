@@ -114,6 +114,79 @@ interface TVDisplayProps {
   tvToken?: string;
 }
 
+function FitText({
+  text,
+  baseStyle,
+  className,
+  testId,
+  maxFontSize = 56,
+  minFontSize = 14,
+}: {
+  text: string;
+  baseStyle?: React.CSSProperties;
+  className?: string;
+  testId?: string;
+  maxFontSize?: number;
+  minFontSize?: number;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const spanRef = useRef<HTMLSpanElement | null>(null);
+  const [fontSize, setFontSize] = useState(maxFontSize);
+
+  useEffect(() => {
+    const fit = () => {
+      const container = containerRef.current;
+      const span = spanRef.current;
+      if (!container || !span) return;
+      let lo = minFontSize;
+      let hi = maxFontSize;
+      let best = minFontSize;
+      const cw = container.clientWidth;
+      const ch = container.clientHeight;
+      if (cw <= 0 || ch <= 0) return;
+      for (let i = 0; i < 10; i++) {
+        const mid = Math.floor((lo + hi) / 2);
+        span.style.fontSize = `${mid}px`;
+        if (span.scrollWidth <= cw && span.scrollHeight <= ch) {
+          best = mid;
+          lo = mid + 1;
+        } else {
+          hi = mid - 1;
+        }
+        if (lo > hi) break;
+      }
+      span.style.fontSize = `${best}px`;
+      setFontSize(best);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, [text, maxFontSize, minFontSize]);
+
+  return (
+    <div
+      ref={containerRef}
+      className={className}
+      style={{ width: '100%', height: '100%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      data-testid={testId}
+    >
+      <span
+        ref={spanRef}
+        style={{
+          ...baseStyle,
+          fontSize: `${fontSize}px`,
+          whiteSpace: 'nowrap',
+          lineHeight: 1.1,
+          display: 'inline-block',
+        }}
+      >
+        {text}
+      </span>
+    </div>
+  );
+}
+
 export function TVDisplay({ 
   currentPatient,
   queueWaiting = [], // Not currently rendered (reserved for future use)
@@ -1226,28 +1299,18 @@ export function TVDisplay({
                      style={{
                        ...getBackgroundStyle(queueItemBackgroundMode, queueItemBackgroundColor, queueItemBackgroundGradient, '#2563eb')
                      }}>
-                  <div className="text-center flex items-center justify-center" 
-                       style={{ 
-                         ...getHistoryNameStyle(),
-                         fontSize: historyFontSizes[item.id]?.name || 'var(--tv-fs-xl, 32px)',
-                         fontWeight: 'bold',
-                         lineHeight: '1.1',
-                         wordBreak: 'break-word',
-                         overflow: 'hidden'
-                       }}>
-                    {getDisplayName(item.name)}
-                  </div>
-                  <div className="text-center flex items-center justify-center" 
-                       style={{ 
-                         ...getHistoryNameStyle(),
-                         fontSize: historyFontSizes[item.id]?.room || 'var(--tv-fs-xl, 32px)',
-                         fontWeight: 'normal',
-                         lineHeight: '1.1',
-                         wordBreak: 'break-word',
-                         overflow: 'hidden'
-                       }}>
-                    {item.room}
-                  </div>
+                  <FitText
+                    text={getDisplayName(item.name)}
+                    baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'bold' }}
+                    maxFontSize={isFullscreen ? 56 : 42}
+                    minFontSize={12}
+                  />
+                  <FitText
+                    text={item.room}
+                    baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'normal' }}
+                    maxFontSize={isFullscreen ? 56 : 42}
+                    minFontSize={12}
+                  />
                 </div>
               ))
             ) : (
