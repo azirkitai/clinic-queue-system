@@ -121,6 +121,7 @@ function FitText({
   testId,
   maxFontSize = 56,
   minFontSize = 14,
+  align = 'center',
 }: {
   text: string;
   baseStyle?: React.CSSProperties;
@@ -128,6 +129,7 @@ function FitText({
   testId?: string;
   maxFontSize?: number;
   minFontSize?: number;
+  align?: 'start' | 'center' | 'end';
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const spanRef = useRef<HTMLSpanElement | null>(null);
@@ -178,7 +180,7 @@ function FitText({
     <div
       ref={containerRef}
       className={className}
-      style={{ width: '100%', height: '100%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      style={{ width: '100%', height: '100%', overflow: 'hidden', display: 'flex', alignItems: align === 'start' ? 'flex-start' : align === 'end' ? 'flex-end' : 'center', justifyContent: 'center' }}
       data-testid={testId}
     >
       <span
@@ -1299,6 +1301,7 @@ export function TVDisplay({
                       baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'bold' }}
                       maxFontSize={isFullscreen ? 64 : 48}
                       minFontSize={isFullscreen ? 24 : 20}
+                      align="end"
                     />
                   </div>
                   <div style={{ flex: '2 1 0', minHeight: 0, width: '100%' }}>
@@ -1307,6 +1310,7 @@ export function TVDisplay({
                       baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'normal', opacity: 0.9 }}
                       maxFontSize={isFullscreen ? 44 : 32}
                       minFontSize={isFullscreen ? 18 : 16}
+                      align="start"
                     />
                   </div>
                 </div>
