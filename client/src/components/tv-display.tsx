@@ -1288,10 +1288,16 @@ export function TVDisplay({
         {/* History Section - Recent Calling History */}
         <div className="flex-1 mt-4 flex flex-col min-h-0">
           {/* Recent Calling History Items (rolling log of recent calls, max 4) */}
-          <div className="flex flex-col gap-2 overflow-hidden flex-1 min-h-0" data-testid="queue-list">
-            {queueHistory.length > 0 ? (
-              queueHistory.slice(0, 4).map((item) => (
-                <div key={item.id} className="flex flex-col px-2 py-1 rounded-lg flex-1 min-h-0 leading-none"
+          <div className="grid grid-rows-4 gap-2 overflow-hidden flex-1 min-h-0" data-testid="queue-list">
+            {Array.from({ length: 4 }).map((_, idx) => {
+              const item = queueHistory[idx];
+              if (!item) {
+                return (
+                  <div key={`empty-${idx}`} className="rounded-lg min-h-0 opacity-0" />
+                );
+              }
+              return (
+                <div key={item.id} className="flex flex-col px-2 py-1 rounded-lg min-h-0 leading-none"
                      style={{
                        ...getBackgroundStyle(queueItemBackgroundMode, queueItemBackgroundColor, queueItemBackgroundGradient, '#2563eb')
                      }}>
@@ -1314,18 +1320,8 @@ export function TVDisplay({
                     />
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-4">
-                <p style={{ 
-                  ...getTextGroupStyles('Patient History', true),
-                  ...getHistoryNameStyle(),
-                  fontSize: 'var(--tv-fs-xl, 32px)', // Responsive: auto-scales from 22px to 48px
-                  fontWeight: 'bold'
-                }} 
-                data-testid="text-no-queue">N/A</p>
-              </div>
-            )}
+              );
+            })}
           </div>
         </div>
 
