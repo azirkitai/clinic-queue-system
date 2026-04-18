@@ -134,34 +134,44 @@ function FitText({
   const [fontSize, setFontSize] = useState(maxFontSize);
 
   useEffect(() => {
+    let rafId = 0;
     const fit = () => {
-      const container = containerRef.current;
-      const span = spanRef.current;
-      if (!container || !span) return;
-      let lo = minFontSize;
-      let hi = maxFontSize;
-      let best = minFontSize;
-      const cw = container.clientWidth;
-      const ch = container.clientHeight;
-      if (cw <= 0 || ch <= 0) return;
-      for (let i = 0; i < 10; i++) {
-        const mid = Math.floor((lo + hi) / 2);
-        span.style.fontSize = `${mid}px`;
-        if (span.scrollWidth <= cw && span.scrollHeight <= ch) {
-          best = mid;
-          lo = mid + 1;
-        } else {
-          hi = mid - 1;
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const container = containerRef.current;
+        const span = spanRef.current;
+        if (!container || !span) return;
+        const cw = container.clientWidth;
+        const ch = container.clientHeight;
+        if (cw <= 0 || ch <= 0) return;
+        let lo = minFontSize;
+        let hi = maxFontSize;
+        let best = minFontSize;
+        for (let i = 0; i < 12; i++) {
+          if (lo > hi) break;
+          const mid = Math.floor((lo + hi) / 2);
+          span.style.fontSize = `${mid}px`;
+          if (span.scrollWidth <= cw && span.scrollHeight <= ch) {
+            best = mid;
+            lo = mid + 1;
+          } else {
+            hi = mid - 1;
+          }
         }
-        if (lo > hi) break;
-      }
-      span.style.fontSize = `${best}px`;
-      setFontSize(best);
+        span.style.fontSize = `${best}px`;
+        setFontSize(best);
+      });
     };
     fit();
-    const ro = new ResizeObserver(fit);
-    if (containerRef.current) ro.observe(containerRef.current);
-    return () => ro.disconnect();
+    let ro: ResizeObserver | null = null;
+    try {
+      ro = new ResizeObserver(fit);
+      if (containerRef.current) ro.observe(containerRef.current);
+    } catch {}
+    return () => {
+      cancelAnimationFrame(rafId);
+      if (ro) ro.disconnect();
+    };
   }, [text, maxFontSize, minFontSize]);
 
   return (
