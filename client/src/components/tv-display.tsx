@@ -1286,10 +1286,10 @@ export function TVDisplay({
         {/* History Section - Recent Calling History */}
         <div className="flex-1 mt-4 flex flex-col min-h-0">
           {/* Recent Calling History Items (rolling log of recent calls, max 4) */}
-          <div className="flex flex-col gap-4 overflow-hidden flex-1 min-h-0" data-testid="queue-list">
+          <div className="flex flex-col gap-2 overflow-hidden flex-1 min-h-0" data-testid="queue-list">
             {queueHistory.length > 0 ? (
               queueHistory.slice(0, 4).map((item) => (
-                <div key={item.id} className="flex flex-col p-2 rounded-lg flex-1 min-h-0"
+                <div key={item.id} className="flex flex-col px-2 py-1 rounded-lg flex-1 min-h-0 leading-none"
                      style={{
                        ...getBackgroundStyle(queueItemBackgroundMode, queueItemBackgroundColor, queueItemBackgroundGradient, '#2563eb')
                      }}>
@@ -1298,15 +1298,15 @@ export function TVDisplay({
                       text={getDisplayName(item.name)}
                       baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'bold' }}
                       maxFontSize={isFullscreen ? 64 : 48}
-                      minFontSize={isFullscreen ? 28 : 22}
+                      minFontSize={isFullscreen ? 24 : 20}
                     />
                   </div>
                   <div style={{ flex: '2 1 0', minHeight: 0, width: '100%' }}>
                     <FitText
                       text={item.room}
                       baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'normal', opacity: 0.9 }}
-                      maxFontSize={isFullscreen ? 48 : 36}
-                      minFontSize={isFullscreen ? 22 : 18}
+                      maxFontSize={isFullscreen ? 44 : 32}
+                      minFontSize={isFullscreen ? 18 : 16}
                     />
                   </div>
                 </div>
