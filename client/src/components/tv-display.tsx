@@ -1036,28 +1036,52 @@ export function TVDisplay({
           playlist: videoId,
           controls: 0,
           enablejsapi: 1,
+          mute: 1, // Start muted so autoplay works; we'll unMute after PLAYING
         },
         events: {
           onReady: (e: any) => {
             ytAudioReadyRef.current = true;
-            const vol = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
             try {
-              e.target.unMute();
+              const vol = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
               e.target.setVolume(vol);
               e.target.playVideo();
-              console.log('🔊 [YT Audio] Player ready, volume set to:', vol);
+              console.log('🔊 [YT Audio] Player ready, will set volume to:', vol);
             } catch (err) {
               console.error('🔊 [YT Audio] onReady error:', err);
             }
           },
           onStateChange: (e: any) => {
-            // Re-apply volume on play
+            // YT.PlayerState.PLAYING === 1
             if (e.data === 1 && ytAudioPlayerRef.current) {
               const vol = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
               try {
+                // CRITICAL ORDER: setVolume FIRST, then unMute
+                // YouTube resets to last-user-preference if you unMute first
+                ytAudioPlayerRef.current.setVolume(vol);
                 ytAudioPlayerRef.current.unMute();
                 ytAudioPlayerRef.current.setVolume(vol);
-              } catch {}
+                console.log('🔊 [YT Audio] PLAYING - volume forced to:', vol);
+
+                // Re-enforce after small delays to combat YT's quirky volume reset
+                setTimeout(() => {
+                  if (ytAudioPlayerRef.current) {
+                    try {
+                      const v = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
+                      ytAudioPlayerRef.current.setVolume(v);
+                    } catch {}
+                  }
+                }, 500);
+                setTimeout(() => {
+                  if (ytAudioPlayerRef.current) {
+                    try {
+                      const v = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
+                      ytAudioPlayerRef.current.setVolume(v);
+                    } catch {}
+                  }
+                }, 2000);
+              } catch (err) {
+                console.error('🔊 [YT Audio] onStateChange error:', err);
+              }
             }
           },
         },
