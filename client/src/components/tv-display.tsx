@@ -1284,9 +1284,9 @@ export function TVDisplay({
         )}
 
         {/* History Section - Recent Calling History */}
-        <div className="flex-1 mt-4">
+        <div className="flex-1 mt-4 flex flex-col min-h-0">
           {/* Recent Calling History Items (rolling log of recent calls, max 4) */}
-          <div className="flex flex-col gap-4 overflow-hidden flex-1" data-testid="queue-list">
+          <div className="flex flex-col gap-4 overflow-hidden flex-1 min-h-0" data-testid="queue-list">
             {queueHistory.length > 0 ? (
               queueHistory.slice(0, 4).map((item) => (
                 <div key={item.id} className="flex flex-col p-2 rounded-lg flex-1 min-h-0"
