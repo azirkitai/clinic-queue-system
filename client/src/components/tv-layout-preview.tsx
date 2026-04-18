@@ -218,20 +218,20 @@ export function TvLayoutPreview({ highlight }: TvLayoutPreviewProps) {
 
       <div className="text-center mt-1.5">
         <span className="text-[10px] font-medium text-red-600 dark:text-red-400">
-          {highlight === 'header' && 'Background Kanan (Header)'}
-          {highlight === 'clinicName' && 'Teks Nama Klinik'}
-          {highlight === 'clinicLogo' && 'Logo Klinik'}
-          {highlight === 'call' && 'Background Panggilan'}
-          {highlight === 'callName' && 'Nama Pesakit (Panggilan)'}
-          {highlight === 'callWindow' && 'Nama Bilik/Kaunter'}
-          {highlight === 'modal' && 'Popup Highlight (Panggilan)'}
-          {highlight === 'prayer' && 'Bahagian Waktu Solat'}
-          {highlight === 'weather' && 'Bahagian Cuaca'}
-          {highlight === 'queue' && 'Background Senarai Giliran'}
-          {highlight === 'queueItem' && 'Box Setiap Pesakit'}
-          {highlight === 'queueHistory' && 'Nama Pesakit (Sejarah)'}
-          {highlight === 'marquee' && 'Bahagian Marquee (bawah)'}
-          {highlight === 'media' && 'Bahagian Media/Iklan (kiri atas)'}
+          {highlight === 'header' && 'Right Background (Header)'}
+          {highlight === 'clinicName' && 'Clinic Name Text'}
+          {highlight === 'clinicLogo' && 'Clinic Logo'}
+          {highlight === 'call' && 'Calling Background'}
+          {highlight === 'callName' && 'Patient Name (Calling)'}
+          {highlight === 'callWindow' && 'Room/Counter Name'}
+          {highlight === 'modal' && 'Highlight Popup (Calling)'}
+          {highlight === 'prayer' && 'Prayer Times Section'}
+          {highlight === 'weather' && 'Weather Section'}
+          {highlight === 'queue' && 'Queue List Background'}
+          {highlight === 'queueItem' && 'Patient Box'}
+          {highlight === 'queueHistory' && 'Patient Name (History)'}
+          {highlight === 'marquee' && 'Marquee Section (bottom)'}
+          {highlight === 'media' && 'Media / Ads Section (top-left)'}
         </span>
       </div>
     </div>
