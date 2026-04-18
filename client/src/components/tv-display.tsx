@@ -1008,6 +1008,11 @@ export function TVDisplay({
 
     window.addEventListener('message', handleMessage);
 
+    // Apply immediately if player already ready (volume slider change)
+    if (ytAudioReadyRef.current) {
+      applyVolume();
+    }
+
     const fallbackTimer = setTimeout(() => {
       applyVolume();
     }, 3000);
