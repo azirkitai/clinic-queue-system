@@ -218,7 +218,7 @@ export default function Dashboard() {
 
   const showPrayerTimes = settings.showPrayerTimes === true;
   const showWeather = settings.showWeather === true;
-  const clinicName = settings.clinicName || "";
+  const clinicName = settings.clinicName || "KLINIK UTAMA 24 JAM";
   const clinicLogo = logoData?.logo || ""; // ✅ From separate logo endpoint with 1-hour cache
   const showClinicLogo = settings.showClinicLogo === "true";
 

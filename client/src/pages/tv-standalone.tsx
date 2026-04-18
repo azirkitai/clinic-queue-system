@@ -209,7 +209,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
 
   const showPrayerTimes = settings.showPrayerTimes === true;
   const showWeather = settings.showWeather === true;
-  const clinicName = settings.clinicName || clinicInfo?.clinicName || "CLINIC";
+  const clinicName = settings.clinicName || clinicInfo?.clinicName || "KLINIK UTAMA 24 JAM";
 
   const callLogRef = useRef<Array<{ logId: string; patientId: string; name: string; room: string; calledAt: Date }>>([]);
   const prevSnapshotRef = useRef<Map<string, { calledAt: string | null; windowName: string | null; status: string }>>(new Map());
