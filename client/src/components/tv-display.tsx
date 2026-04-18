@@ -1285,42 +1285,30 @@ export function TVDisplay({
 
         {/* History Section - Recent Calling History */}
         <div className="flex-1 mt-4">
-          {/* Queue Header */}
-          <div className="mb-4">
-            <div className="grid grid-cols-2 gap-1">
-              <div className="font-bold text-center" style={{ 
-                fontSize: 'var(--tv-fs-2xl, 48px)', // Bigger: auto-scales from 28px to 64px
-                ...getHistoryNameStyle(),
-                ...getTextGroupStyles('Token Label', true)
-              }}>NAME</div>
-              <div className="font-bold text-center" style={{ 
-                fontSize: 'var(--tv-fs-2xl, 48px)', // Bigger: auto-scales from 28px to 64px
-                ...getHistoryNameStyle(),
-                ...getTextGroupStyles('Token Label', true)
-              }}>ROOM</div>
-            </div>
-          </div>
-          
           {/* Recent Calling History Items (rolling log of recent calls, max 4) */}
-          <div className="flex flex-col gap-4 overflow-hidden flex-1" data-testid="queue-list">
+          <div className="flex flex-col gap-3 overflow-hidden flex-1" data-testid="queue-list">
             {queueHistory.length > 0 ? (
               queueHistory.slice(0, 4).map((item) => (
-                <div key={item.id} className="grid grid-cols-2 gap-1 p-2 rounded-lg flex-1 min-h-0"
+                <div key={item.id} className="flex flex-col items-center justify-center p-2 rounded-lg flex-1 min-h-0"
                      style={{
                        ...getBackgroundStyle(queueItemBackgroundMode, queueItemBackgroundColor, queueItemBackgroundGradient, '#2563eb')
                      }}>
-                  <FitText
-                    text={getDisplayName(item.name)}
-                    baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'bold' }}
-                    maxFontSize={isFullscreen ? 56 : 42}
-                    minFontSize={isFullscreen ? 28 : 22}
-                  />
-                  <FitText
-                    text={item.room}
-                    baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'normal' }}
-                    maxFontSize={isFullscreen ? 56 : 42}
-                    minFontSize={isFullscreen ? 28 : 22}
-                  />
+                  <div className="w-full" style={{ flex: '1 1 0', minHeight: 0 }}>
+                    <FitText
+                      text={getDisplayName(item.name)}
+                      baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'bold' }}
+                      maxFontSize={isFullscreen ? 64 : 48}
+                      minFontSize={isFullscreen ? 28 : 22}
+                    />
+                  </div>
+                  <div className="w-full" style={{ flex: '1 1 0', minHeight: 0 }}>
+                    <FitText
+                      text={item.room}
+                      baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'normal', opacity: 0.9 }}
+                      maxFontSize={isFullscreen ? 48 : 36}
+                      minFontSize={isFullscreen ? 22 : 18}
+                    />
+                  </div>
                 </div>
               ))
             ) : (
