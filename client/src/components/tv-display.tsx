@@ -1048,9 +1048,12 @@ export function TVDisplay({
             ytAudioReadyRef.current = true;
             try {
               const vol = ytAudioDuckedRef.current ? 0 : ytAudioVolumeRef.current;
+              // CRITICAL: Reset YT's internal "pre-mute volume" baseline to our target.
+              // Without this, unMute() will restore to default 100 and cause loud spike.
               e.target.setVolume(vol);
+              e.target.mute();        // re-mute so YT remembers `vol` as pre-mute baseline
               e.target.playVideo();
-              console.log('🔊 [YT Audio] Player ready, will set volume to:', vol);
+              console.log('🔊 [YT Audio] Player ready, baseline volume set to:', vol);
             } catch (err) {
               console.error('🔊 [YT Audio] onReady error:', err);
             }
@@ -1060,7 +1063,7 @@ export function TVDisplay({
             if (e.data === 1 && ytAudioPlayerRef.current) {
               const vol = ytAudioDuckedRef.current ? 0 : ytAudioVolumeRef.current;
               try {
-                // CRITICAL ORDER: setVolume FIRST, then unMute
+                // Baseline already set in onReady, so unMute restores to `vol` not 100
                 ytAudioPlayerRef.current.setVolume(vol);
                 ytAudioPlayerRef.current.unMute();
                 ytAudioPlayerRef.current.setVolume(vol);
