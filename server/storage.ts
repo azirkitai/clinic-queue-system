@@ -1545,21 +1545,21 @@ export class DatabaseStorage implements IStorage {
 
   private async initializeDefaultTheme() {
     const defaultPalette = {
-      primaryColor: "#0ea5e9",
-      secondaryColor: "#64748b",
-      callingColor: "#059669",
-      highlightBoxColor: "#f59e0b",
-      historyNameColor: "#475569",
-      clinicNameColor: "#0f172a",
+      primaryColor: "#0072ff",
+      secondaryColor: "#475569",
+      callingColor: "#f09819",
+      highlightBoxColor: "#ff512f",
+      historyNameColor: "#f59e0b",
+      clinicNameColor: "#fbbf24",
       modalBackgroundColor: "#0f172a",
-      modalBorderColor: "#facc15",
+      modalBorderColor: "#fbbf24",
       modalTextColor: "#ffffff",
-      callingGradient: null,
-      highlightBoxGradient: null,
-      historyNameGradient: null,
-      clinicNameGradient: null,
+      callingGradient: "linear-gradient(135deg, #ff512f 0%, #f09819 100%)",
+      highlightBoxGradient: "linear-gradient(135deg, #ff512f 0%, #f09819 100%)",
+      historyNameGradient: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
+      clinicNameGradient: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
       backgroundColor: "#ffffff",
-      backgroundGradient: null,
+      backgroundGradient: "linear-gradient(135deg, #0f172a 0%, #134e4a 100%)",
       accentColor: "#e0f2fe",
     };
 
@@ -1577,18 +1577,18 @@ export class DatabaseStorage implements IStorage {
         userId: this.systemUserId,
         ...defaultPalette,
       });
-      console.log("[THEME] Created system Default Theme with modern palette");
+      console.log("[THEME] Created system Default Theme with portal gradient palette");
     } else {
       const current = existingSystem[0];
+      // Refresh if it still uses any of our previously-shipped default palettes
       const isLegacyPalette =
-        current.primaryColor === "#3b82f6" &&
-        current.callingColor === "#3b82f6" &&
-        current.highlightBoxColor === "#ef4444";
+        (current.primaryColor === "#3b82f6" && current.callingColor === "#3b82f6") ||
+        (current.primaryColor === "#0ea5e9" && current.callingColor === "#059669");
       if (isLegacyPalette) {
         await db.update(schema.themes)
           .set({ ...defaultPalette, updatedAt: new Date() })
           .where(eq(schema.themes.id, current.id));
-        console.log("[THEME] Refreshed system Default Theme with modern palette");
+        console.log("[THEME] Refreshed system Default Theme with portal gradient palette");
       }
     }
   }

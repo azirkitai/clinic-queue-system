@@ -330,42 +330,42 @@ export function TVDisplay({
     return { color: solidColor || fallbackColor };
   };
   
-  // Extract individual section settings
-  const headerBackgroundMode = settingsObj.headerBackgroundMode || 'solid';
+  // Extract individual section settings — modern portal-style gradient palette by default
+  const headerBackgroundMode = settingsObj.headerBackgroundMode || 'gradient';
   const headerBackgroundColor = settingsObj.headerBackgroundColor || '#0f172a';
-  const headerBackgroundGradient = settingsObj.headerBackgroundGradient || 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)';
+  const headerBackgroundGradient = settingsObj.headerBackgroundGradient || 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)';
   
-  const callBackgroundMode = settingsObj.callBackgroundMode || 'solid';
-  const callBackgroundColor = settingsObj.callBackgroundColor || '#16a34a';
-  const callBackgroundGradient = settingsObj.callBackgroundGradient || 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
+  const callBackgroundMode = settingsObj.callBackgroundMode || 'gradient';
+  const callBackgroundColor = settingsObj.callBackgroundColor || '#f09819';
+  const callBackgroundGradient = settingsObj.callBackgroundGradient || 'linear-gradient(135deg, #ff512f 0%, #f09819 100%)';
   
-  const prayerTimesBackgroundMode = settingsObj.prayerTimesBackgroundMode || 'solid';
-  const prayerTimesBackgroundColor = settingsObj.prayerTimesBackgroundColor || '#0f766e';
-  const prayerTimesBackgroundGradient = settingsObj.prayerTimesBackgroundGradient || 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)';
+  const prayerTimesBackgroundMode = settingsObj.prayerTimesBackgroundMode || 'gradient';
+  const prayerTimesBackgroundColor = settingsObj.prayerTimesBackgroundColor || '#11998e';
+  const prayerTimesBackgroundGradient = settingsObj.prayerTimesBackgroundGradient || 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
   
-  const weatherBackgroundMode = settingsObj.weatherBackgroundMode || 'solid';
-  const weatherBackgroundColor = settingsObj.weatherBackgroundColor || '#f97316';
-  const weatherBackgroundGradient = settingsObj.weatherBackgroundGradient || 'linear-gradient(135deg, #fdcb6e 0%, #e84393 100%)';
+  const weatherBackgroundMode = settingsObj.weatherBackgroundMode || 'gradient';
+  const weatherBackgroundColor = settingsObj.weatherBackgroundColor || '#f7971e';
+  const weatherBackgroundGradient = settingsObj.weatherBackgroundGradient || 'linear-gradient(135deg, #f7971e 0%, #ffd200 100%)';
   
   const queueBackgroundMode = settingsObj.queueBackgroundMode || 'solid';
-  const queueBackgroundColor = settingsObj.queueBackgroundColor || '#f3f4f6';
-  const queueBackgroundGradient = settingsObj.queueBackgroundGradient || 'linear-gradient(135deg, #74b9ff 0%, #0984e3 100%)';
+  const queueBackgroundColor = settingsObj.queueBackgroundColor || '#f8fafc';
+  const queueBackgroundGradient = settingsObj.queueBackgroundGradient || 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
   
-  const queueItemBackgroundMode = settingsObj.queueItemBackgroundMode || 'solid';
-  const queueItemBackgroundColor = settingsObj.queueItemBackgroundColor || '#0ea5e9';
-  const queueItemBackgroundGradient = settingsObj.queueItemBackgroundGradient || 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)';
+  const queueItemBackgroundMode = settingsObj.queueItemBackgroundMode || 'gradient';
+  const queueItemBackgroundColor = settingsObj.queueItemBackgroundColor || '#0072ff';
+  const queueItemBackgroundGradient = settingsObj.queueItemBackgroundGradient || 'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)';
   
   const historyNameColor = settingsObj.historyNameColor || '#facc15';
-  const historyNameMode = settingsObj.historyNameMode || 'solid';
+  const historyNameMode = settingsObj.historyNameMode || 'gradient';
   const historyNameGradient = settingsObj.historyNameGradient || 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)';
   
-  const marqueeBackgroundMode = settingsObj.marqueeBackgroundMode || 'solid';
-  const marqueeBackgroundGradient = settingsObj.marqueeBackgroundGradient || 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)';
+  const marqueeBackgroundMode = settingsObj.marqueeBackgroundMode || 'gradient';
+  const marqueeBackgroundGradient = settingsObj.marqueeBackgroundGradient || 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)';
   
   // Extract text color settings
   const headerTextMode = settingsObj.headerTextMode || 'solid';
   const headerTextColor = settingsObj.headerTextColor || '#ffffff';
-  const headerTextGradient = settingsObj.headerTextGradient || 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+  const headerTextGradient = settingsObj.headerTextGradient || 'linear-gradient(135deg, #ffffff 0%, #fef3c7 100%)';
   
   const clinicNameTextMode = settingsObj.clinicNameTextMode || 'solid';
   const clinicNameTextColor = settingsObj.clinicNameTextColor || '#ffffff';
@@ -391,7 +391,7 @@ export function TVDisplay({
   
   const queueTextMode = settingsObj.queueTextMode || 'solid';
   const queueTextColor = settingsObj.queueTextColor || '#1f2937';
-  const queueTextGradient = settingsObj.queueTextGradient || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+  const queueTextGradient = settingsObj.queueTextGradient || 'linear-gradient(135deg, #1e293b 0%, #475569 100%)';
   
   const marqueeTextMode = settingsObj.marqueeTextMode || 'solid';
   const marqueeTextGradient = settingsObj.marqueeTextGradient || 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)';
