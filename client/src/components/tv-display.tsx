@@ -1289,22 +1289,26 @@ export function TVDisplay({
           <div className="flex flex-col gap-4 overflow-hidden flex-1" data-testid="queue-list">
             {queueHistory.length > 0 ? (
               queueHistory.slice(0, 4).map((item) => (
-                <div key={item.id} className="grid grid-cols-2 gap-1 p-2 rounded-lg flex-1 min-h-0"
+                <div key={item.id} className="flex flex-col p-2 rounded-lg flex-1 min-h-0"
                      style={{
                        ...getBackgroundStyle(queueItemBackgroundMode, queueItemBackgroundColor, queueItemBackgroundGradient, '#2563eb')
                      }}>
-                  <FitText
-                    text={getDisplayName(item.name)}
-                    baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'bold' }}
-                    maxFontSize={isFullscreen ? 56 : 42}
-                    minFontSize={isFullscreen ? 28 : 22}
-                  />
-                  <FitText
-                    text={item.room}
-                    baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'normal' }}
-                    maxFontSize={isFullscreen ? 56 : 42}
-                    minFontSize={isFullscreen ? 28 : 22}
-                  />
+                  <div style={{ flex: '3 1 0', minHeight: 0, width: '100%' }}>
+                    <FitText
+                      text={getDisplayName(item.name)}
+                      baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'bold' }}
+                      maxFontSize={isFullscreen ? 64 : 48}
+                      minFontSize={isFullscreen ? 28 : 22}
+                    />
+                  </div>
+                  <div style={{ flex: '2 1 0', minHeight: 0, width: '100%' }}>
+                    <FitText
+                      text={item.room}
+                      baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'normal', opacity: 0.9 }}
+                      maxFontSize={isFullscreen ? 48 : 36}
+                      minFontSize={isFullscreen ? 22 : 18}
+                    />
+                  </div>
                 </div>
               ))
             ) : (
