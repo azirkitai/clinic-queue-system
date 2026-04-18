@@ -983,16 +983,28 @@ export function TVDisplay({
   useEffect(() => {
     if (!isFullscreen || !youtubeAudioItemEarly) return;
 
+    const sendListening = () => {
+      const iframe = ytAudioIframeRef.current;
+      if (!iframe?.contentWindow) return;
+      // YouTube IFrame API handshake: required before player responds to commands
+      iframe.contentWindow.postMessage(JSON.stringify({
+        event: 'listening',
+        id: 'queTAMA-yt-audio',
+        channel: 'widget'
+      }), 'https://www.youtube.com');
+    };
+
     const applyVolume = () => {
       const iframe = ytAudioIframeRef.current;
       if (!iframe?.contentWindow) return;
       const vol = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
       iframe.contentWindow.postMessage(JSON.stringify({
-        event: 'command', func: 'setVolume', args: [vol]
-      }), '*');
+        event: 'command', func: 'setVolume', args: [vol], id: 'queTAMA-yt-audio', channel: 'widget'
+      }), 'https://www.youtube.com');
       iframe.contentWindow.postMessage(JSON.stringify({
-        event: 'command', func: 'unMute', args: []
-      }), '*');
+        event: 'command', func: 'unMute', args: [], id: 'queTAMA-yt-audio', channel: 'widget'
+      }), 'https://www.youtube.com');
+      console.log('🔊 [YT Audio] setVolume sent:', vol);
     };
 
     const handleMessage = (event: MessageEvent) => {
@@ -1008,18 +1020,28 @@ export function TVDisplay({
 
     window.addEventListener('message', handleMessage);
 
+    // Send listening handshake immediately and on iframe load events
+    sendListening();
+    const handshakeTimer1 = setTimeout(sendListening, 500);
+    const handshakeTimer2 = setTimeout(sendListening, 1500);
+
     // Apply immediately if player already ready (volume slider change)
     if (ytAudioReadyRef.current) {
       applyVolume();
     }
 
-    const fallbackTimer = setTimeout(() => {
-      applyVolume();
-    }, 3000);
+    // Repeat applyVolume a few times to ensure it lands after player is ready
+    const fallbackTimer1 = setTimeout(() => applyVolume(), 1000);
+    const fallbackTimer2 = setTimeout(() => applyVolume(), 3000);
+    const fallbackTimer3 = setTimeout(() => applyVolume(), 6000);
 
     return () => {
       window.removeEventListener('message', handleMessage);
-      clearTimeout(fallbackTimer);
+      clearTimeout(handshakeTimer1);
+      clearTimeout(handshakeTimer2);
+      clearTimeout(fallbackTimer1);
+      clearTimeout(fallbackTimer2);
+      clearTimeout(fallbackTimer3);
     };
   }, [isFullscreen, youtubeAudioItemEarly?.url, youtubeAudioVolume]);
 
