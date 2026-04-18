@@ -377,7 +377,11 @@ export function TVDisplay({
     return acc;
   }, {});
 
-  const youtubeAudioVolume = parseInt(settingsObj.youtubeAudioVolume || '50', 10);
+  const youtubeAudioVolumeRaw = parseInt(settingsObj.youtubeAudioVolume || '50', 10);
+  // Apply perceptual (exponential) curve so slider feels linear to human ear.
+  // Human hearing is logarithmic, so YT setVolume(10) sounds much louder than 10%.
+  // curve: actual = (slider/100)^2 * 100  → slider 50 = vol 25, slider 10 = vol 1, slider 100 = vol 100
+  const youtubeAudioVolume = Math.max(0, Math.min(100, Math.round(Math.pow(youtubeAudioVolumeRaw / 100, 2) * 100)));
 
   // Extract marquee settings with fallbacks
   const enableMarquee = settingsObj.enableMarquee === 'true';
