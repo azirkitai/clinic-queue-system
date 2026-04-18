@@ -725,6 +725,7 @@ export function TVDisplay({
   const ytAudioPlayerRef = useRef<any>(null);
   const ytAudioReadyRef = useRef(false);
   const ytAudioDuckedRef = useRef(false);
+  const ytAudioVolumeRef = useRef(50);
   const ytAudioOriginalSrcRef = useRef<string>('');
 
 
@@ -1046,7 +1047,7 @@ export function TVDisplay({
           onReady: (e: any) => {
             ytAudioReadyRef.current = true;
             try {
-              const vol = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
+              const vol = ytAudioDuckedRef.current ? 0 : ytAudioVolumeRef.current;
               e.target.setVolume(vol);
               e.target.playVideo();
               console.log('🔊 [YT Audio] Player ready, will set volume to:', vol);
@@ -1057,20 +1058,19 @@ export function TVDisplay({
           onStateChange: (e: any) => {
             // YT.PlayerState.PLAYING === 1
             if (e.data === 1 && ytAudioPlayerRef.current) {
-              const vol = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
+              const vol = ytAudioDuckedRef.current ? 0 : ytAudioVolumeRef.current;
               try {
                 // CRITICAL ORDER: setVolume FIRST, then unMute
-                // YouTube resets to last-user-preference if you unMute first
                 ytAudioPlayerRef.current.setVolume(vol);
                 ytAudioPlayerRef.current.unMute();
                 ytAudioPlayerRef.current.setVolume(vol);
                 console.log('🔊 [YT Audio] PLAYING - volume forced to:', vol);
 
-                // Re-enforce after small delays to combat YT's quirky volume reset
+                // Re-enforce after small delays — read ref so latest slider value is honored
                 setTimeout(() => {
                   if (ytAudioPlayerRef.current) {
                     try {
-                      const v = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
+                      const v = ytAudioDuckedRef.current ? 0 : ytAudioVolumeRef.current;
                       ytAudioPlayerRef.current.setVolume(v);
                     } catch {}
                   }
@@ -1078,7 +1078,7 @@ export function TVDisplay({
                 setTimeout(() => {
                   if (ytAudioPlayerRef.current) {
                     try {
-                      const v = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
+                      const v = ytAudioDuckedRef.current ? 0 : ytAudioVolumeRef.current;
                       ytAudioPlayerRef.current.setVolume(v);
                     } catch {}
                   }
@@ -1121,8 +1121,9 @@ export function TVDisplay({
     };
   }, [isFullscreen, youtubeAudioItemEarly?.url]);
 
-  // Apply volume changes (slider) without recreating player
+  // Keep latest volume in a ref so closures (onReady/onStateChange/setTimeout) always read fresh value
   useEffect(() => {
+    ytAudioVolumeRef.current = youtubeAudioVolume;
     if (!ytAudioPlayerRef.current || !ytAudioReadyRef.current) return;
     const vol = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
     try {
