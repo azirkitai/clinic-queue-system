@@ -1416,7 +1416,7 @@ export default function Settings() {
                   <div className="space-y-2">
                     <Button
                       variant="outline"
-                      className="w-full"
+                      className="gradient-swatch-btn"
                       onClick={() => setGradientPickers(prev => ({ ...prev, header: true }))}
                       data-testid="button-header-gradient-picker"
                       style={{
@@ -1482,8 +1482,7 @@ export default function Settings() {
                 ) : (
                   <Button
                     variant="outline"
-                    size="sm"
-                    className="w-12 p-0"
+                    className="gradient-swatch-btn"
                     onClick={() => setGradientPickers(prev => ({ ...prev, clinicNameText: true }))}
                     data-testid="button-clinic-name-text-gradient-picker"
                     style={{
@@ -1544,7 +1543,7 @@ export default function Settings() {
                   <div className="space-y-2">
                     <Button
                       variant="outline"
-                      className="w-full text-xs"
+                      className="gradient-swatch-btn"
                       onClick={() => setGradientPickers(prev => ({ ...prev, callNameText: true }))}
                       data-testid="button-call-name-text-gradient-picker"
                       style={{
@@ -1594,7 +1593,7 @@ export default function Settings() {
                   <div className="space-y-2">
                     <Button
                       variant="outline"
-                      className="w-full"
+                      className="gradient-swatch-btn"
                       onClick={() => setGradientPickers(prev => ({ ...prev, call: true }))}
                       data-testid="button-call-gradient-picker"
                       style={{
@@ -1649,7 +1648,7 @@ export default function Settings() {
                   <div className="space-y-2">
                     <Button
                       variant="outline"
-                      className="w-full text-xs"
+                      className="gradient-swatch-btn"
                       onClick={() => setGradientPickers(prev => ({ ...prev, windowText: true }))}
                       data-testid="button-window-text-gradient-picker"
                       style={{
@@ -1756,7 +1755,7 @@ export default function Settings() {
                   <div className="space-y-2">
                     <Button
                       variant="outline"
-                      className="w-full text-xs"
+                      className="gradient-swatch-btn"
                       onClick={() => setGradientPickers(prev => ({ ...prev, prayerText: true }))}
                       data-testid="button-prayer-text-gradient-picker"
                       style={{
@@ -1806,7 +1805,7 @@ export default function Settings() {
                   <div className="space-y-2">
                     <Button
                       variant="outline"
-                      className="w-full"
+                      className="gradient-swatch-btn"
                       onClick={() => setGradientPickers(prev => ({ ...prev, prayer: true }))}
                       data-testid="button-prayer-gradient-picker"
                       style={{
@@ -1886,7 +1885,7 @@ export default function Settings() {
                   <div className="space-y-2">
                     <Button
                       variant="outline"
-                      className="w-full text-xs"
+                      className="gradient-swatch-btn"
                       onClick={() => setGradientPickers(prev => ({ ...prev, weatherText: true }))}
                       data-testid="button-weather-text-gradient-picker"
                       style={{
@@ -1936,7 +1935,7 @@ export default function Settings() {
                   <div className="space-y-2">
                     <Button
                       variant="outline"
-                      className="w-full"
+                      className="gradient-swatch-btn"
                       onClick={() => setGradientPickers(prev => ({ ...prev, weather: true }))}
                       data-testid="button-weather-gradient-picker"
                       style={{
@@ -2005,9 +2004,8 @@ export default function Settings() {
                   ) : (
                     <Button
                       variant="outline"
-                      size="sm"
-                      className="w-12 p-0"
-                      onClick={() => setGradientPickers(prev => ({ ...prev, queueText: true }))}
+                      className="gradient-swatch-btn"
+                    onClick={() => setGradientPickers(prev => ({ ...prev, queueText: true }))}
                       data-testid="button-queue-text-gradient-picker"
                       style={{
                         background: currentSettings.queueTextGradient,
@@ -2056,9 +2054,9 @@ export default function Settings() {
               ) : (
                 <div className="space-y-2">
                   <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setGradientPickers(prev => ({ ...prev, queueItem: true }))}
+                      variant="outline"
+                      className="gradient-swatch-btn"
+                      onClick={() => setGradientPickers(prev => ({ ...prev, queueItem: true }))}
                     data-testid="button-queue-item-gradient-picker"
                     style={{
                       background: currentSettings.queueItemBackgroundGradient,
@@ -2117,9 +2115,9 @@ export default function Settings() {
                   {currentSettings.historyNameMode === 'gradient' && (
                     <div className="space-y-2">
                       <Button
-                        variant="outline"
-                        className="w-full text-xs"
-                        onClick={() => setGradientPickers(prev => ({ ...prev, historyName: true }))}
+                      variant="outline"
+                      className="gradient-swatch-btn"
+                      onClick={() => setGradientPickers(prev => ({ ...prev, historyName: true }))}
                         data-testid="button-history-name-gradient-picker"
                         style={{
                           background: currentSettings.historyNameGradient || 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
@@ -2273,7 +2271,7 @@ export default function Settings() {
                   <div className="space-y-2">
                     <Button
                       variant="outline"
-                      className="w-full text-xs"
+                      className="gradient-swatch-btn"
                       onClick={() => setGradientPickers(prev => ({ ...prev, marqueeText: true }))}
                       data-testid="button-marquee-text-gradient-picker"
                       style={{
@@ -2323,7 +2321,7 @@ export default function Settings() {
                   <div className="space-y-2">
                     <Button
                       variant="outline"
-                      className="w-full"
+                      className="gradient-swatch-btn"
                       onClick={() => setGradientPickers(prev => ({ ...prev, marquee: true }))}
                       data-testid="button-marquee-gradient-picker"
                       style={{

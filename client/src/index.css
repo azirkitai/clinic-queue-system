@@ -637,3 +637,31 @@
 .bg-sidebar {
   background: linear-gradient(180deg, #001a33 0%, #0f3a4f 50%, #0d7490 100%) !important;
 }
+
+/* Uniform color swatch - all color pickers same round size */
+input[type="color"] {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-radius: 9999px;
+  border: 2px solid hsl(var(--border));
+  cursor: pointer;
+  overflow: hidden;
+  background: transparent;
+}
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: none; border-radius: 9999px; }
+input[type="color"]::-moz-color-swatch { border: none; border-radius: 9999px; }
+
+.gradient-swatch-btn {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  min-width: 2.5rem !important;
+  min-height: 2.5rem !important;
+  padding: 0 !important;
+  border-radius: 9999px !important;
+  border: 2px solid hsl(var(--border)) !important;
+  overflow: hidden;
+}
+.gradient-swatch-btn > * { display: none !important; }
+
