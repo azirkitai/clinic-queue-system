@@ -1361,7 +1361,7 @@ export default function Settings() {
                   type="text"
                   value={currentSettings.clinicName || ""}
                   onChange={(e) => updateDisplaySetting('clinicName', e.target.value)}
-                  placeholder="KLINIK UTAMA 24 JAM"
+                  placeholder="Nama klinik anda"
                   data-testid="input-clinic-name"
                   className="text-sm"
                 />
