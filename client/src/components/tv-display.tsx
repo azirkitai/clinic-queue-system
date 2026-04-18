@@ -1313,13 +1313,13 @@ export function TVDisplay({
                     text={getDisplayName(item.name)}
                     baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'bold' }}
                     maxFontSize={isFullscreen ? 56 : 42}
-                    minFontSize={12}
+                    minFontSize={isFullscreen ? 28 : 22}
                   />
                   <FitText
                     text={item.room}
                     baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'normal' }}
                     maxFontSize={isFullscreen ? 56 : 42}
-                    minFontSize={12}
+                    minFontSize={isFullscreen ? 28 : 22}
                   />
                 </div>
               ))
