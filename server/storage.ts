@@ -1472,6 +1472,22 @@ export class DatabaseStorage implements IStorage {
       await db.execute(sql`ALTER TABLE patients ADD COLUMN IF NOT EXISTS tracking_history JSON DEFAULT '[]'::json`);
       await db.execute(sql`ALTER TABLE patients ADD COLUMN IF NOT EXISTS archived_at TIMESTAMP`);
       await db.execute(sql`ALTER TABLE windows ADD COLUMN IF NOT EXISTS is_permanent BOOLEAN NOT NULL DEFAULT false`);
+      await db.execute(sql`ALTER TABLE windows ADD COLUMN IF NOT EXISTS is_dispensary BOOLEAN NOT NULL DEFAULT false`);
+      // Auto-tag legacy windows named DISPENSARY (one per user) so existing deployments work seamlessly
+      await db.execute(sql`
+        UPDATE windows w
+        SET is_dispensary = true
+        WHERE UPPER(w.name) = 'DISPENSARY'
+          AND NOT EXISTS (
+            SELECT 1 FROM windows w2
+            WHERE w2.user_id = w.user_id AND w2.is_dispensary = true
+          )
+          AND w.id = (
+            SELECT id FROM windows w3
+            WHERE w3.user_id = w.user_id AND UPPER(w3.name) = 'DISPENSARY'
+            LIMIT 1
+          )
+      `);
       await db.execute(sql`ALTER TABLE media ADD COLUMN IF NOT EXISTS data TEXT`);
       await db.execute(sql`ALTER TABLE media ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true`);
       await db.execute(sql`
