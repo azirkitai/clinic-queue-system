@@ -106,7 +106,7 @@ export function WindowCard({
           data-testid={`banner-dispensary-${window.id}`}
         >
           <Pill className="h-4 w-4" />
-          Dispensary Semasa
+          Current Dispensary
         </div>
       )}
       <CardHeader className="pb-3">
