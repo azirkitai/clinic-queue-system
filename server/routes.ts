@@ -2685,7 +2685,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           uploadedAt: new Date()
         }];
         res.json(youtubeMedia);
-      } else if (dashboardMediaType === "combine") {
+      } else {
+        // "combine" or "own" — both can include audio if URL is provided
         const activeMedia = await storage.getActiveMedia(req.session.userId);
         const lightweightMedia = activeMedia.map(({ data, ...rest }) => rest);
         if (youtubeUrl) {
@@ -2701,10 +2702,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             uploadedAt: new Date()
           });
         }
-        res.json(lightweightMedia);
-      } else {
-        const activeMedia = await storage.getActiveMedia(req.session.userId);
-        const lightweightMedia = activeMedia.map(({ data, ...rest }) => rest);
         res.json(lightweightMedia);
       }
     } catch (error) {
@@ -3538,7 +3535,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           uploadedAt: new Date()
         }];
         res.json(youtubeMedia);
-      } else if (dashboardMediaType === "combine") {
+      } else {
+        // "combine" or "own" — both can include audio if URL is provided
         const activeMedia = await storage.getActiveMedia(user.id);
         const lightweightMedia = activeMedia.map(({ data, ...rest }: any) => rest);
         if (youtubeUrl) {
@@ -3554,10 +3552,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             uploadedAt: new Date()
           });
         }
-        res.json(lightweightMedia);
-      } else {
-        const activeMedia = await storage.getActiveMedia(user.id);
-        const lightweightMedia = activeMedia.map(({ data, ...rest }: any) => rest);
         res.json(lightweightMedia);
       }
     } catch (error) {

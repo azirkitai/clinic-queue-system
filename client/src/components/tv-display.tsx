@@ -1014,6 +1014,17 @@ export function TVDisplay({
 
   const showAudioGate = isFullscreen && !!youtubeAudioItemEarly && !audioUnlocked;
 
+  let audioDiagnostic: string | null = null;
+  if (isFullscreen) {
+    if (!youtubeAudioItemEarly) {
+      audioDiagnostic = 'AUDIO: NO URL';
+    } else if (youtubeAudioVolume === 0) {
+      audioDiagnostic = 'AUDIO: VOL 0%';
+    } else if (!audioUnlocked) {
+      audioDiagnostic = 'AUDIO: TAP NEEDED';
+    }
+  }
+
   // Load YouTube IFrame API script once
   useEffect(() => {
     if ((window as any).YT && (window as any).YT.Player) return;
@@ -1750,6 +1761,20 @@ export function TVDisplay({
           {renderContent()}
         </div>
         {youtubeAudioIframe}
+        {audioDiagnostic && !showAudioGate && (
+          <div
+            data-testid="badge-audio-diagnostic"
+            className="fixed bottom-4 left-4 z-[9998] px-3 py-1.5 rounded-md text-xs font-semibold pointer-events-none"
+            style={{
+              backgroundColor: 'rgba(220, 38, 38, 0.85)',
+              color: '#ffffff',
+              fontFamily: 'monospace',
+              letterSpacing: '0.05em',
+            }}
+          >
+            {audioDiagnostic}
+          </div>
+        )}
         {showAudioGate && (
           <button
             type="button"
