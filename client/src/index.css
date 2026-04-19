@@ -665,3 +665,34 @@ input[type="color"]::-moz-color-swatch { border: none; border-radius: 9999px; }
 }
 .gradient-swatch-btn > * { display: none !important; }
 
+
+/* ============================================================
+   ANDROID TV / FORCE-DARK BROWSER PROTECTION
+   Prevents browsers from auto-darkening white sections on TV
+   ============================================================ */
+.tv-white-bg,
+.tv-force-light {
+  color-scheme: light only !important;
+  forced-color-adjust: none !important;
+  -webkit-forced-color-adjust: none !important;
+}
+.tv-white-bg {
+  background-color: #ffffff !important;
+  background-image: linear-gradient(#ffffff, #ffffff) !important;
+  color: #111827 !important;
+  isolation: isolate;
+}
+.tv-white-bg img {
+  background-color: #ffffff !important;
+  forced-color-adjust: none !important;
+  -webkit-forced-color-adjust: none !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+@media (prefers-color-scheme: dark) {
+  .tv-white-bg {
+    background-color: #ffffff !important;
+    background-image: linear-gradient(#ffffff, #ffffff) !important;
+    color: #111827 !important;
+  }
+}
