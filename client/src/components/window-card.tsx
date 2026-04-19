@@ -99,7 +99,16 @@ export function WindowCard({
   };
 
   return (
-    <Card className={`w-full hover-elevate ${window.isDispensary ? "ring-2 ring-blue-500 dark:ring-blue-400" : ""}`}>
+    <Card className={`w-full hover-elevate overflow-hidden ${window.isDispensary ? "ring-2 ring-blue-500 dark:ring-blue-400" : ""}`}>
+      {window.isDispensary && (
+        <div
+          className="bg-blue-600 text-white px-4 py-2 flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-wide"
+          data-testid={`banner-dispensary-${window.id}`}
+        >
+          <Pill className="h-4 w-4" />
+          Dispensary Semasa
+        </div>
+      )}
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3 flex-1">
