@@ -1744,6 +1744,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Toggle window dispensary flag
+  app.patch("/api/windows/:id/dispensary", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Session inactive" });
+      }
+      const { id } = req.params;
+      const { isDispensary } = req.body;
+      if (typeof isDispensary !== "boolean") {
+        return res.status(400).json({ error: "isDispensary (boolean) is required" });
+      }
+      const window = await storage.setWindowDispensary(id, req.session.userId, isDispensary);
+      if (!window) {
+        return res.status(404).json({ error: "Window not found" });
+      }
+      invalidateCache(req.session.userId);
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('window:updated', {
+          window,
+          timestamp: Date.now()
+        });
+      }
+      res.json(window);
+    } catch (error) {
+      console.error("Error setting dispensary flag:", error);
+      res.status(500).json({ error: "Failed to update dispensary flag" });
+    }
+  });
+
   // Toggle window status
   app.patch("/api/windows/:id/status", async (req, res) => {
     try {

@@ -179,6 +179,23 @@ app.use((req, res, next) => {
     if (totalCleaned > 0) {
       console.log(`[STARTUP CLEANUP] Deleted ${totalCleaned} old completed patients (>24h) across all users`);
     }
+
+    // MIGRATION: Auto-mark legacy windows named 'DISPENSARY' as isDispensary=true
+    // (only if no window for that user has the flag already)
+    let migratedCount = 0;
+    for (const user of users) {
+      const userWindows = await storage.getWindows(user.id);
+      const hasFlagged = userWindows.some(w => (w as any).isDispensary);
+      if (hasFlagged) continue;
+      const legacy = userWindows.find(w => w.name?.toUpperCase() === 'DISPENSARY');
+      if (legacy) {
+        await storage.setWindowDispensary(legacy.id, user.id, true);
+        migratedCount++;
+      }
+    }
+    if (migratedCount > 0) {
+      console.log(`[STARTUP MIGRATION] Tagged ${migratedCount} legacy DISPENSARY window(s) with isDispensary flag`);
+    }
   } catch (error) {
     console.error('[STARTUP CLEANUP] Error during cleanup:', error);
     // Don't crash server if cleanup fails

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Edit, Trash2, User, UserCheck, XCircle, AlertTriangle } from "lucide-react";
+import { Edit, Trash2, User, UserCheck, XCircle, AlertTriangle, Pill } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ interface Window {
   name: string;
   isActive: boolean;
   isPermanent?: boolean;
+  isDispensary?: boolean;
   currentPatientId?: string;
   currentPatientName?: string;
   currentPatientNumber?: number;
@@ -21,6 +22,7 @@ interface WindowCardProps {
   onDelete: (windowId: string) => void;
   onToggleStatus: (windowId: string) => void;
   onForceClear?: (windowId: string) => void;
+  onToggleDispensary?: (windowId: string, isDispensary: boolean) => void;
 }
 
 export function WindowCard({ 
@@ -28,7 +30,8 @@ export function WindowCard({
   onEdit, 
   onDelete, 
   onToggleStatus,
-  onForceClear
+  onForceClear,
+  onToggleDispensary
 }: WindowCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(window.name);
@@ -119,7 +122,17 @@ export function WindowCard({
               </div>
             )}
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {window.isDispensary && (
+              <Badge 
+                variant="default"
+                className="bg-blue-600 text-white"
+                data-testid={`badge-dispensary-${window.id}`}
+              >
+                <Pill className="h-3 w-3 mr-1" />
+                Dispensary
+              </Badge>
+            )}
             <Badge 
               variant={window.isActive ? "default" : "secondary"}
               data-testid={`badge-status-${window.id}`}
@@ -200,6 +213,21 @@ export function WindowCard({
             {isDeleting ? "Confirm" : "Delete"}
           </Button>
         </div>
+
+        {onToggleDispensary && (
+          <div className="mt-2">
+            <Button
+              onClick={() => onToggleDispensary(window.id, !window.isDispensary)}
+              size="sm"
+              variant={window.isDispensary ? "default" : "outline"}
+              className={`w-full ${window.isDispensary ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}`}
+              data-testid={`button-toggle-dispensary-${window.id}`}
+            >
+              <Pill className="h-4 w-4 mr-1" />
+              {window.isDispensary ? "Unset as Dispensary" : "Set as Dispensary"}
+            </Button>
+          </div>
+        )}
 
         {window.currentPatientId && (
           <div className="mt-2 flex items-center justify-between">

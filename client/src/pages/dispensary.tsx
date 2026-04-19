@@ -67,9 +67,13 @@ export default function Dispensary() {
     refetchOnWindowFocus: false, // Disable - prevents burst
   });
 
-  // Get DISPENSARY window
+  // Get the dispensary window (marked via isDispensary flag in Room Management)
+  // Backward compatibility: also accept legacy window named 'DISPENSARY' if no flag set
   const dispensaryWindow = useMemo(() => {
-    return windows.find(w => w.name === 'DISPENSARY' && w.isActive);
+    return (
+      windows.find(w => (w as any).isDispensary && w.isActive) ||
+      windows.find(w => w.name === 'DISPENSARY' && w.isActive)
+    );
   }, [windows]);
 
   // Update patient status mutation
@@ -202,7 +206,7 @@ export default function Dispensary() {
   const dispensaryPatients = enhancedPatients.filter(p => 
     p.status !== 'completed' && (
       p.readyForDispensary || 
-      ((p.status === 'called' || p.status === 'in-progress') && p.windowName === 'DISPENSARY')
+      ((p.status === 'called' || p.status === 'in-progress') && dispensaryWindow && p.windowId === dispensaryWindow.id)
     )
   );
   const priorityDispensary = dispensaryPatients.filter(p => p.isPriority);

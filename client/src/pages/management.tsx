@@ -14,6 +14,7 @@ interface Window {
   name: string;
   isActive: boolean;
   isPermanent?: boolean;
+  isDispensary?: boolean;
   currentPatientId?: string;
   currentPatientName?: string;
   currentPatientNumber?: number;
@@ -81,6 +82,33 @@ export default function Management() {
 
   const handleEditWindow = async (windowId: string, newName: string) => {
     updateWindowMutation.mutate({ windowId, name: newName });
+  };
+
+  // Toggle dispensary mutation
+  const toggleDispensaryMutation = useMutation({
+    mutationFn: async ({ windowId, isDispensary }: { windowId: string; isDispensary: boolean }) => {
+      return await apiRequest("PATCH", `/api/windows/${windowId}/dispensary`, { isDispensary });
+    },
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/windows"] });
+      toast({
+        title: vars.isDispensary ? "Marked as Dispensary" : "Removed Dispensary mark",
+        description: vars.isDispensary
+          ? "This room is now linked to the Dispensary Management page."
+          : "This room is no longer the Dispensary."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update Dispensary flag.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleToggleDispensary = (windowId: string, isDispensary: boolean) => {
+    toggleDispensaryMutation.mutate({ windowId, isDispensary });
   };
 
   // Delete window mutation
@@ -235,6 +263,7 @@ export default function Management() {
                 onDelete={handleDeleteWindow}
                 onToggleStatus={handleToggleStatus}
                 onForceClear={handleForceClear}
+                onToggleDispensary={handleToggleDispensary}
               />
             ))}
           </div>

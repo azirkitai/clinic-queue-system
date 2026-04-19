@@ -39,6 +39,7 @@ export const windows = pgTable("windows", {
   name: text("name").notNull(),
   isActive: boolean("is_active").notNull().default(true),
   isPermanent: boolean("is_permanent").notNull().default(false), // Cannot be deleted
+  isDispensary: boolean("is_dispensary").notNull().default(false), // Marks this window as the dispensary/pharmacy counter
   currentPatientId: varchar("current_patient_id"),
   // Account isolation
   userId: varchar("user_id").notNull(),

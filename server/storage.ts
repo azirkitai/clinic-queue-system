@@ -98,6 +98,7 @@ export interface IStorage {
   updateWindow(windowId: string, name: string, userId: string): Promise<Window | undefined>;
   deleteWindow(windowId: string, userId: string): Promise<boolean>;
   toggleWindowStatus(windowId: string, userId: string): Promise<Window | undefined>;
+  setWindowDispensary(windowId: string, userId: string, isDispensary: boolean): Promise<Window | undefined>;
   updateWindowPatient(windowId: string, userId: string, patientId?: string): Promise<Window | undefined>;
   
   // Dashboard methods
@@ -943,6 +944,24 @@ export class MemStorage implements IStorage {
       isActive: !window.isActive
     };
 
+    this.windows.set(windowId, updatedWindow);
+    return updatedWindow;
+  }
+
+  async setWindowDispensary(windowId: string, userId: string, isDispensary: boolean): Promise<Window | undefined> {
+    const window = this.windows.get(windowId);
+    if (!window || window.userId !== userId) return undefined;
+
+    // Enforce ONE dispensary per tenant: clear any others first
+    if (isDispensary) {
+      this.windows.forEach((w, id) => {
+        if (w.userId === userId && id !== windowId && (w as any).isDispensary) {
+          this.windows.set(id, { ...w, isDispensary: false } as any);
+        }
+      });
+    }
+
+    const updatedWindow = { ...window, isDispensary } as any;
     this.windows.set(windowId, updatedWindow);
     return updatedWindow;
   }
@@ -1875,11 +1894,13 @@ export class DatabaseStorage implements IStorage {
         id: w.id,
         name: w.name,
         isActive: w.isActive,
+        isPermanent: (w as any).isPermanent ?? false,
+        isDispensary: (w as any).isDispensary ?? false,
         currentPatientId: w.currentPatientId || undefined,
         currentPatientName: w.patientName || undefined,
         currentPatientNumber: w.patientNumber || undefined,
         userId: w.userId
-      }));
+      })) as any;
     } catch (error) {
       console.error('Database error, falling back to memory storage:', error);
       return this.memStorage.getWindows(userId);
@@ -1894,9 +1915,11 @@ export class DatabaseStorage implements IStorage {
       id: w.id,
       name: w.name,
       isActive: w.isActive,
+      isPermanent: (w as any).isPermanent ?? false,
+      isDispensary: (w as any).isDispensary ?? false,
       currentPatientId: w.currentPatientId || undefined,
       userId: w.userId
-    };
+    } as any;
   }
 
   async createWindow(insertWindow: InsertWindow): Promise<Window> {
@@ -1932,9 +1955,11 @@ export class DatabaseStorage implements IStorage {
       id: w.id,
       name: w.name,
       isActive: w.isActive,
+      isPermanent: (w as any).isPermanent ?? false,
+      isDispensary: (w as any).isDispensary ?? false,
       currentPatientId: w.currentPatientId || undefined,
       userId: w.userId
-    };
+    } as any;
   }
 
   async deleteWindow(windowId: string, userId: string): Promise<boolean> {
@@ -1963,9 +1988,43 @@ export class DatabaseStorage implements IStorage {
       id: w.id,
       name: w.name,
       isActive: w.isActive,
+      isPermanent: (w as any).isPermanent ?? false,
+      isDispensary: (w as any).isDispensary ?? false,
       currentPatientId: w.currentPatientId || undefined,
       userId: w.userId
-    };
+    } as any;
+  }
+
+  async setWindowDispensary(windowId: string, userId: string, isDispensary: boolean): Promise<Window | undefined> {
+    // Verify window belongs to user
+    const current = await db.select().from(schema.windows)
+      .where(and(eq(schema.windows.id, windowId), eq(schema.windows.userId, userId)))
+      .limit(1);
+    if (current.length === 0) return undefined;
+
+    // Enforce ONE dispensary per tenant: clear any others first
+    if (isDispensary) {
+      await db.update(schema.windows)
+        .set({ isDispensary: false })
+        .where(and(eq(schema.windows.userId, userId), eq(schema.windows.isDispensary, true)));
+    }
+
+    const result = await db.update(schema.windows)
+      .set({ isDispensary })
+      .where(and(eq(schema.windows.id, windowId), eq(schema.windows.userId, userId)))
+      .returning();
+
+    if (result.length === 0) return undefined;
+    const w = result[0];
+    return {
+      id: w.id,
+      name: w.name,
+      isActive: w.isActive,
+      isPermanent: (w as any).isPermanent ?? false,
+      isDispensary: (w as any).isDispensary ?? false,
+      currentPatientId: w.currentPatientId || undefined,
+      userId: w.userId
+    } as any;
   }
 
   async updateWindowPatient(windowId: string, userId: string, patientId?: string): Promise<Window | undefined> {
