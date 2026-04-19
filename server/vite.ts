@@ -59,7 +59,12 @@ export async function setupVite(app: Express, server: Server) {
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
       const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+      res.status(200).set({
+        "Content-Type": "text/html",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      }).end(page);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
       next(e);
@@ -76,10 +81,28 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  // Serve hashed assets (JS/CSS bundles) with long cache - safe because filenames change
+  app.use(express.static(distPath, {
+    setHeaders: (res, filePath) => {
+      // index.html must NEVER be cached - it's the entry point that references hashed bundles
+      if (filePath.endsWith("index.html")) {
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+      } else if (/\.(js|css|woff2?|png|jpg|jpeg|svg|ico)$/i.test(filePath)) {
+        // Hashed assets can be cached aggressively (Vite uses content hash in filename)
+        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      }
+    },
+  }));
 
-  // fall through to index.html if the file doesn't exist
+  // fall through to index.html (SPA routing) - also no-cache for the entry HTML
   app.use("*", (_req, res) => {
+    res.set({
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Pragma": "no-cache",
+      "Expires": "0",
+    });
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
