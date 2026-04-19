@@ -986,6 +986,34 @@ export function TVDisplay({
   const youtubeAudioItemEarly = mediaItems.find(m => m.type === 'youtube-audio');
   const visibleMediaItems = mediaItems.filter(m => m.type !== 'youtube-audio');
 
+  const [audioUnlocked, setAudioUnlocked] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      return sessionStorage.getItem('tv-audio-unlocked') === '1';
+    } catch {
+      return false;
+    }
+  });
+
+  const unlockAudio = () => {
+    try { sessionStorage.setItem('tv-audio-unlocked', '1'); } catch {}
+    try {
+      const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (Ctx) {
+        const ctx = new Ctx();
+        if (ctx.state === 'suspended') ctx.resume();
+        const buffer = ctx.createBuffer(1, 1, 22050);
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(ctx.destination);
+        source.start(0);
+      }
+    } catch {}
+    setAudioUnlocked(true);
+  };
+
+  const showAudioGate = isFullscreen && !!youtubeAudioItemEarly && !audioUnlocked;
+
   // Load YouTube IFrame API script once
   useEffect(() => {
     if ((window as any).YT && (window as any).YT.Player) return;
@@ -1011,7 +1039,7 @@ export function TVDisplay({
 
   // Initialize YT.Player and manage volume
   useEffect(() => {
-    if (!isFullscreen || !youtubeAudioItemEarly) return;
+    if (!isFullscreen || !youtubeAudioItemEarly || !audioUnlocked) return;
     const videoId = getYouTubeVideoId(youtubeAudioItemEarly.url);
     if (!videoId) return;
 
@@ -1722,6 +1750,28 @@ export function TVDisplay({
           {renderContent()}
         </div>
         {youtubeAudioIframe}
+        {showAudioGate && (
+          <button
+            type="button"
+            onClick={unlockAudio}
+            data-testid="button-unlock-audio"
+            className="fixed inset-0 z-[9999] flex flex-col items-center justify-center text-white cursor-pointer"
+            style={{ backgroundColor: 'rgba(0,0,0,0.85)', border: 'none' }}
+          >
+            <div className="text-center px-8" style={{ maxWidth: '900px' }}>
+              <Volume2 className="mx-auto mb-8" style={{ width: '8rem', height: '8rem' }} />
+              <div style={{ fontSize: '4rem', fontWeight: 700, marginBottom: '1.5rem' }}>
+                TAP TO START
+              </div>
+              <div style={{ fontSize: '2rem', opacity: 0.9, marginBottom: '1rem' }}>
+                Tekan skrin atau OK pada remote untuk aktifkan audio
+              </div>
+              <div style={{ fontSize: '1.5rem', opacity: 0.7 }}>
+                Press screen or OK on remote to enable audio
+              </div>
+            </div>
+          </button>
+        )}
       </div>
     );
   }
