@@ -99,7 +99,7 @@ export function WindowCard({
   };
 
   return (
-    <Card className="w-full hover-elevate">
+    <Card className={`w-full hover-elevate ${window.isDispensary ? "ring-2 ring-blue-500 dark:ring-blue-400" : ""}`}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3 flex-1">
