@@ -997,16 +997,16 @@ export function TVDisplay({
 
   const unlockAudio = () => {
     try { sessionStorage.setItem('tv-audio-unlocked', '1'); } catch {}
+    // CRITICAL: call unMute/setVolume/playVideo SYNCHRONOUSLY inside the click
+    // handler so the browser still considers this a user gesture. If we wait
+    // for React re-render + effect, the gesture context is lost and Chrome
+    // silently keeps the player muted.
     try {
-      const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
-      if (Ctx) {
-        const ctx = new Ctx();
-        if (ctx.state === 'suspended') ctx.resume();
-        const buffer = ctx.createBuffer(1, 1, 22050);
-        const source = ctx.createBufferSource();
-        source.buffer = buffer;
-        source.connect(ctx.destination);
-        source.start(0);
+      const player = ytAudioPlayerRef.current;
+      if (player) {
+        try { player.playVideo(); } catch {}
+        try { player.unMute(); } catch {}
+        try { player.setVolume(ytAudioVolumeRef.current); } catch {}
       }
     } catch {}
     setAudioUnlocked(true);
@@ -1057,9 +1057,12 @@ export function TVDisplay({
     return '';
   };
 
-  // Initialize YT.Player and manage volume
+  // Initialize YT.Player (muted autoplay) as soon as fullscreen + URL are
+  // available — do NOT wait for audioUnlocked. This way the player is already
+  // loaded when the user taps the gate, and we can call unMute() synchronously
+  // inside the click handler (preserving the user gesture context).
   useEffect(() => {
-    if (!isFullscreen || !youtubeAudioItemEarly || !audioUnlocked) return;
+    if (!isFullscreen || !youtubeAudioItemEarly) return;
     const videoId = getYouTubeVideoId(youtubeAudioItemEarly.url);
     if (!videoId) return;
 
@@ -1110,6 +1113,16 @@ export function TVDisplay({
             // YT.PlayerState.PLAYING === 1
             if (e.data === 1 && ytAudioPlayerRef.current) {
               const vol = ytAudioDuckedRef.current ? 0 : ytAudioVolumeRef.current;
+              // Only attempt unMute if user has already authorized audio.
+              // Otherwise stay muted; the click handler will unmute under
+              // a fresh user gesture.
+              const alreadyUnlocked = (() => {
+                try { return sessionStorage.getItem('tv-audio-unlocked') === '1'; } catch { return false; }
+              })();
+              if (!alreadyUnlocked) {
+                console.log('🔊 [YT Audio] PLAYING (muted) - waiting for user tap');
+                return;
+              }
               try {
                 // Baseline already set in onReady, so unMute restores to `vol` not 100
                 ytAudioPlayerRef.current.setVolume(vol);
