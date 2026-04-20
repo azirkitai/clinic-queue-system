@@ -1035,15 +1035,24 @@ export function TVDisplay({
     document.head.appendChild(tag);
   }, []);
 
-  // Extract YouTube video ID
+  // Extract YouTube video ID — supports watch, youtu.be, live, shorts, embed,
+  // mobile (m.youtube.com), music.youtube.com, and bare 11-char IDs.
   const getYouTubeVideoId = (url: string): string => {
     if (!url) return '';
-    if (url.includes('youtube.com/watch')) {
-      return url.split('v=')[1]?.split('&')[0] || '';
-    } else if (url.includes('youtube.com/live/')) {
-      return url.split('live/')[1]?.split('?')[0] || '';
-    } else if (url.includes('youtu.be/')) {
-      return url.split('youtu.be/')[1]?.split('?')[0] || '';
+    const trimmed = url.trim();
+    // Already a bare 11-char ID
+    if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return trimmed;
+    const patterns = [
+      /[?&]v=([a-zA-Z0-9_-]{11})/,           // ...watch?v=ID
+      /youtu\.be\/([a-zA-Z0-9_-]{11})/,      // youtu.be/ID
+      /\/live\/([a-zA-Z0-9_-]{11})/,         // /live/ID
+      /\/shorts\/([a-zA-Z0-9_-]{11})/,       // /shorts/ID
+      /\/embed\/([a-zA-Z0-9_-]{11})/,        // /embed/ID
+      /\/v\/([a-zA-Z0-9_-]{11})/,            // /v/ID (old format)
+    ];
+    for (const re of patterns) {
+      const match = trimmed.match(re);
+      if (match && match[1]) return match[1];
     }
     return '';
   };
@@ -1222,21 +1231,14 @@ export function TVDisplay({
 
   // YouTube video helper functions
   const isYouTubeUrl = (url: string): boolean => {
-    return url.includes('youtube.com/watch') || url.includes('youtube.com/live/') || url.includes('youtu.be/');
+    if (!url) return false;
+    return /youtube\.com|youtu\.be/i.test(url);
   };
 
   const getYouTubeEmbedUrl = (url: string): string => {
-    if (url.includes('youtube.com/watch')) {
-      const videoId = url.split('v=')[1]?.split('&')[0];
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}`;
-    } else if (url.includes('youtube.com/live/')) {
-      const videoId = url.split('live/')[1]?.split('?')[0];
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`;
-    } else if (url.includes('youtu.be/')) {
-      const videoId = url.split('youtu.be/')[1]?.split('?')[0];
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}`;
-    }
-    return url;
+    const videoId = getYouTubeVideoId(url);
+    if (!videoId) return url;
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}`;
   };
 
   const getYouTubeAudioEmbedUrl = (url: string): string => {
