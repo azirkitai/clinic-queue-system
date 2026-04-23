@@ -1014,14 +1014,44 @@ export function TVDisplay({
 
   const showAudioGate = isFullscreen && !!youtubeAudioItemEarly && !audioUnlocked;
 
+  const [ytPlayerState, setYtPlayerState] = useState<string>('INIT');
+
+  // Standalone helper used by the diagnostic badge. Must NOT depend on any
+  // function declared later in the component (no hoisting for const).
+  function extractYtId(url: string | undefined): string {
+    if (!url) return '';
+    const t = url.trim();
+    if (/^[a-zA-Z0-9_-]{11}$/.test(t)) return t;
+    const patterns = [
+      /[?&]v=([a-zA-Z0-9_-]{11})/,
+      /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+      /\/live\/([a-zA-Z0-9_-]{11})/,
+      /\/shorts\/([a-zA-Z0-9_-]{11})/,
+      /\/embed\/([a-zA-Z0-9_-]{11})/,
+      /\/v\/([a-zA-Z0-9_-]{11})/,
+    ];
+    for (const p of patterns) {
+      const m = t.match(p);
+      if (m) return m[1];
+    }
+    return '';
+  }
+
   let audioDiagnostic: string | null = null;
   if (isFullscreen) {
     if (!youtubeAudioItemEarly) {
-      audioDiagnostic = 'AUDIO: NO URL';
-    } else if (youtubeAudioVolume === 0) {
-      audioDiagnostic = 'AUDIO: VOL 0%';
-    } else if (!audioUnlocked) {
-      audioDiagnostic = 'AUDIO: TAP NEEDED';
+      audioDiagnostic = 'AUDIO: NO URL (settings)';
+    } else {
+      const vid = extractYtId(youtubeAudioItemEarly.url);
+      if (!vid) {
+        audioDiagnostic = `AUDIO: BAD URL (${(youtubeAudioItemEarly.url || '').slice(0, 30)})`;
+      } else if (youtubeAudioVolume === 0) {
+        audioDiagnostic = 'AUDIO: VOL 0%';
+      } else if (!audioUnlocked) {
+        audioDiagnostic = 'AUDIO: TAP NEEDED';
+      } else {
+        audioDiagnostic = `AUDIO: ${ytPlayerState} v${youtubeAudioVolume}`;
+      }
     }
   }
 
@@ -1109,7 +1139,18 @@ export function TVDisplay({
               console.error('🔊 [YT Audio] onReady error:', err);
             }
           },
+          onError: (e: any) => {
+            // YT error codes: 2=invalid param, 5=html5 error, 100=not found,
+            // 101/150=embed disabled by owner
+            const code = e?.data;
+            const map: Record<number, string> = { 2: 'BAD-PARAM', 5: 'HTML5-ERR', 100: 'NOT-FOUND', 101: 'EMBED-OFF', 150: 'EMBED-OFF' };
+            setYtPlayerState(`ERR-${map[code] || code}`);
+            console.error('🔊 [YT Audio] Player error:', code);
+          },
           onStateChange: (e: any) => {
+            // -1=unstarted 0=ended 1=playing 2=paused 3=buffering 5=cued
+            const stateMap: Record<number, string> = { '-1': 'UNSTART', 0: 'ENDED', 1: 'PLAY', 2: 'PAUSE', 3: 'BUFFER', 5: 'CUED' } as any;
+            setYtPlayerState(stateMap[e.data] || `S${e.data}`);
             // YT.PlayerState.PLAYING === 1
             if (e.data === 1 && ytAudioPlayerRef.current) {
               const vol = ytAudioDuckedRef.current ? 0 : ytAudioVolumeRef.current;
