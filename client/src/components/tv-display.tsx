@@ -1129,12 +1129,22 @@ export function TVDisplay({
             ytAudioReadyRef.current = true;
             try {
               const vol = ytAudioDuckedRef.current ? 0 : ytAudioVolumeRef.current;
-              // CRITICAL: Reset YT's internal "pre-mute volume" baseline to our target.
-              // Without this, unMute() will restore to default 100 and cause loud spike.
+              const alreadyUnlocked = (() => {
+                try { return sessionStorage.getItem('tv-audio-unlocked') === '1'; } catch { return false; }
+              })();
+              // Set baseline volume so unMute() won't spike to default 100.
               e.target.setVolume(vol);
-              e.target.mute();        // re-mute so YT remembers `vol` as pre-mute baseline
+              e.target.mute();
               e.target.playVideo();
-              console.log('🔊 [YT Audio] Player ready, baseline volume set to:', vol);
+              if (alreadyUnlocked) {
+                // User has tapped earlier (or refreshed within session).
+                // Browser autoplay quota is granted — unmute under our control.
+                e.target.unMute();
+                e.target.setVolume(vol);
+                console.log('🔊 [YT Audio] Player ready, AUTO-UNMUTED (session unlocked) vol:', vol);
+              } else {
+                console.log('🔊 [YT Audio] Player ready, baseline volume set to:', vol);
+              }
             } catch (err) {
               console.error('🔊 [YT Audio] onReady error:', err);
             }
@@ -1235,8 +1245,33 @@ export function TVDisplay({
       }, 200);
     }
 
+    // WATCHDOG: every 1.5s check if player is stuck in a non-playing state
+    // (UNSTART, CUED, PAUSED, ENDED) while the user has authorized audio.
+    // This catches the case where the initial UNSTART state never fires
+    // onStateChange (no transition to recover from), and any silent stalls.
+    const watchdog = setInterval(() => {
+      if (cancelled) return;
+      const player = ytAudioPlayerRef.current;
+      if (!player || !ytAudioReadyRef.current) return;
+      const isUnlocked = (() => {
+        try { return sessionStorage.getItem('tv-audio-unlocked') === '1'; } catch { return false; }
+      })();
+      if (!isUnlocked) return;
+      try {
+        const state = typeof player.getPlayerState === 'function' ? player.getPlayerState() : null;
+        // 1=PLAYING, 3=BUFFERING are healthy
+        if (state === 1 || state === 3) return;
+        // Stuck — kick it
+        player.playVideo();
+        player.unMute();
+        player.setVolume(ytAudioVolumeRef.current);
+        console.log('🔊 [YT Audio] Watchdog kicked stuck player from state', state);
+      } catch {}
+    }, 1500);
+
     return () => {
       cancelled = true;
+      clearInterval(watchdog);
       if (initIntervalId) clearInterval(initIntervalId);
       if (ytAudioPlayerRef.current) {
         try { ytAudioPlayerRef.current.destroy(); } catch {}
