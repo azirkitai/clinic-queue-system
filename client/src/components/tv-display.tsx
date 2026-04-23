@@ -1151,6 +1151,26 @@ export function TVDisplay({
             // -1=unstarted 0=ended 1=playing 2=paused 3=buffering 5=cued
             const stateMap: Record<number, string> = { '-1': 'UNSTART', 0: 'ENDED', 1: 'PLAY', 2: 'PAUSE', 3: 'BUFFER', 5: 'CUED' } as any;
             setYtPlayerState(stateMap[e.data] || `S${e.data}`);
+
+            // Auto-recovery: if player stalls in UNSTART/CUED/PAUSED/ENDED
+            // and the user has already authorized audio, force playVideo()
+            // again. Browser autoplay quota is granted for the whole session
+            // after the first user gesture, so this will succeed.
+            const isUnlocked = (() => {
+              try { return sessionStorage.getItem('tv-audio-unlocked') === '1'; } catch { return false; }
+            })();
+            if (isUnlocked && (e.data === -1 || e.data === 5 || e.data === 2 || e.data === 0) && ytAudioPlayerRef.current) {
+              setTimeout(() => {
+                try {
+                  if (!ytAudioPlayerRef.current) return;
+                  ytAudioPlayerRef.current.playVideo();
+                  ytAudioPlayerRef.current.unMute();
+                  ytAudioPlayerRef.current.setVolume(ytAudioVolumeRef.current);
+                  console.log('🔊 [YT Audio] Auto-recovery: forcing playVideo from state', e.data);
+                } catch {}
+              }, 300);
+            }
+
             // YT.PlayerState.PLAYING === 1
             if (e.data === 1 && ytAudioPlayerRef.current) {
               const vol = ytAudioDuckedRef.current ? 0 : ytAudioVolumeRef.current;
@@ -1798,9 +1818,25 @@ export function TVDisplay({
   );
 
   const youtubeAudioIframe = (isFullscreen && youtubeAudioItemEarly) ? (
+    // IMPORTANT: must be a real, "visible-to-the-engine" iframe.
+    // 1×1 + opacity:0 + off-screen makes Chrome's intersection observer
+    // treat the player as non-visible and silently block autoplay
+    // (state stays UNSTART forever). We keep it small but in-viewport
+    // and just hide it BEHIND the content with negative z-index.
     <div
       ref={ytAudioContainerRef}
-      style={{ position: 'fixed', width: '1px', height: '1px', top: '-10px', left: '-10px', opacity: 0, pointerEvents: 'none', overflow: 'hidden' }}
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        right: 0,
+        width: '160px',
+        height: '90px',
+        zIndex: -1,
+        opacity: 0.01,
+        pointerEvents: 'none',
+        overflow: 'hidden',
+      }}
+      aria-hidden="true"
       data-testid="youtube-audio-iframe"
     />
   ) : null;
