@@ -223,6 +223,7 @@ export default function Settings() {
   const [ttsTestName, setTtsTestName] = useState("");
   const [ttsTestRoom, setTtsTestRoom] = useState("");
   const [editingPronunciationIndex, setEditingPronunciationIndex] = useState<number | null>(null);
+  const [pronunciationPage, setPronunciationPage] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // TV Mode state (separate from Settings API - stored in localStorage)
@@ -2529,6 +2530,21 @@ export default function Settings() {
 
                   {currentSettings.ttsPronunciations.length > 0 ? (
                     <div className="space-y-2">
+                      {(() => {
+                        const PAGE_SIZE = 5;
+                        const total = currentSettings.ttsPronunciations.length;
+                        const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+                        const safePage = Math.min(pronunciationPage, totalPages - 1);
+                        if (safePage !== pronunciationPage) {
+                          setTimeout(() => setPronunciationPage(safePage), 0);
+                        }
+                        const reversed = currentSettings.ttsPronunciations
+                          .map((rule, originalIndex) => ({ rule, originalIndex }))
+                          .reverse();
+                        const start = safePage * PAGE_SIZE;
+                        const pageItems = reversed.slice(start, start + PAGE_SIZE);
+                        return (
+                          <>
                       <div className="rounded-md border overflow-hidden">
                         <table className="w-full text-sm">
                           <thead>
@@ -2541,7 +2557,7 @@ export default function Settings() {
                             </tr>
                           </thead>
                           <tbody>
-                            {currentSettings.ttsPronunciations.map((rule, index) => (
+                            {pageItems.map(({ rule, originalIndex: index }) => (
                               <tr key={index} className="border-b last:border-b-0" data-testid={`row-pronunciation-${index}`}>
                                 <td className="px-3 py-2 text-xs text-muted-foreground">{index + 1}</td>
                                 <td className="px-3 py-2 font-mono font-semibold">{rule.original || '-'}</td>
@@ -2603,6 +2619,37 @@ export default function Settings() {
                           </tbody>
                         </table>
                       </div>
+
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-between gap-2 pt-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPronunciationPage((p) => Math.max(0, p - 1))}
+                            disabled={safePage === 0}
+                            data-testid="button-pronunciation-prev"
+                          >
+                            <ChevronLeft className="h-4 w-4 mr-1" />
+                            Sebelum
+                          </Button>
+                          <span className="text-xs text-muted-foreground" data-testid="text-pronunciation-page">
+                            Halaman {safePage + 1} / {totalPages} ({total} sebutan)
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPronunciationPage((p) => Math.min(totalPages - 1, p + 1))}
+                            disabled={safePage >= totalPages - 1}
+                            data-testid="button-pronunciation-next"
+                          >
+                            Seterusnya
+                            <ChevronRight className="h-4 w-4 ml-1" />
+                          </Button>
+                        </div>
+                      )}
+                          </>
+                        );
+                      })()}
 
                       {editingPronunciationIndex !== null && editingPronunciationIndex < currentSettings.ttsPronunciations.length && (() => {
                         const editRule = currentSettings.ttsPronunciations[editingPronunciationIndex];
