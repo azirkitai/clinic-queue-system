@@ -1016,6 +1016,29 @@ export function TVDisplay({
 
   const [ytPlayerState, setYtPlayerState] = useState<string>('INIT');
 
+  const [diagnosticBadgeVisible, setDiagnosticBadgeVisible] = useState(true);
+  useEffect(() => {
+    let hideTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleHide = () => {
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => setDiagnosticBadgeVisible(false), 3000);
+    };
+    const handleActivity = () => {
+      setDiagnosticBadgeVisible(true);
+      scheduleHide();
+    };
+    scheduleHide();
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('touchstart', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+    return () => {
+      if (hideTimer) clearTimeout(hideTimer);
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('touchstart', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+    };
+  }, []);
+
   // Standalone helper used by the diagnostic badge. Must NOT depend on any
   // function declared later in the component (no hoisting for const).
   function extractYtId(url: string | undefined): string {
@@ -1897,6 +1920,8 @@ export function TVDisplay({
               color: '#ffffff',
               fontFamily: 'monospace',
               letterSpacing: '0.05em',
+              opacity: diagnosticBadgeVisible ? 1 : 0,
+              transition: 'opacity 400ms ease-in-out',
             }}
           >
             {audioDiagnostic}
