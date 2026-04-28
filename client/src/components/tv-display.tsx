@@ -1586,26 +1586,26 @@ export function TVDisplay({
                 );
               }
               return (
-                <div key={item.id} className="flex flex-col px-2 py-1 rounded-lg min-h-0 leading-none"
+                <div key={item.id} className="flex flex-col items-center justify-center px-2 py-1 rounded-lg min-h-0 leading-none text-center"
                      style={{
                        ...getBackgroundStyle(queueItemBackgroundMode, queueItemBackgroundColor, queueItemBackgroundGradient, '#2563eb')
                      }}>
-                  <div style={{ flex: '3 1 0', minHeight: 0, width: '100%' }}>
+                  <div style={{ flex: '3 1 0', minHeight: 0, width: '100%', textAlign: 'center' }}>
                     <FitText
                       text={getDisplayName(item.name)}
-                      baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'bold' }}
+                      baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'bold', textAlign: 'center' }}
                       maxFontSize={isFullscreen ? 64 : 48}
                       minFontSize={isFullscreen ? 24 : 20}
-                      align="end"
+                      align="center"
                     />
                   </div>
-                  <div style={{ flex: '2 1 0', minHeight: 0, width: '100%' }}>
+                  <div style={{ flex: '2 1 0', minHeight: 0, width: '100%', textAlign: 'center' }}>
                     <FitText
                       text={item.room}
-                      baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'normal', opacity: 0.9 }}
+                      baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'normal', opacity: 0.9, textAlign: 'center' }}
                       maxFontSize={isFullscreen ? 44 : 32}
                       minFontSize={isFullscreen ? 18 : 16}
-                      align="start"
+                      align="center"
                     />
                   </div>
                 </div>
