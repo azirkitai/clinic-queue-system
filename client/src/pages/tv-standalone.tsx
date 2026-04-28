@@ -311,7 +311,8 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
       };
     })();
 
-    const history: QueueItem[] = callLogRef.current
+    const history: QueueItem[] = [...callLogRef.current]
+      .sort((a, b) => b.calledAt.getTime() - a.calledAt.getTime())
       .filter(entry => !current || entry.patientId !== current.id || entry.calledAt.getTime() !== current.calledAt?.getTime())
       .slice(0, 4)
       .map(entry => ({
