@@ -259,7 +259,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   }, [socket]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 via-cyan-50 to-teal-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 p-4">
       <div className="w-full max-w-md">
         {/* Logo and Brand */}
         <div className="text-center mb-8">
@@ -333,12 +333,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 <Button
                   type="submit"
                   data-testid="button-login"
-                  className="w-full text-white border-0"
+                  className="w-full btn-gradient"
                   disabled={isLoading}
-                  style={{
-                    background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 50%, #020617 100%)',
-                    backgroundImage: 'linear-gradient(180deg, #1e293b 0%, #0f172a 50%, #020617 100%)'
-                  }}
                 >
                   {isLoading ? (
                     <>

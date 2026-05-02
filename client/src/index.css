@@ -14,67 +14,67 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 0 0% 98%;
+  --background: 210 30% 98%;
 
-  --foreground: 220 15% 15%;
+  --foreground: 215 25% 17%;
 
-  --border: 0 0% 88%;
+  --border: 215 20% 90%;
 
-  --card: 0 0% 96%;
+  --card: 0 0% 100%;
 
-  --card-foreground: 220 15% 18%;
+  --card-foreground: 215 25% 17%;
 
-  --card-border: 0 0% 90%;
+  --card-border: 215 20% 92%;
 
-  --sidebar: 220 40% 15%;
+  --sidebar: 200 70% 12%;
 
-  --sidebar-foreground: 0 0% 95%;
+  --sidebar-foreground: 200 30% 96%;
 
-  --sidebar-border: 220 30% 20%;
+  --sidebar-border: 200 60% 18%;
 
-  --sidebar-primary: 220 60% 25%;
+  --sidebar-primary: 188 85% 42%;
 
-  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-primary-foreground: 0 0% 100%;
 
-  --sidebar-accent: 220 50% 30%;
+  --sidebar-accent: 200 50% 22%;
 
   --sidebar-accent-foreground: 0 0% 98%;
 
-  --sidebar-ring: 220 60% 40%;
+  --sidebar-ring: 188 85% 50%;
 
-  --popover: 0 0% 94%;
+  --popover: 0 0% 100%;
 
-  --popover-foreground: 220 15% 20%;
+  --popover-foreground: 215 25% 17%;
 
-  --popover-border: 0 0% 86%;
+  --popover-border: 215 20% 90%;
 
-  --primary: 210 100% 50%;
+  --primary: 199 89% 48%;
 
-  --primary-foreground: 0 0% 98%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 0 0% 92%;
+  --secondary: 215 25% 95%;
 
-  --secondary-foreground: 220 15% 25%;
+  --secondary-foreground: 215 25% 25%;
 
-  --muted: 0 0% 93%;
+  --muted: 215 20% 95%;
 
-  --muted-foreground: 0 0% 45%;
+  --muted-foreground: 215 15% 45%;
 
-  --accent: 210 15% 90%;
+  --accent: 199 70% 94%;
 
-  --accent-foreground: 220 15% 30%;
+  --accent-foreground: 199 80% 28%;
 
-  --destructive: 0 70% 50%;
+  --destructive: 0 75% 52%;
 
-  --destructive-foreground: 0 0% 98%;
+  --destructive-foreground: 0 0% 100%;
 
-  --input: 0 0% 75%;
-  --ring: 210 100% 50%;
-  --chart-1: 120 60% 45%;
-  --chart-2: 45 100% 55%;
-  --chart-3: 210 100% 50%;
-  --chart-4: 280 70% 50%;
-  --chart-5: 30 80% 55%;
+  --input: 215 20% 82%;
+  --ring: 199 89% 48%;
+  --chart-1: 158 64% 45%;
+  --chart-2: 38 92% 55%;
+  --chart-3: 199 89% 48%;
+  --chart-4: 268 70% 58%;
+  --chart-5: 12 80% 58%;
 
   --font-sans: Inter, sans-serif;
   --font-serif: Georgia, serif;
@@ -118,8 +118,8 @@
   /* TV border radius - scales proportionally */
   --tv-radius: clamp(8px, 1.0vmin, 24px);
 
-  /* Sidebar gradient background - Navy Blue to Cyan/Teal */
-  --sidebar-gradient: linear-gradient(180deg, #001a33 0%, #0f3a4f 50%, #0d7490 100%);
+  /* Sidebar gradient background - Refined Deep Teal to Cyan */
+  --sidebar-gradient: linear-gradient(180deg, #06283d 0%, #0f5566 45%, #0e8a9c 100%);
 
   /* Automatically computed borders - intensity can be controlled by the user by the --opaque-button-border-intensity setting */
 
@@ -380,14 +380,14 @@
     animation: tv-blink 0.8s step-end 5;
   }
 
-  /* Custom Sidebar Gradient - Force Override */
+  /* Custom Sidebar Gradient - Refined Deep Teal */
   .sidebar-gradient {
-    background: linear-gradient(180deg, #2980b9 0%, #1f4e79 30%, #1a252f 70%, #0d1821 100%) !important;
+    background: linear-gradient(180deg, #06283d 0%, #0f5566 45%, #0e8a9c 100%) !important;
   }
 
   /* Override Shadcn Sidebar default background */
   .bg-sidebar {
-    background: linear-gradient(180deg, #001a33 0%, #0f3a4f 50%, #0d7490 100%) !important;
+    background: linear-gradient(180deg, #06283d 0%, #0f5566 45%, #0e8a9c 100%) !important;
   }
 
   .sidebar-section-header {
@@ -404,20 +404,19 @@
     margin-top: 0;
   }
 
-  /* Gradient Button Styling - Match Sidebar Gradient */
+  /* Gradient Button Styling - Match Refined Sidebar Gradient */
   .btn-gradient {
-    background: linear-gradient(180deg, #001a33 0%, #0f3a4f 50%, #0d7490 100%) !important;
-    border: 1px solid #0d7490 !important;
+    background: linear-gradient(135deg, #0f5566 0%, #0e8a9c 60%, #06b6d4 100%) !important;
+    border: 1px solid #0e8a9c !important;
     color: white !important;
-    transition: all 0.3s ease !important;
+    transition: all 0.25s ease !important;
+    box-shadow: 0 1px 2px rgba(6, 40, 61, 0.15) !important;
   }
 
   .btn-gradient:hover {
-    background: linear-gradient(180deg, #0f3a4f 0%, #0d7490 50%, #06b6d4 100%) !important;
+    background: linear-gradient(135deg, #0e8a9c 0%, #06b6d4 60%, #22d3ee 100%) !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 4px 8px rgba(13, 107, 144, 0.3) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-    transition: all 0.2s ease !important;
+    box-shadow: 0 4px 12px rgba(14, 138, 156, 0.35) !important;
   }
 
   input[type="color"]:hover {
@@ -633,10 +632,7 @@
 
 
 
-/* Override Sidebar background color with gradient */
-.bg-sidebar {
-  background: linear-gradient(180deg, #001a33 0%, #0f3a4f 50%, #0d7490 100%) !important;
-}
+/* (Sidebar background gradient is defined inside @layer utilities above) */
 
 /* Uniform color swatch - all color pickers same round size */
 input[type="color"] {

@@ -11,6 +11,7 @@ Preferred communication style: Simple, everyday language.
 ### Frontend
 - **Framework**: React 18 with TypeScript (Vite).
 - **UI/UX**: Shadcn/ui (Radix UI) and Tailwind CSS with Material Design principles, custom theme system with light/dark modes.
+  - **Visual Theme (refreshed)**: Modern medical sky-teal palette. `--primary` is sky-blue (199 89% 48%), `--background` is a subtle cool tint (210 30% 98%), cards are pure white. Sidebar uses a refined deep-teal-to-cyan gradient (`#06283d → #0f5566 → #0e8a9c`) defined once via `.bg-sidebar`/`.sidebar-gradient` in `client/src/index.css`. The `.btn-gradient` utility (135deg teal→cyan) styles primary action buttons (Fullscreen TV, Login). Stat numbers use cohesive Tailwind `-600` semantic colors: amber (Waiting), sky (Called), violet (Dispensary), emerald (Completed), primary (Active Rooms).
   - **TV Display**: Optimized for Smart TVs with a light theme, white background, dark text, 2-3x larger fonts, and high contrast. Includes a manual toggle in settings for "TV Mode" which syncs across tabs via local storage.
 - **State Management**: TanStack Query for server state, React hooks for local state.
 - **Routing**: Wouter.

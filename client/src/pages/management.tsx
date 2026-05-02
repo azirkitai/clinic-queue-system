@@ -288,7 +288,7 @@ export default function Management() {
             <CardTitle className="text-sm font-medium">Active Rooms</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600" data-testid="text-active-windows">
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400" data-testid="text-active-windows">
               {windows.filter(w => w.isActive).length}
             </div>
           </CardContent>
@@ -299,7 +299,7 @@ export default function Management() {
             <CardTitle className="text-sm font-medium">In Use</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600" data-testid="text-occupied-windows">
+            <div className="text-2xl font-bold text-sky-600 dark:text-sky-400" data-testid="text-occupied-windows">
               {windows.filter(w => w.currentPatientId).length}
             </div>
           </CardContent>

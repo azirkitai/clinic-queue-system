@@ -362,7 +362,7 @@ export default function Dispensary() {
       {/* Priority Patients */}
       {priorityDispensary.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold mb-4 flex items-center text-yellow-600 dark:text-yellow-500">
+          <h2 className="text-lg font-semibold mb-4 flex items-center text-amber-600 dark:text-amber-400">
             <Star className="h-5 w-5 mr-2 fill-current" />
             Priority Patients ({priorityDispensary.length})
           </h2>

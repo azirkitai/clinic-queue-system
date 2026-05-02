@@ -381,7 +381,7 @@ export default function Administration() {
             <CardTitle className="text-sm font-medium">Online Now</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600" data-testid="text-online-users">
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400" data-testid="text-online-users">
               {users.filter(u => u.isOnline).length}
             </div>
           </CardContent>
@@ -392,7 +392,7 @@ export default function Administration() {
             <CardTitle className="text-sm font-medium">Active</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600" data-testid="text-active-users">
+            <div className="text-2xl font-bold text-sky-600 dark:text-sky-400" data-testid="text-active-users">
               {users.filter(u => u.isActive).length}
             </div>
           </CardContent>

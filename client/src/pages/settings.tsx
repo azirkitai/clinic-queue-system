@@ -947,7 +947,7 @@ export default function Settings() {
             </div>
             
             {unsavedChanges.length > 0 && (
-              <div className="flex items-center space-x-2 text-sm text-orange-600">
+              <div className="flex items-center space-x-2 text-sm text-amber-600">
                 <Save className="h-4 w-4" />
                 <span>{unsavedChanges.length} unsaved changes</span>
               </div>
@@ -1036,7 +1036,7 @@ export default function Settings() {
                     value="own"
                     checked={currentSettings.dashboardMediaType === "own"}
                     onChange={(e) => updateDisplaySetting('dashboardMediaType', e.target.value)}
-                    className="w-4 h-4 text-blue-600"
+                    className="w-4 h-4 text-primary"
                     data-testid="radio-own-media"
                   />
                   <Label htmlFor="own-media">Upload Images</Label>
@@ -1049,7 +1049,7 @@ export default function Settings() {
                     value="youtube"
                     checked={currentSettings.dashboardMediaType === "youtube"}
                     onChange={(e) => updateDisplaySetting('dashboardMediaType', e.target.value)}
-                    className="w-4 h-4 text-blue-600"
+                    className="w-4 h-4 text-primary"
                     data-testid="radio-youtube-media"
                   />
                   <Label htmlFor="youtube-media">YouTube Video</Label>
@@ -1062,7 +1062,7 @@ export default function Settings() {
                     value="combine"
                     checked={currentSettings.dashboardMediaType === "combine"}
                     onChange={(e) => updateDisplaySetting('dashboardMediaType', e.target.value)}
-                    className="w-4 h-4 text-blue-600"
+                    className="w-4 h-4 text-primary"
                     data-testid="radio-combine-media"
                   />
                   <Label htmlFor="combine-media">Combine (Image + YouTube Audio)</Label>
@@ -1169,7 +1169,7 @@ export default function Settings() {
                           {selectedFiles.map((file, index) => (
                             <div key={index} className="flex items-center space-x-2 p-3 bg-white border rounded-lg">
                               <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                                <Upload className="h-4 w-4 text-blue-600" />
+                                <Upload className="h-4 w-4 text-primary" />
                               </div>
                               <div className="flex-1 text-left min-w-0">
                                 <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
@@ -1251,7 +1251,7 @@ export default function Settings() {
                               <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 ${media.type === 'image' ? 'hidden' : ''}`}>
                                 <div className="text-center p-2">
                                   <Upload className="h-8 w-8 text-blue-400 mx-auto mb-2" />
-                                  <p className="text-xs text-blue-600 font-medium">{media.filename}</p>
+                                  <p className="text-xs text-primary font-medium">{media.filename}</p>
                                 </div>
                               </div>
                               

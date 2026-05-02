@@ -372,7 +372,7 @@ export default function Dashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600" data-testid="text-waiting-count">
+            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400" data-testid="text-waiting-count">
               {statsLoading ? "..." : (stats?.totalWaiting ?? 0)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -387,7 +387,7 @@ export default function Dashboard() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600" data-testid="text-called-count">
+            <div className="text-2xl font-bold text-sky-600 dark:text-sky-400" data-testid="text-called-count">
               {statsLoading ? "..." : (stats?.totalCalled ?? 0)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -402,7 +402,7 @@ export default function Dashboard() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600" data-testid="text-dispensary-count">
+            <div className="text-2xl font-bold text-violet-600 dark:text-violet-400" data-testid="text-dispensary-count">
               {statsLoading ? "..." : (stats?.totalDispensary ?? 0)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -417,7 +417,7 @@ export default function Dashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600" data-testid="text-completed-count">
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400" data-testid="text-completed-count">
               {statsLoading ? "..." : (stats?.totalCompleted ?? 0)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -448,7 +448,7 @@ export default function Dashboard() {
           <CardTitle>TV Display Preview</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden max-w-2xl mx-auto" style={{ aspectRatio: '16/9' }}>
+          <div className="bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden max-w-2xl mx-auto ring-1 ring-border" style={{ aspectRatio: '16/9' }}>
             <div className="h-full scale-[0.42] origin-top-left" style={{ width: '238%', height: '238%' }}>
               <TVDisplay
                 currentPatient={currentPatient || undefined}
