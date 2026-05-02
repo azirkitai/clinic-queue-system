@@ -152,6 +152,14 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
 
     socket.on('settings:updated', () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tv/${token}/settings`] });
+      // ✅ FIX: media list depends on youtubeUrl + dashboardMediaType settings.
+      // Without this, switching combine/own/youtube mode (or changing the URL)
+      // takes up to 3 minutes (next poll) for the youtube-audio item to appear/disappear.
+      queryClient.invalidateQueries({ queryKey: [`/api/tv/${token}/media/active`] });
+    });
+
+    socket.on('media:updated', () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tv/${token}/media/active`] });
     });
 
     // End-of-day reset events

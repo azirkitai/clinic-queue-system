@@ -2433,6 +2433,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalTimeMs: totalTime
       });
 
+      invalidateCache(req.session.userId as string);
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('media:updated', { timestamp: Date.now() });
+      }
+
       res.status(201).json(media);
     } catch (error: any) {
       const totalTime = Date.now() - uploadStartTime;
@@ -2498,6 +2503,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.session.userId as string,
       });
 
+      invalidateCache(req.session.userId as string);
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('media:updated', { timestamp: Date.now() });
+      }
+
       res.status(201).json(media);
     } catch (error) {
       console.error("Error saving uploaded media:", error);
@@ -2535,6 +2545,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.session.userId,
       });
 
+      invalidateCache(req.session.userId);
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('media:updated', { timestamp: Date.now() });
+      }
+
       res.status(201).json(media);
     } catch (error) {
       console.error("Error creating media:", error);
@@ -2563,6 +2578,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Media not found" });
       }
       
+      invalidateCache(req.session.userId);
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('media:updated', { timestamp: Date.now() });
+      }
+
       res.json(media);
     } catch (error) {
       console.error("Error updating media:", error);
@@ -2585,6 +2605,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Media not found" });
       }
       
+      invalidateCache(req.session.userId);
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('media:updated', { timestamp: Date.now() });
+      }
+
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting media:", error);
@@ -2739,6 +2764,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (updated) {
           updatedMedia.push(updated);
         }
+      }
+
+      invalidateCache(req.session.userId);
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('media:updated', { timestamp: Date.now() });
       }
 
       res.json({ 

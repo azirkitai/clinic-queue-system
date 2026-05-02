@@ -294,6 +294,16 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
       queryClient.invalidateQueries({ queryKey: ['/api/settings/tv'] });
       queryClient.invalidateQueries({ queryKey: ['/api/settings/logo'] }); // ✅ Also invalidate logo cache
+      // ✅ FIX: /api/display response depends on youtubeUrl + dashboardMediaType settings
+      // (combine mode appends youtube-audio item). Without this, switching mode/URL
+      // takes up to 3 minutes (next poll) to reflect.
+      queryClient.invalidateQueries({ queryKey: ['/api/display'] });
+    });
+
+    // Media events — emitted when media library or active selection changes
+    socket.on('media:updated', () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/media'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/display'] });
     });
 
     socket.on('themes:updated', () => {
@@ -346,6 +356,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       socket.off('window:updated');
       socket.off('window:patient-updated');
       socket.off('settings:updated');
+      socket.off('media:updated');
       socket.off('themes:updated');
       socket.off('text-groups:updated');
       socket.off('system:force-refresh');
