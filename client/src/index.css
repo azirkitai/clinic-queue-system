@@ -118,8 +118,8 @@
   /* TV border radius - scales proportionally */
   --tv-radius: clamp(8px, 1.0vmin, 24px);
 
-  /* Sidebar gradient background - Refined Deep Teal to Cyan */
-  --sidebar-gradient: linear-gradient(180deg, #06283d 0%, #0f5566 45%, #0e8a9c 100%);
+  /* Sidebar gradient background - Premium Indigo to Violet */
+  --sidebar-gradient: linear-gradient(180deg, #1e1b4b 0%, #4c1d95 50%, #7c3aed 100%);
 
   /* Automatically computed borders - intensity can be controlled by the user by the --opaque-button-border-intensity setting */
 
@@ -397,14 +397,14 @@
     animation: tv-blink 0.8s step-end 5;
   }
 
-  /* Custom Sidebar Gradient - Refined Deep Teal */
+  /* Custom Sidebar Gradient - Premium Indigo → Violet */
   .sidebar-gradient {
-    background: linear-gradient(180deg, #06283d 0%, #0f5566 45%, #0e8a9c 100%) !important;
+    background: linear-gradient(180deg, #1e1b4b 0%, #4c1d95 50%, #7c3aed 100%) !important;
   }
 
   /* Override Shadcn Sidebar default background */
   .bg-sidebar {
-    background: linear-gradient(180deg, #06283d 0%, #0f5566 45%, #0e8a9c 100%) !important;
+    background: linear-gradient(180deg, #1e1b4b 0%, #4c1d95 50%, #7c3aed 100%) !important;
   }
 
   .sidebar-section-header {
@@ -421,19 +421,19 @@
     margin-top: 0;
   }
 
-  /* Gradient Button Styling - Match Refined Sidebar Gradient */
+  /* Gradient Button Styling - Match Premium Indigo→Violet Sidebar */
   .btn-gradient {
-    background: linear-gradient(135deg, #0f5566 0%, #0e8a9c 60%, #06b6d4 100%) !important;
-    border: 1px solid #0e8a9c !important;
+    background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 60%, #a855f7 100%) !important;
+    border: 1px solid #7c3aed !important;
     color: white !important;
     transition: all 0.25s ease !important;
-    box-shadow: 0 1px 2px rgba(6, 40, 61, 0.15) !important;
+    box-shadow: 0 1px 2px rgba(30, 27, 75, 0.25) !important;
   }
 
   .btn-gradient:hover {
-    background: linear-gradient(135deg, #0e8a9c 0%, #06b6d4 60%, #22d3ee 100%) !important;
+    background: linear-gradient(135deg, #7c3aed 0%, #a855f7 60%, #c084fc 100%) !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 4px 12px rgba(14, 138, 156, 0.35) !important;
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.45) !important;
   }
 
   input[type="color"]:hover {
