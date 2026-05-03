@@ -118,8 +118,8 @@
   /* TV border radius - scales proportionally */
   --tv-radius: clamp(8px, 1.0vmin, 24px);
 
-  /* Sidebar gradient background - Premium Indigo to Violet */
-  --sidebar-gradient: linear-gradient(180deg, #1e1b4b 0%, #4c1d95 50%, #7c3aed 100%);
+  /* Sidebar gradient background - Pure Dark Charcoal */
+  --sidebar-gradient: linear-gradient(180deg, #000000 0%, #0a0a0a 40%, #1a1a1a 100%);
 
   /* Automatically computed borders - intensity can be controlled by the user by the --opaque-button-border-intensity setting */
 
@@ -246,12 +246,9 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 
-  /* Dark theme: full-page gradient background — deep navy → teal → cyan glow */
+  /* Dark theme: full-page pure dark gradient — black → charcoal */
   .dark body {
-    background:
-      radial-gradient(1200px 800px at 85% -10%, hsl(188 85% 30% / 0.18), transparent 60%),
-      radial-gradient(900px 700px at -10% 110%, hsl(210 80% 25% / 0.22), transparent 60%),
-      linear-gradient(160deg, hsl(215 40% 6%) 0%, hsl(210 45% 9%) 45%, hsl(195 50% 12%) 100%);
+    background: linear-gradient(160deg, #000000 0%, #0a0a0a 45%, #1a1a1a 100%);
     background-attachment: fixed;
     min-height: 100vh;
   }
@@ -397,14 +394,14 @@
     animation: tv-blink 0.8s step-end 5;
   }
 
-  /* Custom Sidebar Gradient - Premium Indigo → Violet */
+  /* Custom Sidebar Gradient - Pure Dark Charcoal */
   .sidebar-gradient {
-    background: linear-gradient(180deg, #1e1b4b 0%, #4c1d95 50%, #7c3aed 100%) !important;
+    background: linear-gradient(180deg, #000000 0%, #0a0a0a 40%, #1a1a1a 100%) !important;
   }
 
   /* Override Shadcn Sidebar default background */
   .bg-sidebar {
-    background: linear-gradient(180deg, #1e1b4b 0%, #4c1d95 50%, #7c3aed 100%) !important;
+    background: linear-gradient(180deg, #000000 0%, #0a0a0a 40%, #1a1a1a 100%) !important;
   }
 
   .sidebar-section-header {
@@ -421,19 +418,19 @@
     margin-top: 0;
   }
 
-  /* Gradient Button Styling - Match Premium Indigo→Violet Sidebar */
+  /* Gradient Button Styling - Sleek Dark Charcoal */
   .btn-gradient {
-    background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 60%, #a855f7 100%) !important;
-    border: 1px solid #7c3aed !important;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 60%, #3a3a3a 100%) !important;
+    border: 1px solid #3a3a3a !important;
     color: white !important;
     transition: all 0.25s ease !important;
-    box-shadow: 0 1px 2px rgba(30, 27, 75, 0.25) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
   }
 
   .btn-gradient:hover {
-    background: linear-gradient(135deg, #7c3aed 0%, #a855f7 60%, #c084fc 100%) !important;
+    background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 60%, #4a4a4a 100%) !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.45) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6) !important;
   }
 
   input[type="color"]:hover {
