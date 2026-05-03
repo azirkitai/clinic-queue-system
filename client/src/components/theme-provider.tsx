@@ -26,33 +26,23 @@ export function ThemeProvider({
   storageKey = "ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  )
+  // FORCED DARK MODE — entire system uses dark gradient theme.
+  // Old localStorage preferences are ignored to ensure consistent appearance.
+  const [theme, setThemeState] = useState<Theme>("dark")
 
   useEffect(() => {
     const root = window.document.documentElement
-
     root.classList.remove("light", "dark")
-
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light"
-
-      root.classList.add(systemTheme)
-      return
-    }
-
-    root.classList.add(theme)
-  }, [theme])
+    root.classList.add("dark")
+    try {
+      localStorage.setItem(storageKey, "dark")
+    } catch {}
+  }, [theme, storageKey])
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
-      setTheme(theme)
+    setTheme: (_theme: Theme) => {
+      setThemeState("dark")
     },
   }
 
