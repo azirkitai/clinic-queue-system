@@ -8,6 +8,28 @@ interface AuthenticatedSocket extends Socket {
   clinicRoom?: string;
 }
 
+// ✅ BANDWIDTH FIX: Singleton session store reused across all socket connections.
+// Previous: cipta PgSession + sessionStore baharu setiap connection = setup DB connection berulang.
+// Sekarang: satu instance untuk seluruh server lifetime (mirror server/index.ts pattern).
+const PgSession = connectPgSimple(session);
+const sharedSessionStore = new PgSession({
+  conString: process.env.DATABASE_URL,
+  tableName: 'user_sessions',
+  createTableIfMissing: true,
+});
+
+const sharedSessionParser = session({
+  store: sharedSessionStore,
+  secret: process.env.SESSION_SECRET || 'clinic-management-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000,
+  },
+});
+
 // Track online users: userId -> Set of socket IDs
 const onlineUsers = new Map<string, Set<string>>();
 
@@ -29,28 +51,8 @@ export function setupWebSocket(io: Server) {
   io.use((socket: AuthenticatedSocket, next) => {
     const req = socket.request as any;
     
-    // Parse session from socket request
-    const PgSession = connectPgSimple(session);
-    const sessionStore = new PgSession({
-      conString: process.env.DATABASE_URL,
-      tableName: 'user_sessions',
-      createTableIfMissing: true,
-    });
-    
-    // Get session ID from cookie
-    const sessionParser = session({
-      store: sessionStore,
-      secret: process.env.SESSION_SECRET || 'clinic-management-secret-key-change-in-production',
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000,
-      },
-    });
-    
-    sessionParser(req, {} as any, () => {
+    // ✅ BANDWIDTH FIX: Reuse shared session parser/store (created once at module load)
+    sharedSessionParser(req, {} as any, () => {
       if (req.session && req.session.userId) {
         // Authenticated connection - assign userId and clinic room
         socket.userId = req.session.userId;

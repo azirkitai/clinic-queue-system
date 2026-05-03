@@ -2817,7 +2817,15 @@ export class DatabaseStorage implements IStorage {
     const endOfDayUTC = new Date(`${today}T23:59:59.999Z`);
     endOfDayUTC.setTime(endOfDayUTC.getTime() - malaysiaOffset);
 
-    const todayPatients = await db.select().from(schema.patients)
+    // ✅ BANDWIDTH FIX: Use COUNT aggregation instead of SELECT * (saves ~99% bandwidth)
+    // Previous: fetched ALL patient rows including trackingHistory (~5-10KB each × 200 patients = 1-2MB)
+    // Now: 4 small COUNT integers transferred from Neon
+    const [counts] = await db.select({
+      totalWaiting: sql<number>`COUNT(*) FILTER (WHERE ${schema.patients.status} = 'waiting')`.mapWith(Number),
+      totalCalled: sql<number>`COUNT(*) FILTER (WHERE ${schema.patients.status} = 'called')`.mapWith(Number),
+      totalCompleted: sql<number>`COUNT(*) FILTER (WHERE ${schema.patients.status} = 'completed')`.mapWith(Number),
+      totalDispensary: sql<number>`COUNT(*) FILTER (WHERE ${schema.patients.readyForDispensary} = true AND ${schema.patients.status} != 'completed')`.mapWith(Number),
+    }).from(schema.patients)
       .where(
         and(
           eq(schema.patients.userId, userId),
@@ -2829,10 +2837,10 @@ export class DatabaseStorage implements IStorage {
     const windows = await this.getWindows(userId);
 
     return {
-      totalWaiting: todayPatients.filter(p => p.status === "waiting").length,
-      totalCalled: todayPatients.filter(p => p.status === "called").length,
-      totalCompleted: todayPatients.filter(p => p.status === "completed").length,
-      totalDispensary: todayPatients.filter(p => p.readyForDispensary && p.status !== "completed").length,
+      totalWaiting: counts?.totalWaiting ?? 0,
+      totalCalled: counts?.totalCalled ?? 0,
+      totalCompleted: counts?.totalCompleted ?? 0,
+      totalDispensary: counts?.totalDispensary ?? 0,
       activeWindows: windows.filter(w => w.isActive && w.currentPatientId).length,
       totalWindows: windows.filter(w => w.isActive).length
     };
