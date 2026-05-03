@@ -159,62 +159,63 @@
   --opaque-button-border-intensity: 9;  /* In terms of percentages */
 
   /* Backgrounds applied on top of other backgrounds when hovered/active */
-  --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
+  --elevate-1: rgba(255,255,255, .05);
+  --elevate-2: rgba(255,255,255, .10);
 
-  --background: 220 15% 12%;
+  /* Dark gradient theme — deep navy → teal */
+  --background: 215 35% 8%;
 
-  --foreground: 0 0% 92%;
+  --foreground: 195 25% 95%;
 
-  --border: 220 15% 20%;
+  --border: 200 30% 22%;
 
-  --card: 220 15% 15%;
+  --card: 210 35% 13%;
 
-  --card-foreground: 0 0% 90%;
+  --card-foreground: 195 25% 94%;
 
-  --card-border: 220 15% 22%;
+  --card-border: 200 30% 24%;
 
-  --sidebar: 220 15% 8%;
+  --sidebar: 205 60% 6%;
 
-  --sidebar-foreground: 0 0% 90%;
+  --sidebar-foreground: 195 30% 94%;
 
-  --sidebar-border: 220 15% 18%;
+  --sidebar-border: 200 50% 18%;
 
-  --sidebar-primary: 210 90% 35%;
+  --sidebar-primary: 188 85% 45%;
 
-  --sidebar-primary-foreground: 0 0% 95%;
+  --sidebar-primary-foreground: 0 0% 100%;
 
-  --sidebar-accent: 220 15% 18%;
+  --sidebar-accent: 200 50% 22%;
 
-  --sidebar-accent-foreground: 0 0% 85%;
+  --sidebar-accent-foreground: 0 0% 98%;
 
-  --sidebar-ring: 210 90% 40%;
+  --sidebar-ring: 188 85% 50%;
 
-  --popover: 220 15% 18%;
+  --popover: 210 35% 14%;
 
-  --popover-foreground: 0 0% 88%;
+  --popover-foreground: 195 25% 94%;
 
-  --popover-border: 220 15% 25%;
+  --popover-border: 200 30% 26%;
 
-  --primary: 210 90% 35%;
+  --primary: 188 85% 50%;
 
-  --primary-foreground: 0 0% 95%;
+  --primary-foreground: 210 40% 8%;
 
-  --secondary: 220 15% 20%;
+  --secondary: 210 30% 18%;
 
-  --secondary-foreground: 0 0% 85%;
+  --secondary-foreground: 195 25% 90%;
 
-  --muted: 220 15% 17%;
+  --muted: 210 30% 16%;
 
-  --muted-foreground: 0 0% 65%;
+  --muted-foreground: 200 15% 65%;
 
-  --accent: 220 12% 19%;
+  --accent: 195 50% 22%;
 
-  --accent-foreground: 0 0% 80%;
+  --accent-foreground: 188 85% 80%;
 
-  --destructive: 0 70% 40%;
+  --destructive: 0 70% 50%;
 
-  --destructive-foreground: 0 0% 95%;
+  --destructive-foreground: 0 0% 98%;
 
   /* Used as the border around inputs. Dark mode: Should be a border that is light enough to have high contrast when rendered on a --card background. More contrast than standard --border */
   --input: 220 15% 35%;
@@ -243,6 +244,22 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+  }
+
+  /* Dark theme: full-page gradient background — deep navy → teal → cyan glow */
+  .dark body {
+    background:
+      radial-gradient(1200px 800px at 85% -10%, hsl(188 85% 30% / 0.18), transparent 60%),
+      radial-gradient(900px 700px at -10% 110%, hsl(210 80% 25% / 0.22), transparent 60%),
+      linear-gradient(160deg, hsl(215 40% 6%) 0%, hsl(210 45% 9%) 45%, hsl(195 50% 12%) 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* Soften card surfaces over the gradient for better depth */
+  .dark [data-card],
+  .dark .bg-card {
+    backdrop-filter: blur(2px);
   }
 }
 

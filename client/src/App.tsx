@@ -183,7 +183,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <ThemeProvider defaultTheme="light" storageKey="clinic-ui-theme">
+        <ThemeProvider defaultTheme="dark" storageKey="clinic-ui-theme">
           <TooltipProvider>
             <AppContent />
             <Toaster />
