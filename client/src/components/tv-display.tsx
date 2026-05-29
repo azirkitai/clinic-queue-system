@@ -747,27 +747,30 @@ export function TVDisplay({
       const vw = viewport.clientWidth;
       const vh = viewport.clientHeight;
 
-      // CINEMA LETTERBOX MODE: Scale by WIDTH only
-      // Left/right edges ALWAYS touch the screen
-      // Black bars appear ONLY on top/bottom (like movies)
-      const scale = vw / STAGE_WIDTH;
+      // CONTAIN MODE: scale so the WHOLE 1920×1080 stage fits inside the screen
+      // without ever overflowing/enlarging. Uses the smaller of the width/height
+      // ratios, then centers both axes (letterbox bars appear only where needed).
+      // This prevents content from auto-enlarging on screens that are not exactly 16:9.
+      const scale = Math.min(vw / STAGE_WIDTH, vh / STAGE_HEIGHT);
 
+      const scaledWidth = STAGE_WIDTH * scale;
       const scaledHeight = STAGE_HEIGHT * scale;
-      const marginTop = -(scaledHeight / 2); // Center: offset by half of scaled height
+      const marginLeft = (vw - scaledWidth) / 2;   // horizontal centering (left: 0)
+      const marginTop = -(scaledHeight / 2);        // vertical centering (top: 50%)
 
-      console.log('🎬 LETTERBOX MODE:', {
+      console.log('🎬 CONTAIN MODE:', {
         viewportSize: `${vw}×${vh}`,
         stageSize: `${STAGE_WIDTH}×${STAGE_HEIGHT}`,
         scale: scale.toFixed(3),
-        scaledHeight: `${scaledHeight.toFixed(0)}px`,
-        marginTop: `${marginTop.toFixed(0)}px`,
-        topBar: `${((vh - scaledHeight) / 2).toFixed(0)}px`,
-        bottomBar: `${((vh - scaledHeight) / 2).toFixed(0)}px`
+        scaledSize: `${scaledWidth.toFixed(0)}×${scaledHeight.toFixed(0)}`,
+        sideBar: `${marginLeft.toFixed(0)}px`,
+        topBottomBar: `${((vh - scaledHeight) / 2).toFixed(0)}px`
       });
 
-      // Apply scale and vertical centering
+      // Apply scale and center both axes
       stage.style.transformOrigin = 'top left';
       stage.style.transform = `scale(${scale})`;
+      stage.style.marginLeft = `${marginLeft}px`;
       stage.style.marginTop = `${marginTop}px`;
     };
 
