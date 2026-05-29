@@ -532,7 +532,10 @@ export function TVDisplay({
   };
 
   // Location state for prayer times
-  const [location, setLocation] = useState<{lat: number; lon: number} | null>(null);
+  // Default immediately to Kuala Lumpur so prayer times appear instantly on TVs/kiosks
+  // (browser geolocation is usually blocked on HDMI TV devices). GPS only refines it.
+  const KL_FALLBACK = { lat: 3.139, lon: 101.6869 };
+  const [location, setLocation] = useState<{lat: number; lon: number} | null>(KL_FALLBACK);
   const [locationError, setLocationError] = useState<string | null>(null);
 
   // Track previous patient for audio notification
@@ -554,7 +557,7 @@ export function TVDisplay({
           console.warn('Geolocation timeout, using fallback location');
           setLocationError('Location timeout');
           // Fallback to Kuala Lumpur
-          setLocation({ lat: 3.139, lon: 101.6869 });
+          setLocation(KL_FALLBACK);
         }, 5000); // 5 second timeout
 
         navigator.geolocation.getCurrentPosition(
@@ -571,7 +574,7 @@ export function TVDisplay({
             console.warn('Geolocation failed, using fallback location:', error.message);
             setLocationError(error.message);
             // Fallback to Kuala Lumpur
-            setLocation({ lat: 3.139, lon: 101.6869 });
+            setLocation(KL_FALLBACK);
           },
           {
             timeout: 4000, // 4 second timeout for getCurrentPosition
@@ -582,7 +585,7 @@ export function TVDisplay({
         console.warn('Geolocation not supported, using fallback location');
         setLocationError('Geolocation not supported');
         // Fallback to Kuala Lumpur
-        setLocation({ lat: 3.139, lon: 101.6869 });
+        setLocation(KL_FALLBACK);
       }
     };
 
