@@ -1521,11 +1521,7 @@ export function TVDisplay({
               style={{ 
                 ...getTextGroupStyles('clinic_name', true), // Exclude color overrides so Settings can override
                 ...getTextStyle(clinicNameTextMode, clinicNameTextColor, clinicNameTextGradient, '#ffffff'),
-                // Capped responsive size + wrap so long clinic names never balloon/overflow on TV
-                fontSize: 'clamp(20px, 3.2vmin, 42px)',
-                lineHeight: 1.15,
-                overflowWrap: 'break-word',
-                wordBreak: 'break-word'
+                fontSize: 'var(--tv-fs-2xl, 48px)' // Responsive: auto-scales from 28px to 64px based on screen
               }} 
               data-testid="clinic-name">
             {clinicName}
