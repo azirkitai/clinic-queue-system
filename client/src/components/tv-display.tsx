@@ -1405,7 +1405,7 @@ export function TVDisplay({
     overflow: 'hidden',
     display: 'grid',
     gridTemplateRows: '900px 180px', // Bigger media area on top (900px), slim single-row info bar below (180px) = 1080px total
-    gridTemplateColumns: '1248px 672px', // Fixed: Left 65% (1248px), Right 35% (672px) = 1920px total
+    gridTemplateColumns: '1420px 500px', // Narrower right panel so media area is bigger: Left 1420px, Right 500px = 1920px total
     gap: 0,
     padding: 0,
     boxSizing: 'border-box' as const,
@@ -1416,7 +1416,7 @@ export function TVDisplay({
     ...getBackgroundStyle(headerBackgroundMode, headerBackgroundColor, headerBackgroundGradient, '#ffffff')
   } : {
     gridTemplateRows: 'auto 1fr',
-    gridTemplateColumns: '65% 35%',
+    gridTemplateColumns: '74% 26%',
     gap: '0',
     colorScheme: 'light',
     color: '#111827',
