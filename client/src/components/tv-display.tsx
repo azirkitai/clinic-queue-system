@@ -24,16 +24,16 @@ const IsolatedClock = memo(function IsolatedClock() {
   const year = now.getFullYear();
 
   return (
-    <div className="flex items-center justify-center space-x-8" style={{ color: '#111827' }}>
+    <div className="flex items-center justify-center space-x-4" style={{ color: '#111827' }}>
       <div className="text-center">
-        <div className="text-6xl font-bold" style={{ color: '#000000' }}>{day}</div>
+        <div className="text-4xl font-bold" style={{ color: '#000000' }}>{day}</div>
       </div>
       <div className="text-center">
-        <div className="font-bold text-4xl" style={{ color: '#111827' }}>{dayName}</div>
-        <div className="text-3xl" style={{ color: '#4B5563' }}>{month} {year}</div>
+        <div className="font-bold text-xl leading-tight" style={{ color: '#111827' }}>{dayName}</div>
+        <div className="text-lg leading-tight" style={{ color: '#4B5563' }}>{month} {year}</div>
       </div>
       <div className="text-center">
-        <div className="font-mono font-bold text-6xl" style={{ color: '#111827' }} data-testid="display-time">
+        <div className="font-mono font-bold text-4xl" style={{ color: '#111827' }} data-testid="display-time">
           {formatTime(now)}
         </div>
       </div>
@@ -1404,7 +1404,7 @@ export function TVDisplay({
     transformOrigin: 'top left', // Scale from top-left corner
     overflow: 'hidden',
     display: 'grid',
-    gridTemplateRows: '700px 380px', // Fixed: Top 700px (16:9 for 1248px), Bottom 380px = 1080px total
+    gridTemplateRows: '900px 180px', // Bigger media area on top (900px), slim single-row info bar below (180px) = 1080px total
     gridTemplateColumns: '1248px 672px', // Fixed: Left 65% (1248px), Right 35% (672px) = 1920px total
     gap: 0,
     padding: 0,
@@ -1629,33 +1629,33 @@ export function TVDisplay({
              ...getBackgroundStyle(showWeather ? weatherBackgroundMode : prayerTimesBackgroundMode, showWeather ? weatherBackgroundColor : prayerTimesBackgroundColor, showWeather ? weatherBackgroundGradient : prayerTimesBackgroundGradient, showWeather ? '#f97316' : '#1e40af')
            }}>
         {/* Combined Date/Time + Prayer Times / Weather in ONE white box */}
-        <div className={`p-6 tv-white-bg ${isFullscreen ? 'rounded-md' : 'rounded-lg'}`} style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)', color: '#111827' }}>
-          <div className="flex items-center justify-center gap-10 flex-wrap">
+        <div className={`px-4 py-3 tv-white-bg ${isFullscreen ? 'rounded-md' : 'rounded-lg'}`} style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)', color: '#111827' }}>
+          <div className="flex items-center justify-center gap-6 whitespace-nowrap overflow-hidden">
             <IsolatedClock />
 
-            {/* Compact Prayer Times block (right of clock) */}
+            {/* Compact Prayer Times block (right of clock, single row) */}
             {showPrayerTimes && (
-              <div className="text-center" data-testid="prayer-times-inline">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <span className="text-2xl" style={{ color: '#b45309' }}>🕌</span>
-                  <span className="font-bold text-2xl" style={{ color: '#111827' }}>PRAYER TIME</span>
+              <div className="flex items-center gap-4" data-testid="prayer-times-inline">
+                <div className="text-center leading-tight">
+                  <span className="text-xl" style={{ color: '#b45309' }}>🕌</span>
+                  <div className="font-bold text-sm" style={{ color: '#111827' }}>PRAYER<br />TIME</div>
                 </div>
 
                 {prayerTimesLoading && (
-                  <div className="text-lg" style={{ color: '#4B5563' }}>Loading prayer times...</div>
+                  <div className="text-base" style={{ color: '#4B5563' }}>Loading prayer times...</div>
                 )}
 
                 {!prayerTimesLoading && displayPrayerTimes.length > 0 && (
-                  <div className="grid grid-cols-5 gap-4">
+                  <div className="grid grid-cols-5 gap-3">
                     {displayPrayerTimes.map((prayer, index) => {
                       const isCurrentPrayer = nextPrayer === prayer.key && shouldHighlight;
                       const color = isCurrentPrayer ? '#d97706' : '#111827';
                       return (
-                        <div key={prayer.key || index} className="text-center">
-                          <div className={`font-bold text-xl ${isCurrentPrayer ? 'animate-pulse' : ''}`} style={{ color }}>
+                        <div key={prayer.key || index} className="text-center leading-tight">
+                          <div className={`font-bold text-base ${isCurrentPrayer ? 'animate-pulse' : ''}`} style={{ color }}>
                             {prayer.name}
                           </div>
-                          <div className={`text-xl ${isCurrentPrayer ? 'font-bold' : ''}`} style={{ color: isCurrentPrayer ? '#d97706' : '#374151' }}>
+                          <div className={`text-base ${isCurrentPrayer ? 'font-bold' : ''}`} style={{ color: isCurrentPrayer ? '#d97706' : '#374151' }}>
                             {prayer.time}
                           </div>
                         </div>
@@ -1665,36 +1665,36 @@ export function TVDisplay({
                 )}
 
                 {!prayerTimesLoading && displayPrayerTimes.length === 0 && (
-                  <div className="text-lg" style={{ color: '#4B5563' }}>Prayer times not available</div>
+                  <div className="text-base" style={{ color: '#4B5563' }}>Prayer times not available</div>
                 )}
               </div>
             )}
 
-            {/* Compact Weather block (right of clock) */}
+            {/* Compact Weather block (right of clock, single row) */}
             {showWeather && (
-              <div className="text-center" data-testid="weather-inline">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <span className="text-2xl">🌤️</span>
-                  <span className="font-bold text-2xl" style={{ color: '#111827' }}>WEATHER</span>
-                </div>
-
+              <div className="flex items-center gap-3" data-testid="weather-inline">
                 {weatherLoading ? (
-                  <div className="text-lg" style={{ color: '#4B5563' }}>Loading weather...</div>
+                  <div className="text-base" style={{ color: '#4B5563' }}>Loading weather...</div>
                 ) : weatherData ? (
-                  <div className="flex items-center justify-center gap-4">
-                    <span className="text-4xl">{weatherData.current.icon}</span>
-                    <span className="text-3xl font-bold" style={{ color: '#111827' }}>
+                  <>
+                    <span className="text-3xl">{weatherData.current.icon}</span>
+                    <span className="text-2xl font-bold" style={{ color: '#111827' }}>
                       {weatherData.current.temperature}{weatherData.units.temperature}
                     </span>
-                    <span className="text-xl" style={{ color: '#374151' }}>
-                      {weatherData.current.description}
-                    </span>
-                    <span className="text-xl" style={{ color: '#4B5563' }}>
-                      💧 {weatherData.current.humidity}{weatherData.units.humidity}
-                    </span>
-                  </div>
+                    {/* Hide extra details when prayer times are also shown, to guarantee single-row fit */}
+                    {!showPrayerTimes && (
+                      <>
+                        <span className="text-base truncate" style={{ color: '#374151', maxWidth: '260px' }}>
+                          {weatherData.current.description}
+                        </span>
+                        <span className="text-base" style={{ color: '#4B5563' }}>
+                          💧 {weatherData.current.humidity}{weatherData.units.humidity}
+                        </span>
+                      </>
+                    )}
+                  </>
                 ) : (
-                  <div className="text-lg" style={{ color: '#4B5563' }}>Weather unavailable</div>
+                  <div className="text-base" style={{ color: '#4B5563' }}>Weather unavailable</div>
                 )}
               </div>
             )}
