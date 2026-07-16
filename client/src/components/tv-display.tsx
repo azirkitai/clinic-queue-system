@@ -1507,10 +1507,10 @@ export function TVDisplay({
              ...getBackgroundStyle(headerBackgroundMode, headerBackgroundColor, headerBackgroundGradient, '#0f172a')
            }}>
         {/* Header */}
-        <div className={`text-center ${isFullscreen ? 'mb-2 pt-4 px-4' : 'mb-4'}`}>
+        <div className={`text-center ${isFullscreen ? 'mb-3 pt-4 px-4' : 'mb-4'}`}>
           {/* Logo Display - Use uploaded logo if enabled */}
           {showClinicLogo && clinicLogo && (
-            <div className="mb-4">
+            <div className={isFullscreen ? 'mb-3' : 'mb-4'}>
               <div className="rounded-lg p-4 shadow-lg w-full flex items-center justify-center tv-white-bg" style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)' }}>
                 <img 
                   src={clinicLogo} 
@@ -1522,7 +1522,7 @@ export function TVDisplay({
               </div>
             </div>
           )}
-          <div className="px-4 py-2 rounded-lg mt-2"
+          <div className={`px-4 py-2 ${isFullscreen ? 'rounded-md' : 'rounded-lg mt-2'}`}
                style={{
                  ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#16a34a'),
                  color: '#ffffff'
@@ -1537,7 +1537,7 @@ export function TVDisplay({
 
         {/* Current Patient Display */}
         {currentPatient ? (
-          <div className={`${isFullscreen ? 'p-2 mx-4 rounded-md mb-2' : 'p-3 rounded-lg mb-3'} text-center`}
+          <div className={`${isFullscreen ? 'p-2 mx-4 rounded-md mb-3' : 'p-3 rounded-lg mb-3'} text-center`}
                style={{
                  ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#16a34a')
                }}>
@@ -1565,7 +1565,7 @@ export function TVDisplay({
             </div>
           </div>
         ) : (
-          <div className={`${isFullscreen ? 'p-2 mx-4 rounded-md mb-2' : 'p-3 rounded-lg mb-3'} text-center`}
+          <div className={`${isFullscreen ? 'p-2 mx-4 rounded-md mb-3' : 'p-3 rounded-lg mb-3'} text-center`}
                style={{
                  ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#16a34a')
                }}>
@@ -1574,9 +1574,9 @@ export function TVDisplay({
         )}
 
         {/* History Section - Recent Calling History */}
-        <div className="flex-1 mt-4 flex flex-col min-h-0">
+        <div className={`flex-1 flex flex-col min-h-0 ${isFullscreen ? 'px-4 pb-4' : 'mt-4'}`}>
           {/* Recent Calling History Items (rolling log of recent calls, max 4) */}
-          <div className="grid grid-rows-4 gap-2 overflow-hidden flex-1 min-h-0" data-testid="queue-list">
+          <div className={`grid grid-rows-4 overflow-hidden flex-1 min-h-0 ${isFullscreen ? 'gap-3' : 'gap-2'}`} data-testid="queue-list">
             {Array.from({ length: 4 }).map((_, idx) => {
               const item = queueHistory[idx];
               if (!item) {
