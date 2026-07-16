@@ -1404,7 +1404,7 @@ export function TVDisplay({
     transformOrigin: 'top left', // Scale from top-left corner
     overflow: 'hidden',
     display: 'grid',
-    gridTemplateRows: '900px 180px', // Bigger media area on top (900px), slim single-row info bar below (180px) = 1080px total
+    gridTemplateRows: '870px 210px', // Big media area on top (870px), info bar with clinic name + clock/prayer below (210px) = 1080px total
     gridTemplateColumns: '1420px 500px', // Narrower right panel so media area is bigger: Left 1420px, Right 500px = 1920px total
     gap: 0,
     padding: 0,
@@ -1631,7 +1631,8 @@ export function TVDisplay({
               fontSize: 'var(--tv-fs-xl, 32px)', // Responsive
               whiteSpace: 'nowrap',
               overflow: 'hidden',
-              textOverflow: 'ellipsis'
+              textOverflow: 'ellipsis',
+              flexShrink: 0 // Never collapse when vertical space is tight (e.g. marquee enabled in fullscreen)
             }}
             data-testid="clinic-name">
           {clinicName}
