@@ -221,6 +221,94 @@ function FitText({
   );
 }
 
+// FitRow: scales an entire row of content down uniformly when it is wider
+// than its container, so nothing gets clipped (e.g. clock + prayer times bar).
+function FitRow({
+  children,
+  className,
+  refitKey,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  refitKey?: string;
+}) {
+  const outerRef = useRef<HTMLDivElement | null>(null);
+  const innerRef = useRef<HTMLDivElement | null>(null);
+  const [fit, setFit] = useState<{ scale: number; width: number | null }>({ scale: 1, width: null });
+
+  useEffect(() => {
+    let rafId = 0;
+    const refit = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const outer = outerRef.current;
+        const inner = innerRef.current;
+        if (!outer || !inner) return;
+        const cw = outer.clientWidth;
+        if (cw <= 0) return;
+        // Measure the natural (unconstrained) content width.
+        // Use inline-flex + width:auto (not max-content) for older Smart TV
+        // browsers that lack intrinsic sizing keyword support.
+        const prevWidth = inner.style.width;
+        const prevDisplay = inner.style.display;
+        inner.style.width = 'auto';
+        inner.style.display = 'inline-flex';
+        const rectWidth = inner.getBoundingClientRect().width;
+        const needed = Math.max(inner.scrollWidth, Math.ceil(rectWidth));
+        inner.style.width = prevWidth;
+        inner.style.display = prevDisplay;
+        if (needed > cw + 1) {
+          const scale = (cw / needed) * 0.99;
+          setFit(prev => (Math.abs(prev.scale - scale) > 0.005 || prev.width !== needed) ? { scale, width: needed } : prev);
+        } else {
+          setFit(prev => (prev.scale !== 1 || prev.width !== null) ? { scale: 1, width: null } : prev);
+        }
+      });
+    };
+    refit();
+    let ro: ResizeObserver | null = null;
+    try {
+      ro = new ResizeObserver(refit);
+      if (outerRef.current) ro.observe(outerRef.current);
+    } catch {}
+    let mo: MutationObserver | null = null;
+    try {
+      mo = new MutationObserver(refit);
+      if (innerRef.current) mo.observe(innerRef.current, { childList: true, subtree: true, characterData: true });
+    } catch {}
+    window.addEventListener('resize', refit);
+    const t1 = window.setTimeout(refit, 300);
+    const t2 = window.setTimeout(refit, 1200);
+    try {
+      (document as any).fonts?.ready?.then(refit);
+    } catch {}
+    return () => {
+      cancelAnimationFrame(rafId);
+      if (ro) ro.disconnect();
+      if (mo) mo.disconnect();
+      window.removeEventListener('resize', refit);
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [refitKey]);
+
+  return (
+    <div ref={outerRef} style={{ width: '100%', overflow: 'hidden' }}>
+      <div
+        ref={innerRef}
+        className={className}
+        style={{
+          width: fit.width ? `${fit.width}px` : '100%',
+          transform: fit.scale < 1 ? `scale(${fit.scale})` : undefined,
+          transformOrigin: 'left center',
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function TVDisplay({ 
   currentPatient,
   queueWaiting = [], // Not currently rendered (reserved for future use)
@@ -1663,7 +1751,10 @@ export function TVDisplay({
 
         {/* Combined Date/Time + Prayer Times / Weather in ONE white box */}
         <div className={`px-4 tv-white-bg w-full ${isFullscreen ? 'py-2 rounded-md' : 'py-3 rounded-lg'}`} style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)', color: '#111827' }}>
-          <div className="flex items-center justify-between gap-6 px-4 whitespace-nowrap overflow-hidden">
+          <FitRow
+            className="flex items-center justify-between gap-6 px-4 whitespace-nowrap"
+            refitKey={`${prayerTimesLoading}-${displayPrayerTimes.length}-${showWeather}-${weatherLoading ? 1 : 0}`}
+          >
             <IsolatedClock />
 
             {/* Compact Prayer Times block (right of clock, single row) */}
@@ -1731,7 +1822,7 @@ export function TVDisplay({
                 )}
               </div>
             )}
-          </div>
+          </FitRow>
         </div>
       </div>
 
