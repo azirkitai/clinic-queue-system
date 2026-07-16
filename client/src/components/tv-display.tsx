@@ -210,7 +210,9 @@ function FitText({
           whiteSpace: 'nowrap',
           lineHeight: 1.1,
           display: 'inline-block',
-          maxWidth: '100%',
+          // NOTE: no maxWidth here! Clamping the span makes scrollWidth report
+          // the clamped width instead of the true text width, which breaks the
+          // fit measurement and lets long names render too big (clipped).
           transform: overflowScale < 1 ? `scale(${overflowScale})` : undefined,
           transformOrigin: 'center center',
         }}
