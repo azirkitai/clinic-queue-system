@@ -147,6 +147,9 @@ function FitText({
         const cw = container.clientWidth;
         const ch = container.clientHeight;
         if (cw <= 0 || ch <= 0) return;
+        // 3px safety margin prevents subpixel rounding bleed on Smart TVs.
+        const safeW = Math.max(1, cw - 3);
+        const safeH = Math.max(1, ch - 3);
         let lo = minFontSize;
         let hi = maxFontSize;
         let best = minFontSize;
@@ -154,7 +157,11 @@ function FitText({
           if (lo > hi) break;
           const mid = Math.floor((lo + hi) / 2);
           span.style.fontSize = `${mid}px`;
-          if (span.scrollWidth <= cw && span.scrollHeight <= ch) {
+          // getBoundingClientRect is more reliable for inline-block nowrap
+          // than scrollWidth on some Smart TV browsers.
+          const tw = span.getBoundingClientRect().width;
+          const th = span.scrollHeight;
+          if (tw <= safeW && th <= safeH) {
             best = mid;
             lo = mid + 1;
           } else {
@@ -166,10 +173,10 @@ function FitText({
         // Safety net: if the text STILL overflows at the chosen size
         // (e.g. minFontSize reached, or measurement was off), scale it
         // down visually so it can never be cut off.
-        const sw = span.scrollWidth;
-        const sh = span.scrollHeight;
-        const ratio = Math.min(1, sw > 0 ? cw / sw : 1, sh > 0 ? ch / sh : 1);
-        setOverflowScale(ratio < 1 ? ratio * 0.98 : 1);
+        const tw = span.getBoundingClientRect().width;
+        const th = span.scrollHeight;
+        const ratio = Math.min(1, tw > 0 ? cw / tw : 1, th > 0 ? ch / th : 1);
+        setOverflowScale(ratio < 1 ? ratio * 0.96 : 1);
       });
     };
     fit();
