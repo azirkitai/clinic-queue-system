@@ -1502,6 +1502,8 @@ export function TVDisplay({
       <div className={`${isFullscreen ? 'p-0 m-0 row-span-2' : 'p-4 row-span-2'} flex flex-col w-full h-full`}
            style={{
              color: '#ffffff',
+             // Reserve space for the floating marquee so it never covers the call history
+             ...(isFullscreen && enableMarquee ? { paddingBottom: '70px' } : {}),
              ...getBackgroundStyle(headerBackgroundMode, headerBackgroundColor, headerBackgroundGradient, '#0f172a')
            }}>
         {/* Header */}
@@ -1617,6 +1619,8 @@ export function TVDisplay({
       <div className={`${isFullscreen ? 'px-4 py-2 m-0' : 'px-4 py-2'} w-full h-full flex flex-col justify-center`}
            style={{
              color: '#ffffff',
+             // Reserve space for the floating marquee so it never covers the clock/prayer bar
+             ...(isFullscreen && enableMarquee ? { paddingBottom: '70px' } : {}),
              ...getBackgroundStyle(showWeather ? weatherBackgroundMode : prayerTimesBackgroundMode, showWeather ? weatherBackgroundColor : prayerTimesBackgroundColor, showWeather ? weatherBackgroundGradient : prayerTimesBackgroundGradient, showWeather ? '#f97316' : '#1e40af')
            }}>
         {/* Clinic Name - below media area */}
