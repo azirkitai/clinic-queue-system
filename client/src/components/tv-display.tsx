@@ -1638,15 +1638,15 @@ export function TVDisplay({
       </div>
 
       {/* Second Row Left - Date & Prayer Times / Weather */}
-      <div className={`${isFullscreen ? 'px-4 py-2 m-0' : 'px-4 py-2'} w-full h-full flex flex-col justify-center`}
+      <div className={`${isFullscreen ? 'px-4 py-1 m-0' : 'px-4 py-2'} w-full h-full flex flex-col items-center justify-center overflow-hidden`}
            style={{
              color: '#ffffff',
              // Reserve space for the floating marquee so it never covers the clock/prayer bar
-             ...(isFullscreen && enableMarquee ? { paddingBottom: '70px' } : {}),
+             ...(isFullscreen && enableMarquee ? { paddingBottom: '60px' } : {}),
              ...getBackgroundStyle(showWeather ? weatherBackgroundMode : prayerTimesBackgroundMode, showWeather ? weatherBackgroundColor : prayerTimesBackgroundColor, showWeather ? weatherBackgroundGradient : prayerTimesBackgroundGradient, showWeather ? '#f97316' : '#1e40af')
            }}>
         {/* Clinic Name - below media area */}
-        <h1 className="font-bold text-center mb-1 leading-tight"
+        <h1 className="font-bold text-center leading-none mb-2 w-full"
             style={{
               ...getTextGroupStyles('clinic_name', true), // Exclude color overrides so Settings can override
               ...getTextStyle(clinicNameTextMode, clinicNameTextColor, clinicNameTextGradient, '#ffffff'),
@@ -1654,14 +1654,15 @@ export function TVDisplay({
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              flexShrink: 0 // Never collapse when vertical space is tight (e.g. marquee enabled in fullscreen)
+              flexShrink: 0, // Never collapse when vertical space is tight (e.g. marquee enabled in fullscreen)
+              paddingTop: '2px', // Prevent glyph tops from being clipped with leading-none
             }}
             data-testid="clinic-name">
           {clinicName}
         </h1>
 
         {/* Combined Date/Time + Prayer Times / Weather in ONE white box */}
-        <div className={`px-4 py-3 tv-white-bg ${isFullscreen ? 'rounded-md' : 'rounded-lg'}`} style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)', color: '#111827' }}>
+        <div className={`px-4 tv-white-bg w-full ${isFullscreen ? 'py-2 rounded-md' : 'py-3 rounded-lg'}`} style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)', color: '#111827' }}>
           <div className="flex items-center justify-between gap-6 px-4 whitespace-nowrap overflow-hidden">
             <IsolatedClock />
 
