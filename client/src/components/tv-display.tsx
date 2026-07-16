@@ -1520,15 +1520,6 @@ export function TVDisplay({
               </div>
             </div>
           )}
-          <h1 className="font-bold text-[16px]" 
-              style={{ 
-                ...getTextGroupStyles('clinic_name', true), // Exclude color overrides so Settings can override
-                ...getTextStyle(clinicNameTextMode, clinicNameTextColor, clinicNameTextGradient, '#ffffff'),
-                fontSize: 'var(--tv-fs-2xl, 48px)' // Responsive: auto-scales from 28px to 64px based on screen
-              }} 
-              data-testid="clinic-name">
-            {clinicName}
-          </h1>
           <div className="px-4 py-2 rounded-lg mt-2"
                style={{
                  ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#16a34a'),
@@ -1628,6 +1619,20 @@ export function TVDisplay({
              color: '#ffffff',
              ...getBackgroundStyle(showWeather ? weatherBackgroundMode : prayerTimesBackgroundMode, showWeather ? weatherBackgroundColor : prayerTimesBackgroundColor, showWeather ? weatherBackgroundGradient : prayerTimesBackgroundGradient, showWeather ? '#f97316' : '#1e40af')
            }}>
+        {/* Clinic Name - below media area */}
+        <h1 className="font-bold text-center mb-1 leading-tight"
+            style={{
+              ...getTextGroupStyles('clinic_name', true), // Exclude color overrides so Settings can override
+              ...getTextStyle(clinicNameTextMode, clinicNameTextColor, clinicNameTextGradient, '#ffffff'),
+              fontSize: 'var(--tv-fs-xl, 32px)', // Responsive
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}
+            data-testid="clinic-name">
+          {clinicName}
+        </h1>
+
         {/* Combined Date/Time + Prayer Times / Weather in ONE white box */}
         <div className={`px-4 py-3 tv-white-bg ${isFullscreen ? 'rounded-md' : 'rounded-lg'}`} style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)', color: '#111827' }}>
           <div className="flex items-center justify-center gap-6 whitespace-nowrap overflow-hidden">
