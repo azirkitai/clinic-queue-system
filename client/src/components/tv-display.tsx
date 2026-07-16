@@ -1628,119 +1628,78 @@ export function TVDisplay({
              color: '#ffffff',
              ...getBackgroundStyle(showWeather ? weatherBackgroundMode : prayerTimesBackgroundMode, showWeather ? weatherBackgroundColor : prayerTimesBackgroundColor, showWeather ? weatherBackgroundGradient : prayerTimesBackgroundGradient, showWeather ? '#f97316' : '#1e40af')
            }}>
-        {/* Date/Time Section - Larger */}
-        <div className={`p-6 tv-white-bg ${isFullscreen ? 'rounded-md mb-6' : 'rounded-lg mb-6'}`} style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)', color: '#111827' }}>
-          <IsolatedClock />
-        </div>
+        {/* Combined Date/Time + Prayer Times / Weather in ONE white box */}
+        <div className={`p-6 tv-white-bg ${isFullscreen ? 'rounded-md' : 'rounded-lg'}`} style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)', color: '#111827' }}>
+          <div className="flex items-center justify-center gap-10 flex-wrap">
+            <IsolatedClock />
 
-        {/* Prayer Times Section - Conditional with Loading/Error States */}
-        {showPrayerTimes && (
-          <div className="text-center">
-            <div className="flex items-center justify-center space-x-3 mb-4">
-              <span className="text-3xl" style={{ color: '#facc15' }}>🕌</span>
-              <span className="font-bold text-3xl" style={{ ...getTextStyle(prayerTimesTextMode, prayerTimesTextColor, prayerTimesTextGradient, '#facc15') }}>PRAYER TIME</span>
-            </div>
-            
-            {prayerTimesLoading ? (
-              <div className="text-xl" style={{ color: '#ffffff' }}>
-                Loading prayer times...
-              </div>
-            ) : null}
-            
-            {!prayerTimesLoading && displayPrayerTimes.length > 0 && (
-              <div className="grid grid-cols-5 gap-4">
-                {displayPrayerTimes.map((prayer, index) => {
-                  const isCurrentPrayer = nextPrayer === prayer.key && shouldHighlight;
-                  
-                  return (
-                    <div key={prayer.key || index} className="text-center">
-                      <div className={`font-bold text-2xl ${isCurrentPrayer ? 'animate-pulse' : ''}`} style={{
-                        ...(isCurrentPrayer ? getTextStyle(prayerTimesTextMode, prayerTimesHighlightColor, prayerTimesTextGradient, prayerTimesHighlightColor) : getTextStyle(prayerTimesTextMode, prayerTimesTextColor, prayerTimesTextGradient, '#ffffff'))
-                      }}>
-                        {prayer.name}
-                      </div>
-                      <div className={`text-2xl ${isCurrentPrayer ? 'font-bold' : ''}`} style={{
-                        ...(isCurrentPrayer ? getTextStyle(prayerTimesTextMode, prayerTimesHighlightColor, prayerTimesTextGradient, prayerTimesHighlightColor) : getTextStyle(prayerTimesTextMode, prayerTimesTextColor, prayerTimesTextGradient, '#ffffff'))
-                      }}>
-                        {prayer.time}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            
-            {!prayerTimesLoading && displayPrayerTimes.length === 0 && (
-              <div className="text-xl" style={{ color: '#ffffff' }}>
-                Prayer times not available
-              </div>
-            )}
-          </div>
-        )}
+            {/* Compact Prayer Times block (right of clock) */}
+            {showPrayerTimes && (
+              <div className="text-center" data-testid="prayer-times-inline">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <span className="text-2xl" style={{ color: '#b45309' }}>🕌</span>
+                  <span className="font-bold text-2xl" style={{ color: '#111827' }}>PRAYER TIME</span>
+                </div>
 
-        {/* Weather Section - Real Location-Based Weather */}
-        {showWeather && (
-          <div className="text-center">
-            <div className="flex items-center justify-center space-x-3 mb-4">
-              <span className="text-3xl" style={{ color: '#60a5fa' }}>🌤️</span>
-              <span className="font-bold text-3xl" style={{ ...getTextStyle(weatherTextMode, weatherTextColor, weatherTextGradient, '#60a5fa') }}>WEATHER</span>
-            </div>
-            
-            {/* Fix rendering race condition - better conditional logic */}
-            {!location ? (
-              <div className="text-xl" style={{ color: '#ffffff' }}>
-                Detecting location...
-              </div>
-            ) : weatherLoading ? (
-              <div className="text-xl" style={{ color: '#ffffff' }}>
-                Loading weather data...
-              </div>
-            ) : weatherData ? (
-              <div className="space-y-4">
-                {locationError && (
-                  <div className="text-lg mb-2" style={{ color: '#fde047' }}>
-                    Using default location
+                {prayerTimesLoading && (
+                  <div className="text-lg" style={{ color: '#4B5563' }}>Loading prayer times...</div>
+                )}
+
+                {!prayerTimesLoading && displayPrayerTimes.length > 0 && (
+                  <div className="grid grid-cols-5 gap-4">
+                    {displayPrayerTimes.map((prayer, index) => {
+                      const isCurrentPrayer = nextPrayer === prayer.key && shouldHighlight;
+                      const color = isCurrentPrayer ? '#d97706' : '#111827';
+                      return (
+                        <div key={prayer.key || index} className="text-center">
+                          <div className={`font-bold text-xl ${isCurrentPrayer ? 'animate-pulse' : ''}`} style={{ color }}>
+                            {prayer.name}
+                          </div>
+                          <div className={`text-xl ${isCurrentPrayer ? 'font-bold' : ''}`} style={{ color: isCurrentPrayer ? '#d97706' : '#374151' }}>
+                            {prayer.time}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
-                
-                {/* All Weather Info in One Row */}
-                <div className="flex items-center justify-center gap-8">
-                  <span className="text-7xl">{weatherData.current.icon}</span>
-                  <span className="text-6xl font-bold" style={{
-                    ...getTextStyle(weatherTextMode, weatherTextColor, weatherTextGradient, '#ffffff')
-                  }}>
-                    {weatherData.current.temperature}{weatherData.units.temperature}
-                  </span>
-                  <span className="text-3xl" style={{
-                    ...getTextStyle(weatherTextMode, weatherTextColor, weatherTextGradient, '#ffffff')
-                  }}>
-                    {weatherData.current.description}
-                  </span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl font-semibold" style={{
-                      ...getTextStyle(weatherTextMode, weatherTextColor, weatherTextGradient, '#bfdbfe')
-                    }}>Humidity:</span>
-                    <span className="text-3xl" style={{
-                      ...getTextStyle(weatherTextMode, weatherTextColor, weatherTextGradient, '#ffffff')
-                    }}>{weatherData.current.humidity}{weatherData.units.humidity}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl font-semibold" style={{
-                      ...getTextStyle(weatherTextMode, weatherTextColor, weatherTextGradient, '#bfdbfe')
-                    }}>Wind:</span>
-                    <span className="text-3xl" style={{
-                      ...getTextStyle(weatherTextMode, weatherTextColor, weatherTextGradient, '#ffffff')
-                    }}>{weatherData.current.windSpeed} {weatherData.units.windSpeed}</span>
-                  </div>
-                </div>
+
+                {!prayerTimesLoading && displayPrayerTimes.length === 0 && (
+                  <div className="text-lg" style={{ color: '#4B5563' }}>Prayer times not available</div>
+                )}
               </div>
-            ) : (
-              <div className="text-xl" style={{ color: '#ffffff' }}>
-                Weather data unavailable, retrying...
+            )}
+
+            {/* Compact Weather block (right of clock) */}
+            {showWeather && (
+              <div className="text-center" data-testid="weather-inline">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <span className="text-2xl">🌤️</span>
+                  <span className="font-bold text-2xl" style={{ color: '#111827' }}>WEATHER</span>
+                </div>
+
+                {weatherLoading ? (
+                  <div className="text-lg" style={{ color: '#4B5563' }}>Loading weather...</div>
+                ) : weatherData ? (
+                  <div className="flex items-center justify-center gap-4">
+                    <span className="text-4xl">{weatherData.current.icon}</span>
+                    <span className="text-3xl font-bold" style={{ color: '#111827' }}>
+                      {weatherData.current.temperature}{weatherData.units.temperature}
+                    </span>
+                    <span className="text-xl" style={{ color: '#374151' }}>
+                      {weatherData.current.description}
+                    </span>
+                    <span className="text-xl" style={{ color: '#4B5563' }}>
+                      💧 {weatherData.current.humidity}{weatherData.units.humidity}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="text-lg" style={{ color: '#4B5563' }}>Weather unavailable</div>
+                )}
               </div>
             )}
           </div>
-        )}
+        </div>
       </div>
 
       
