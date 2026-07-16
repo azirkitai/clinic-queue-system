@@ -134,6 +134,7 @@ function FitText({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const spanRef = useRef<HTMLSpanElement | null>(null);
   const [fontSize, setFontSize] = useState(maxFontSize);
+  const [overflowScale, setOverflowScale] = useState(1);
 
   useEffect(() => {
     let rafId = 0;
@@ -162,6 +163,13 @@ function FitText({
         }
         span.style.fontSize = `${best}px`;
         setFontSize(best);
+        // Safety net: if the text STILL overflows at the chosen size
+        // (e.g. minFontSize reached, or measurement was off), scale it
+        // down visually so it can never be cut off.
+        const sw = span.scrollWidth;
+        const sh = span.scrollHeight;
+        const ratio = Math.min(1, sw > 0 ? cw / sw : 1, sh > 0 ? ch / sh : 1);
+        setOverflowScale(ratio < 1 ? ratio * 0.98 : 1);
       });
     };
     fit();
@@ -202,6 +210,9 @@ function FitText({
           whiteSpace: 'nowrap',
           lineHeight: 1.1,
           display: 'inline-block',
+          maxWidth: '100%',
+          transform: overflowScale < 1 ? `scale(${overflowScale})` : undefined,
+          transformOrigin: 'center center',
         }}
       >
         {text}
