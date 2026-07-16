@@ -24,16 +24,16 @@ const IsolatedClock = memo(function IsolatedClock() {
   const year = now.getFullYear();
 
   return (
-    <div className="flex items-center justify-center space-x-4" style={{ color: '#111827' }}>
+    <div className="flex items-center justify-center space-x-5" style={{ color: '#111827' }}>
       <div className="text-center">
-        <div className="text-4xl font-bold" style={{ color: '#000000' }}>{day}</div>
+        <div className="text-6xl font-bold" style={{ color: '#000000' }}>{day}</div>
       </div>
       <div className="text-center">
-        <div className="font-bold text-xl leading-tight" style={{ color: '#111827' }}>{dayName}</div>
-        <div className="text-lg leading-tight" style={{ color: '#4B5563' }}>{month} {year}</div>
+        <div className="font-bold text-3xl leading-tight" style={{ color: '#111827' }}>{dayName}</div>
+        <div className="text-2xl leading-tight" style={{ color: '#4B5563' }}>{month} {year}</div>
       </div>
       <div className="text-center">
-        <div className="font-mono font-bold text-4xl" style={{ color: '#111827' }} data-testid="display-time">
+        <div className="font-mono font-bold text-6xl" style={{ color: '#111827' }} data-testid="display-time">
           {formatTime(now)}
         </div>
       </div>
@@ -170,9 +170,20 @@ function FitText({
       ro = new ResizeObserver(fit);
       if (containerRef.current) ro.observe(containerRef.current);
     } catch {}
+    // Fallbacks for browsers without ResizeObserver (e.g. some Smart TVs)
+    // and for late layout/webfont changes that RO won't catch:
+    window.addEventListener('resize', fit);
+    const t1 = window.setTimeout(fit, 300);
+    const t2 = window.setTimeout(fit, 1200);
+    try {
+      (document as any).fonts?.ready?.then(fit);
+    } catch {}
     return () => {
       cancelAnimationFrame(rafId);
       if (ro) ro.disconnect();
+      window.removeEventListener('resize', fit);
+      clearTimeout(t1);
+      clearTimeout(t2);
     };
   }, [text, maxFontSize, minFontSize]);
 
@@ -1640,15 +1651,15 @@ export function TVDisplay({
 
         {/* Combined Date/Time + Prayer Times / Weather in ONE white box */}
         <div className={`px-4 py-3 tv-white-bg ${isFullscreen ? 'rounded-md' : 'rounded-lg'}`} style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)', color: '#111827' }}>
-          <div className="flex items-center justify-center gap-6 whitespace-nowrap overflow-hidden">
+          <div className="flex items-center justify-between gap-6 px-4 whitespace-nowrap overflow-hidden">
             <IsolatedClock />
 
             {/* Compact Prayer Times block (right of clock, single row) */}
             {showPrayerTimes && (
               <div className="flex items-center gap-4" data-testid="prayer-times-inline">
                 <div className="text-center leading-tight">
-                  <span className="text-xl" style={{ color: '#b45309' }}>🕌</span>
-                  <div className="font-bold text-sm" style={{ color: '#111827' }}>PRAYER<br />TIME</div>
+                  <span className="text-3xl" style={{ color: '#b45309' }}>🕌</span>
+                  <div className="font-bold text-lg" style={{ color: '#111827' }}>PRAYER<br />TIME</div>
                 </div>
 
                 {prayerTimesLoading && (
@@ -1656,16 +1667,16 @@ export function TVDisplay({
                 )}
 
                 {!prayerTimesLoading && displayPrayerTimes.length > 0 && (
-                  <div className="grid grid-cols-5 gap-3">
+                  <div className="grid grid-cols-5 gap-6">
                     {displayPrayerTimes.map((prayer, index) => {
                       const isCurrentPrayer = nextPrayer === prayer.key && shouldHighlight;
                       const color = isCurrentPrayer ? '#d97706' : '#111827';
                       return (
                         <div key={prayer.key || index} className="text-center leading-tight">
-                          <div className={`font-bold text-base ${isCurrentPrayer ? 'animate-pulse' : ''}`} style={{ color }}>
+                          <div className={`font-bold text-2xl ${isCurrentPrayer ? 'animate-pulse' : ''}`} style={{ color }}>
                             {prayer.name}
                           </div>
-                          <div className={`text-base ${isCurrentPrayer ? 'font-bold' : ''}`} style={{ color: isCurrentPrayer ? '#d97706' : '#374151' }}>
+                          <div className={`text-2xl ${isCurrentPrayer ? 'font-bold' : ''}`} style={{ color: isCurrentPrayer ? '#d97706' : '#374151' }}>
                             {prayer.time}
                           </div>
                         </div>
@@ -1687,8 +1698,8 @@ export function TVDisplay({
                   <div className="text-base" style={{ color: '#4B5563' }}>Loading weather...</div>
                 ) : weatherData ? (
                   <>
-                    <span className="text-3xl">{weatherData.current.icon}</span>
-                    <span className="text-2xl font-bold" style={{ color: '#111827' }}>
+                    <span className="text-5xl">{weatherData.current.icon}</span>
+                    <span className="text-4xl font-bold" style={{ color: '#111827' }}>
                       {weatherData.current.temperature}{weatherData.units.temperature}
                     </span>
                     {/* Hide extra details when prayer times are also shown, to guarantee single-row fit */}
