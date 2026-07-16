@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, memo } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Volume2, Calendar } from "lucide-react";
@@ -136,7 +136,7 @@ function FitText({
   const [fontSize, setFontSize] = useState(maxFontSize);
   const [overflowScale, setOverflowScale] = useState(1);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let rafId = 0;
     const fit = () => {
       cancelAnimationFrame(rafId);
@@ -157,9 +157,9 @@ function FitText({
           if (lo > hi) break;
           const mid = Math.floor((lo + hi) / 2);
           span.style.fontSize = `${mid}px`;
-          // getBoundingClientRect is more reliable for inline-block nowrap
-          // than scrollWidth on some Smart TV browsers.
-          const tw = span.getBoundingClientRect().width;
+          // scrollWidth measures layout width BEFORE CSS transforms.
+          // getBoundingClientRect includes stage scale and misleads the fit.
+          const tw = span.scrollWidth;
           const th = span.scrollHeight;
           if (tw <= safeW && th <= safeH) {
             best = mid;
@@ -173,10 +173,22 @@ function FitText({
         // Safety net: if the text STILL overflows at the chosen size
         // (e.g. minFontSize reached, or measurement was off), scale it
         // down visually so it can never be cut off.
-        const tw = span.getBoundingClientRect().width;
+        const tw = span.scrollWidth;
         const th = span.scrollHeight;
         const ratio = Math.min(1, tw > 0 ? cw / tw : 1, th > 0 ? ch / th : 1);
-        setOverflowScale(ratio < 1 ? ratio * 0.96 : 1);
+        const finalScale = ratio < 1 ? ratio * 0.96 : 1;
+        setOverflowScale(finalScale);
+        // Debug log so we can verify in browser console
+        // eslint-disable-next-line no-console
+        console.log('[FitText]', JSON.stringify({
+          text: text.substring(0, 30),
+          cw, ch, safeW, safeH, best, tw, th,
+          finalScale,
+          maxFontSize, minFontSize,
+          computedFs: getComputedStyle(span).fontSize,
+          scrollW: span.scrollWidth,
+          rectW: span.getBoundingClientRect().width
+        }));
       });
     };
     fit();
@@ -255,17 +267,13 @@ function FitRow({
         if (!outer || !inner) return;
         const cw = outer.clientWidth;
         if (cw <= 0) return;
-        // Measure the natural (unconstrained) content width.
-        // Use inline-flex + width:auto (not max-content) for older Smart TV
-        // browsers that lack intrinsic sizing keyword support.
+        // Measure natural content width. Use scrollWidth (not getBoundingClientRect)
+        // because getBoundingClientRect includes CSS transform scale on the stage,
+        // which makes overflowed text appear smaller than it really is.
         const prevWidth = inner.style.width;
-        const prevDisplay = inner.style.display;
         inner.style.width = 'auto';
-        inner.style.display = 'inline-flex';
-        const rectWidth = inner.getBoundingClientRect().width;
-        const needed = Math.max(inner.scrollWidth, Math.ceil(rectWidth));
+        const needed = inner.scrollWidth;
         inner.style.width = prevWidth;
-        inner.style.display = prevDisplay;
         if (needed > cw + 1) {
           const scale = (cw / needed) * 0.99;
           setFit(prev => (Math.abs(prev.scale - scale) > 0.005 || prev.width !== needed) ? { scale, width: needed } : prev);
