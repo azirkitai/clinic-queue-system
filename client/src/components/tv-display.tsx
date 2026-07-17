@@ -866,13 +866,45 @@ export function TVDisplay({
 
   // Calculate font size for multi-line wrapped text within a box.
   // Considers both width (line wrapping) and height (max lines).
+  // Words are wrapped at natural boundaries (spaces) like the browser does.
   const calculateWrappedFontSize = (text: string, maxWidth: number, maxHeight: number, baseSize: number, minSize: number = 16, maxLines: number = 3) => {
     if (!text) return `${baseSize}px`;
 
-    // All names are upper-cased via getDisplayName.  Bold uppercase sans-serif
-    // averages ~0.72× font-size per character (e.g. Inter / Roboto 900).
-    const avgCharWidth = 0.72;
-    const lineHeight = 1.12;
+    // Inter/Roboto 900-weight uppercase averages ~0.65× font-size per char.
+    // Calibrated for bold uppercase Malay names — fills the box without overflow.
+    const avgCharWidth = 0.65;
+    const lineHeight = 1.15;
+
+    const words = text.split(' ');
+
+    // Simulate browser word-wrapping for a given font size
+    const countLines = (fontSize: number) => {
+      const charWidth = fontSize * avgCharWidth;
+      let lines = 1;
+      let currentLineWidth = 0;
+      for (let w = 0; w < words.length; w++) {
+        const wordWidth = words[w].length * charWidth;
+        // Word is longer than the whole line → must break the word itself
+        if (wordWidth > maxWidth) {
+          // Split the word across as many lines as needed
+          const wordLines = Math.ceil(wordWidth / maxWidth);
+          if (currentLineWidth > 0) {
+            lines += 1; // finish current line first
+            currentLineWidth = 0;
+          }
+          lines += wordLines - 1;
+          currentLineWidth = wordWidth % maxWidth || maxWidth;
+        } else if (currentLineWidth + wordWidth + (currentLineWidth > 0 ? charWidth : 0) <= maxWidth) {
+          // Word fits on current line (add space width if not first word)
+          currentLineWidth += wordWidth + (currentLineWidth > 0 ? charWidth : 0);
+        } else {
+          // Word doesn't fit → new line
+          lines += 1;
+          currentLineWidth = wordWidth;
+        }
+      }
+      return lines;
+    };
 
     // Binary search for largest font that fits
     let lo = minSize;
@@ -883,9 +915,7 @@ export function TVDisplay({
       if (lo > hi) break;
       const fontSize = Math.floor((lo + hi) / 2);
 
-      const charWidth = fontSize * avgCharWidth;
-      const textWidth = text.length * charWidth;
-      const lines = Math.ceil(textWidth / maxWidth);
+      const lines = countLines(fontSize);
       const textHeight = lines * fontSize * lineHeight;
 
       if (textHeight <= maxHeight && lines <= maxLines) {
@@ -1941,108 +1971,117 @@ export function TVDisplay({
         </div>
       )}
 
-      {/* Highlight Overlay - Cinematic calling display */}
-      {showHighlight && currentPatient && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center tv-highlight-animate"
-             style={{
-               background: 'radial-gradient(ellipse at center, rgba(15,23,42,0.95) 0%, rgba(0,0,0,0.98) 70%)'
-             }}
-             data-testid="highlight-overlay">
-          {/* Animated glow ring behind content */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="rounded-3xl tv-highlight-glow"
-                 style={{
-                   width: 'min(85vw, 1400px)',
-                   height: 'min(75vh, 800px)',
-                   border: `3px solid ${modalBorderColor}`,
-                   background: `linear-gradient(135deg, ${modalBackgroundColor}ee 0%, ${modalBackgroundColor}99 100%)`
-                 }} />
-          </div>
-
-          {/* Shimmer overlay */}
-          <div className="absolute inset-0 pointer-events-none tv-highlight-fade-in"
-               style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
-            <div className="tv-highlight-shimmer absolute inset-0 opacity-30 rounded-3xl"
-                 style={{ width: 'min(85vw, 1400px)', height: 'min(75vh, 800px)', margin: 'auto' }} />
-          </div>
-
-          {/* Main content */}
-          <div className="relative z-10 flex flex-col items-center justify-center text-center px-8"
-               style={{ maxWidth: '1200px', width: '90%' }}>
-
-            {/* CALLING badge */}
-            <div className="mb-6 px-10 py-3 rounded-full tv-highlight-pulse-border"
-                 style={{
-                   border: `2px solid ${modalBorderColor}`,
-                   background: `linear-gradient(135deg, ${modalBorderColor}33, ${modalBorderColor}11)`,
-                   color: modalBorderColor,
-                   fontSize: 'clamp(28px, 3vw, 44px)',
-                   fontWeight: 700,
-                   letterSpacing: '0.15em',
-                   textTransform: 'uppercase'
-                 }}>
-              Now Calling
-            </div>
-
-            {/* Patient Name — maximizes the entire box using calculated font */}
-            <div className="relative mb-6 w-full" style={{ minHeight: '120px' }}>
-              <div className="px-4 py-5 rounded-2xl w-full flex items-center justify-center"
-                   style={{
-                     background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
-                     border: `1px solid rgba(255,255,255,0.1)`,
-                     backdropFilter: 'blur(8px)'
-                   }}>
-                <div style={{
-                  fontSize: calculateFontSize(getDisplayName(currentPatient.name), 1000, 120, 30, 0.72),
-                  fontWeight: 900,
-                  color: modalTextColor,
-                  lineHeight: '1.15',
-                  wordBreak: 'break-word',
-                  overflowWrap: 'break-word',
-                  textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
-                  letterSpacing: '0.02em',
-                  textAlign: 'center'
-                }} data-testid="highlight-patient-name">
-                  {getDisplayName(currentPatient.name)}
-                </div>
-              </div>
-            </div>
-
-            {/* Divider line with glow */}
-            <div className="w-full max-w-2xl mb-8 h-px"
-                 style={{
-                   background: `linear-gradient(90deg, transparent, ${modalBorderColor}, transparent)`,
-                   boxShadow: `0 0 12px ${modalBorderColor}66`
-                 }} />
-
-            {/* Room info */}
-            <div className="flex items-center gap-4 flex-wrap justify-center">
-              <span style={{
-                fontSize: 'clamp(24px, 2.5vw, 40px)',
-                color: modalTextColor,
-                opacity: 0.7,
-                fontWeight: 500,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase'
-              }}>
-                Please proceed to
-              </span>
-              <span style={{
-                fontSize: 'clamp(36px, 4vw, 72px)',
-                fontWeight: 800,
-                color: modalBorderColor,
-                textShadow: `0 0 30px ${modalBorderColor}55`,
-                letterSpacing: '0.05em'
-              }} data-testid="highlight-patient-room">
-                {currentPatient.room}
-              </span>
-            </div>
-
-          </div>
-        </div>
-      )}
     </>
   );
+
+  // Highlight Overlay - rendered OUTSIDE the scaled stage so it fills the real viewport
+  const highlightOverlay = (showHighlight && currentPatient) ? (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center tv-highlight-animate"
+         style={{
+           background: 'radial-gradient(ellipse at center, rgba(15,23,42,0.95) 0%, rgba(0,0,0,0.98) 70%)'
+         }}
+         data-testid="highlight-overlay">
+      {/* Animated glow ring behind content */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="rounded-3xl tv-highlight-glow"
+             style={{
+               width: 'min(85vw, 1400px)',
+               height: 'min(75vh, 800px)',
+               border: `3px solid ${modalBorderColor}`,
+               background: `linear-gradient(135deg, ${modalBackgroundColor}ee 0%, ${modalBackgroundColor}99 100%)`
+             }} />
+      </div>
+
+      {/* Shimmer overlay */}
+      <div className="absolute inset-0 pointer-events-none tv-highlight-fade-in"
+           style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
+        <div className="tv-highlight-shimmer absolute inset-0 opacity-30 rounded-3xl"
+             style={{ width: 'min(85vw, 1400px)', height: 'min(75vh, 800px)', margin: 'auto' }} />
+      </div>
+
+      {/* Main content */}
+      <div className="relative z-10 flex flex-col items-center justify-center text-center px-8"
+           style={{ maxWidth: '1200px', width: '90%' }}>
+
+        {/* CALLING badge */}
+        <div className="mb-6 px-10 py-3 rounded-full tv-highlight-pulse-border"
+             style={{
+               border: `2px solid ${modalBorderColor}`,
+               background: `linear-gradient(135deg, ${modalBorderColor}33, ${modalBorderColor}11)`,
+               color: modalBorderColor,
+               fontSize: 'clamp(28px, 3vw, 44px)',
+               fontWeight: 700,
+               letterSpacing: '0.15em',
+               textTransform: 'uppercase'
+             }}>
+          Now Calling
+        </div>
+
+        {/* Patient Name — maximizes the box using wrapped font sizing */}
+        <div className="relative mb-6 w-full" style={{ flex: 1, height: 'min(50vh, 480px)', minHeight: 'min(50vh, 480px)' }}>
+          <div className="px-6 py-6 rounded-2xl w-full h-full flex items-center justify-center"
+               style={{
+                 background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
+                 border: `1px solid rgba(255,255,255,0.1)`,
+                 backdropFilter: 'blur(8px)'
+               }}>
+            <div style={{
+              fontSize: calculateWrappedFontSize(
+                getDisplayName(currentPatient.name),
+                880,    // conservative usable width (container ~1080 minus padding & margin)
+                360,    // conservative usable height (container 480 minus padding ~96, minus safety)
+                140,    // max font to try
+                28,     // min font
+                4       // up to 4 lines
+              ),
+              fontWeight: 900,
+              color: modalTextColor,
+              lineHeight: '1.15',
+              wordBreak: 'break-word',
+              overflowWrap: 'break-word',
+              overflow: 'hidden',
+              textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
+              letterSpacing: '0.02em',
+              textAlign: 'center'
+            }} data-testid="highlight-patient-name">
+              {getDisplayName(currentPatient.name)}
+            </div>
+          </div>
+        </div>
+
+        {/* Divider line with glow */}
+        <div className="w-full max-w-2xl mb-8 h-px"
+             style={{
+               background: `linear-gradient(90deg, transparent, ${modalBorderColor}, transparent)`,
+               boxShadow: `0 0 12px ${modalBorderColor}66`
+             }} />
+
+        {/* Room info */}
+        <div className="flex items-center gap-4 flex-wrap justify-center">
+          <span style={{
+            fontSize: 'clamp(24px, 2.5vw, 40px)',
+            color: modalTextColor,
+            opacity: 0.7,
+            fontWeight: 500,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase'
+          }}>
+            Please proceed to
+          </span>
+          <span style={{
+            fontSize: 'clamp(36px, 4vw, 72px)',
+            fontWeight: 800,
+            color: modalBorderColor,
+            textShadow: `0 0 30px ${modalBorderColor}55`,
+            letterSpacing: '0.05em'
+          }} data-testid="highlight-patient-room">
+            {currentPatient.room}
+          </span>
+        </div>
+
+      </div>
+    </div>
+  ) : null;
 
   const youtubeAudioIframe = (isFullscreen && youtubeAudioItemEarly) ? (
     // IMPORTANT: must be a real, "visible-to-the-engine" iframe.
@@ -2080,6 +2119,7 @@ export function TVDisplay({
           {renderContent()}
         </div>
         {youtubeAudioIframe}
+        {highlightOverlay}
         {audioDiagnostic && !showAudioGate && (
           <div
             data-testid="badge-audio-diagnostic"
@@ -2127,6 +2167,7 @@ export function TVDisplay({
          style={stageStyle} 
          data-testid="tv-display">
       {renderContent()}
+      {highlightOverlay}
     </div>
   );
 }
