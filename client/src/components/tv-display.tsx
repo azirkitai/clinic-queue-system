@@ -2055,7 +2055,13 @@ export function TVDisplay({
               overflow: 'hidden',
               textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
               letterSpacing: '0.02em',
-              textAlign: 'center'
+              textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'column',
+              width: '100%',
+              height: '100%'
             }} data-testid="highlight-patient-name">
               {getDisplayName(currentPatient.name)}
             </div>
