@@ -138,11 +138,9 @@ function FitText({
   const [fontSize, setFontSize] = useState(maxFontSize);
   const [overflowScale, setOverflowScale] = useState(1);
 
-  // Determine if we should allow wrapping:
-  // If wrap=true AND text has 2+ words, allow multi-line.
-  // Single-word text always stays on one line.
-  const words = text.trim().split(/\s+/).filter(Boolean);
-  const shouldWrap = wrap && words.length > 1;
+  // If wrap=true, allow text to break into multiple lines.
+  // The binary search will find the largest font that still fits.
+  const shouldWrap = wrap;
 
   useLayoutEffect(() => {
     let rafId = 0;
@@ -158,6 +156,8 @@ function FitText({
         // 3px safety margin prevents subpixel rounding bleed on Smart TVs.
         const safeW = Math.max(1, cw - 3);
         const safeH = Math.max(1, ch - 3);
+        // Max lines target for wrapped text to keep font large.
+        const MAX_WRAP_LINES = 3;
         let lo = minFontSize;
         let hi = maxFontSize;
         let best = minFontSize;
@@ -169,7 +169,21 @@ function FitText({
           // getBoundingClientRect includes stage scale and misleads the fit.
           const tw = span.scrollWidth;
           const th = span.scrollHeight;
-          if (tw <= safeW && th <= safeH) {
+          // For wrapped text with width:100%, scrollWidth always equals
+          // container width, so width check is meaningless. Only check height.
+          // Also enforce max line count so font stays large.
+          let fits: boolean;
+          if (shouldWrap) {
+            fits = th <= safeH;
+            if (fits) {
+              const lineHeightPx = parseFloat(window.getComputedStyle(span).lineHeight) || mid * 1.05;
+              const lineCount = Math.ceil(th / lineHeightPx);
+              if (lineCount > MAX_WRAP_LINES) fits = false;
+            }
+          } else {
+            fits = tw <= safeW && th <= safeH;
+          }
+          if (fits) {
             best = mid;
             lo = mid + 1;
           } else {
@@ -183,7 +197,14 @@ function FitText({
         // down visually so it can never be cut off.
         const tw = span.scrollWidth;
         const th = span.scrollHeight;
-        const ratio = Math.min(1, tw > 0 ? cw / tw : 1, th > 0 ? ch / th : 1);
+        let ratio: number;
+        if (shouldWrap) {
+          // For wrapped text, scrollWidth always == container width,
+          // so only check height for overflow.
+          ratio = Math.min(1, th > 0 ? ch / th : 1);
+        } else {
+          ratio = Math.min(1, tw > 0 ? cw / tw : 1, th > 0 ? ch / th : 1);
+        }
         const finalScale = ratio < 1 ? ratio * 0.96 : 1;
         setOverflowScale(finalScale);
       });
@@ -225,6 +246,7 @@ function FitText({
           fontSize: `${fontSize}px`,
           whiteSpace: shouldWrap ? 'normal' : 'nowrap',
           overflowWrap: shouldWrap ? 'break-word' : 'normal',
+          wordBreak: shouldWrap ? 'break-all' : 'normal',
           lineHeight: shouldWrap ? 1.05 : 1.1,
           display: shouldWrap ? 'block' : 'inline-block',
           width: shouldWrap ? '100%' : undefined,
@@ -1930,7 +1952,7 @@ export function TVDisplay({
             </div>
 
             {/* Patient Name - Cinematic big with FitText */}
-            <div className="relative mb-8 w-full" style={{ maxHeight: '35vh', minHeight: '120px' }}>
+            <div className="relative mb-8 w-full" style={{ height: 'min(40vh, 420px)', minHeight: '160px' }}>
               <div className="px-6 py-4 rounded-2xl w-full h-full"
                    style={{
                      background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
@@ -1946,7 +1968,7 @@ export function TVDisplay({
                     letterSpacing: '0.02em',
                     textAlign: 'center'
                   }}
-                  maxFontSize={130}
+                  maxFontSize={160}
                   minFontSize={28}
                   align="center"
                   wrap
