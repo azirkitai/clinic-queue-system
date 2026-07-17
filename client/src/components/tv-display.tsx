@@ -1746,14 +1746,11 @@ export function TVDisplay({
         )}
 
         {/* Unified Calling Box - CALLING + Name + Room in one box with glow border */}
-        <div className={`${isFullscreen ? 'mx-4 mb-3' : 'mb-4'} text-center tv-highlight-pulse-border rounded-xl`}
+        <div className={`${isFullscreen ? 'mx-4 mb-3' : 'mb-4'} text-center tv-highlight-pulse-border rounded-xl overflow-hidden`}
              style={{
                ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#16a34a'),
                border: `3px solid ${callBackgroundColor || '#16a34a'}`,
-               boxShadow: `0 0 20px ${callBackgroundColor || '#16a34a'}66, 0 0 40px ${callBackgroundColor || '#16a34a'}33`,
-               display: 'flex',
-               flexDirection: 'column',
-               minHeight: isFullscreen ? '420px' : '280px'
+               boxShadow: `0 0 20px ${callBackgroundColor || '#16a34a'}66, 0 0 40px ${callBackgroundColor || '#16a34a'}33`
              }}>
           {/* CALLING label */}
           <div className={`font-bold ${isFullscreen ? 'py-2 px-3' : 'py-2 px-3'} text-center`}
@@ -1768,31 +1765,28 @@ export function TVDisplay({
 
           {/* Patient Name + Room */}
           {currentPatient ? (
-            <div className={`${isFullscreen ? 'px-1' : 'px-1'} flex-1 flex flex-col items-center justify-center text-center`}
-                 style={{ minHeight: 0 }}>
+            <div className={`${isFullscreen ? 'py-2 px-1' : 'py-3 px-1'} text-center`}>
               <div className={`font-bold ${isBlinking ? 'tv-blink-active' : ''}`}
-                   style={{
+                   style={{ 
                      fontSize: patientNameFontSize,
                      lineHeight: '1.15',
                      wordBreak: 'normal',
                      overflowWrap: 'normal',
-                     overflow: 'visible',
-                     textAlign: 'center',
+                     overflow: 'hidden',
                      ...getTextStyle(callNameTextMode, callNameTextColor, callNameTextGradient, '#facc15')
-                   }}
+                   }} 
                    data-testid="current-patient-display">
                 {getDisplayName(currentPatient.name)}
               </div>
               <div className={isBlinking ? 'tv-blink-active' : ''}
-                   style={{
+                   style={{ 
                      fontSize: roomNameFontSize,
                      lineHeight: '1.15',
                      wordBreak: 'normal',
                      overflowWrap: 'normal',
-                     overflow: 'visible',
-                     textAlign: 'center',
+                     overflow: 'hidden',
                      ...getTextStyle(windowTextMode, windowTextColor, windowTextGradient, '#facc15')
-                   }}
+                   }} 
                    data-testid="current-room">
                 {currentPatient.room}
               </div>
@@ -2061,13 +2055,7 @@ export function TVDisplay({
               overflow: 'hidden',
               textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
               letterSpacing: '0.02em',
-              textAlign: 'center',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'column',
-              width: '100%',
-              height: '100%'
+              textAlign: 'center'
             }} data-testid="highlight-patient-name">
               {getDisplayName(currentPatient.name)}
             </div>
