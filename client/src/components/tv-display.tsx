@@ -1673,16 +1673,16 @@ export function TVDisplay({
                   data-testid="youtube-content"
                 />
               ) : currentMedia.type === "image" ? (
-                <img 
-                  src={currentMedia.url} 
-                  alt="Media Content" 
-                  className="w-full h-full object-cover"
+                <img
+                  src={currentMedia.url}
+                  alt="Media Content"
+                  className="w-full h-full object-contain"
                   data-testid="media-content"
                 />
               ) : (
-                <video 
-                  src={currentMedia.url} 
-                  className="w-full h-full object-cover"
+                <video
+                  src={currentMedia.url}
+                  className="w-full h-full object-contain"
                   autoPlay
                   muted
                   loop
