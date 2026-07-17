@@ -845,21 +845,22 @@ export function TVDisplay({
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Function to calculate optimal font size for text to fit container
-  const calculateFontSize = (text: string, maxWidth: number, baseSize: number, minSize: number = 16) => {
+  const calculateFontSize = (text: string, maxWidth: number, baseSize: number, minSize: number = 16, charWidthRatio: number = 0.6) => {
     if (!text) return `${baseSize}px`;
-    
-    // Estimate character width (roughly 0.6 of font size for most fonts)
-    const charWidth = baseSize * 0.6;
+
+    // Estimate character width as a ratio of font size.
+    // Normal text ~0.6; bold uppercase ~0.75.
+    const charWidth = baseSize * charWidthRatio;
     const textWidth = text.length * charWidth;
-    
+
     if (textWidth <= maxWidth) {
       return `${baseSize}px`;
     }
-    
+
     // Calculate scaling factor
     const scaleFactor = maxWidth / textWidth;
     const newSize = Math.max(baseSize * scaleFactor, minSize);
-    
+
     return `${Math.floor(newSize)}px`;
   };
 
@@ -1984,27 +1985,20 @@ export function TVDisplay({
             </div>
 
             {/* Patient Name — maximizes the entire box using calculated font */}
-            <div className="relative mb-6 w-full" style={{ height: 'min(55vh, 600px)', minHeight: '200px' }}>
-              <div className="px-4 py-3 rounded-2xl w-full h-full flex items-center justify-center"
+            <div className="relative mb-6 w-full" style={{ minHeight: '120px' }}>
+              <div className="px-4 py-5 rounded-2xl w-full flex items-center justify-center"
                    style={{
                      background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
                      border: `1px solid rgba(255,255,255,0.1)`,
-                     backdropFilter: 'blur(8px)',
-                     overflow: 'hidden'
+                     backdropFilter: 'blur(8px)'
                    }}>
                 <div style={{
-                  fontSize: calculateWrappedFontSize(
-                    getDisplayName(currentPatient.name),
-                    1000,   // usable width inside the box (accounting for padding)
-                    520,    // usable height inside the box
-                    180,    // max font to try
-                    40      // min font
-                  ),
+                  fontSize: calculateFontSize(getDisplayName(currentPatient.name), 1000, 120, 30, 0.72),
                   fontWeight: 900,
                   color: modalTextColor,
-                  lineHeight: '1.12',
+                  lineHeight: '1.15',
                   wordBreak: 'break-word',
-                  overflow: 'hidden',
+                  overflowWrap: 'break-word',
                   textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
                   letterSpacing: '0.02em',
                   textAlign: 'center'
