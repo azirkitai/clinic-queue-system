@@ -1919,7 +1919,7 @@ export function TVDisplay({
               Now Calling
             </div>
 
-            {/* Patient Name - Cinematic big with FitText */}
+            {/* Patient Name - Cinematic big */}
             <div className="relative mb-8 w-full">
               <div className="px-6 py-4 rounded-2xl"
                    style={{
@@ -1927,19 +1927,16 @@ export function TVDisplay({
                      border: `1px solid rgba(255,255,255,0.1)`,
                      backdropFilter: 'blur(8px)'
                    }}>
-                <FitText
-                  text={getDisplayName(currentPatient.name)}
-                  maxFontSize={120}
-                  minFontSize={32}
-                  testId="highlight-patient-name"
-                  baseStyle={{
-                    fontWeight: 900,
-                    color: modalTextColor,
-                    lineHeight: 1.05,
-                    textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
-                    letterSpacing: '0.02em',
-                  }}
-                />
+                <div style={{
+                  fontSize: 'clamp(60px, 8vw, 130px)',
+                  fontWeight: 900,
+                  color: modalTextColor,
+                  lineHeight: 1.05,
+                  textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
+                  letterSpacing: '0.02em'
+                }} data-testid="highlight-patient-name">
+                  {getDisplayName(currentPatient.name)}
+                </div>
               </div>
             </div>
 
