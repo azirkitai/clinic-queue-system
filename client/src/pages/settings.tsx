@@ -1210,10 +1210,10 @@ export default function Settings() {
                         </div>
                       </div>
                     ) : (
-                      <Button 
+                      <Button
                         onClick={handleUploadClick}
                         variant="outline"
-                        className="w-full"
+                        className="w-full text-[#000405]"
                         data-testid="button-select-file"
                       >
                         <Plus className="h-4 w-4 mr-2" />
