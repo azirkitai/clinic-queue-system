@@ -2031,8 +2031,8 @@ export function TVDisplay({
         </div>
 
         {/* Patient Name — maximizes the box using wrapped font sizing */}
-        <div className="relative mb-6 w-full" style={{ flex: 1, height: 'min(50vh, 480px)', minHeight: 'min(50vh, 480px)' }}>
-          <div className="px-6 py-6 rounded-2xl w-full h-full flex items-center justify-center"
+        <div className="relative mb-4 w-full" style={{ flex: 0, minHeight: 0 }}>
+          <div className="px-4 py-4 rounded-2xl w-full flex items-center justify-center"
                style={{
                  background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
                  border: `1px solid rgba(255,255,255,0.1)`,
@@ -2042,8 +2042,8 @@ export function TVDisplay({
               fontSize: calculateWrappedFontSize(
                 getDisplayName(currentPatient.name),
                 880,    // conservative usable width
-                360,    // conservative usable height
-                140,    // max font
+                240,    // smaller height budget to keep room info closer
+                120,    // max font
                 28      // min font
               ),
               fontWeight: 900,
@@ -2062,7 +2062,7 @@ export function TVDisplay({
         </div>
 
         {/* Divider line with glow */}
-        <div className="w-full max-w-2xl mb-8 h-px"
+        <div className="w-full max-w-2xl mb-3 h-px"
              style={{
                background: `linear-gradient(90deg, transparent, ${modalBorderColor}, transparent)`,
                boxShadow: `0 0 12px ${modalBorderColor}66`
