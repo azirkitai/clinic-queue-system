@@ -873,8 +873,8 @@ export function TVDisplay({
   const calculateWrappedFontSize = (text: string, boxWidth: number, boxHeight: number, baseSize: number, minSize: number = 16) => {
     if (!text) return `${baseSize}px`;
 
-    // Bold uppercase Malay names: ~0.62× font-size per char
-    const avgCharWidth = 0.62;
+    // Bold uppercase Malay names: ~0.78× font-size per char (larger for TV bold display)
+    const avgCharWidth = 0.78;
     const lineHeight = 1.15;
 
     const words = text.split(' ');
@@ -1159,22 +1159,17 @@ export function TVDisplay({
   // Auto-resize text effect - adjust font sizes based on text length
   useEffect(() => {
     if (currentPatient) {
-      // Calculate container widths (approximate based on typical screen sizes)
-      const isFullSize = isFullscreen;
-      const nameContainerWidth = isFullSize ? 600 : 400; // Approximate container width
-      const roomContainerWidth = isFullSize ? 400 : 300; // Room container is smaller
-      
-      // Base font sizes 
-      const nameBaseSize = isFullSize ? 80 : 60; // Bigger calling name
-      const roomBaseSize = isFullSize ? 50 : 40; // Bigger calling room
-      
       // Box calling display: text auto-resize, maintain box size, wrap at spaces only
-      // Use full inner box width (no side padding on text), full height budget
+      // Right panel is 500px in fullscreen; subtract mx-4 (32px) + px-1 (8px) = ~460px inner
+      const isFullSize = isFullscreen;
+      const nameContainerWidth = isFullSize ? 460 : 340;
+      const roomContainerWidth = isFullSize ? 460 : 340;
+
       const newNameSize = calculateWrappedFontSize(
         getDisplayName(currentPatient.name),
-        nameContainerWidth,      // full inner width
+        nameContainerWidth,      // actual inner width
         isFullSize ? 150 : 110,  // full box height budget
-        isFullSize ? 72 : 52     // max font
+        isFullSize ? 68 : 48     // max font
       );
       const newRoomSize = calculateWrappedFontSize(
         currentPatient.room,
