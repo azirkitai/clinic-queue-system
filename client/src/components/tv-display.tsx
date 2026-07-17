@@ -2016,35 +2016,37 @@ export function TVDisplay({
       <div className="relative z-10 flex flex-col items-center justify-center text-center px-8"
            style={{ maxWidth: '1200px', width: '90%' }}>
 
-        {/* CALLING badge */}
-        <div className="mb-6 px-10 py-3 rounded-full tv-highlight-pulse-border"
+        {/* Single unified calling box with glow border */}
+        <div className="relative w-full tv-highlight-pulse-border rounded-3xl overflow-hidden"
              style={{
-               border: `2px solid ${modalBorderColor}`,
-               background: `linear-gradient(135deg, ${modalBorderColor}33, ${modalBorderColor}11)`,
-               color: modalBorderColor,
-               fontSize: 'clamp(28px, 3vw, 44px)',
-               fontWeight: 700,
-               letterSpacing: '0.15em',
-               textTransform: 'uppercase'
+               border: `3px solid ${modalBorderColor}`,
+               background: `linear-gradient(135deg, ${modalBackgroundColor}ee 0%, ${modalBackgroundColor}99 100%)`,
+               boxShadow: `0 0 30px ${modalBorderColor}44, 0 0 80px ${modalBorderColor}22`,
+               maxWidth: 'min(85vw, 1200px)',
+               padding: 'clamp(24px, 4vh, 48px) clamp(32px, 5vw, 64px)'
              }}>
-          Now Calling
-        </div>
+          {/* Inner content */}
+          <div className="flex flex-col items-center gap-4">
+            {/* CALLING label */}
+            <div style={{
+              color: modalBorderColor,
+              fontSize: 'clamp(20px, 2.5vw, 36px)',
+              fontWeight: 700,
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              opacity: 0.9
+            }}>
+              Now Calling
+            </div>
 
-        {/* Patient Name — maximizes the box using wrapped font sizing */}
-        <div className="relative mb-4 w-full" style={{ flex: 0, minHeight: 0 }}>
-          <div className="px-4 py-4 rounded-2xl w-full flex items-center justify-center"
-               style={{
-                 background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
-                 border: `1px solid rgba(255,255,255,0.1)`,
-                 backdropFilter: 'blur(8px)'
-               }}>
+            {/* Patient Name */}
             <div style={{
               fontSize: calculateWrappedFontSize(
                 getDisplayName(currentPatient.name),
-                880,    // conservative usable width
-                240,    // smaller height budget to keep room info closer
-                120,    // max font
-                28      // min font
+                Math.min(window.innerWidth * 0.75, 1000),
+                200,
+                100,
+                28
               ),
               fontWeight: 900,
               color: modalTextColor,
@@ -2052,43 +2054,42 @@ export function TVDisplay({
               wordBreak: 'normal',
               overflowWrap: 'normal',
               overflow: 'hidden',
-              textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
+              textShadow: `0 0 30px ${modalBorderColor}33, 0 2px 8px rgba(0,0,0,0.5)`,
               letterSpacing: '0.02em',
               textAlign: 'center'
             }} data-testid="highlight-patient-name">
               {getDisplayName(currentPatient.name)}
             </div>
+
+            {/* Divider */}
+            <div className="w-full max-w-lg h-px my-1"
+                 style={{
+                   background: `linear-gradient(90deg, transparent, ${modalBorderColor}88, transparent)`
+                 }} />
+
+            {/* Room info */}
+            <div className="flex items-center gap-3 flex-wrap justify-center">
+              <span style={{
+                fontSize: 'clamp(18px, 2vw, 32px)',
+                color: modalTextColor,
+                opacity: 0.7,
+                fontWeight: 500,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase'
+              }}>
+                Please proceed to
+              </span>
+              <span style={{
+                fontSize: 'clamp(28px, 3.5vw, 56px)',
+                fontWeight: 800,
+                color: modalBorderColor,
+                textShadow: `0 0 20px ${modalBorderColor}44`,
+                letterSpacing: '0.05em'
+              }} data-testid="highlight-patient-room">
+                {currentPatient.room}
+              </span>
+            </div>
           </div>
-        </div>
-
-        {/* Divider line with glow */}
-        <div className="w-full max-w-2xl mb-3 h-px"
-             style={{
-               background: `linear-gradient(90deg, transparent, ${modalBorderColor}, transparent)`,
-               boxShadow: `0 0 12px ${modalBorderColor}66`
-             }} />
-
-        {/* Room info */}
-        <div className="flex items-center gap-4 flex-wrap justify-center">
-          <span style={{
-            fontSize: 'clamp(24px, 2.5vw, 40px)',
-            color: modalTextColor,
-            opacity: 0.7,
-            fontWeight: 500,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase'
-          }}>
-            Please proceed to
-          </span>
-          <span style={{
-            fontSize: 'clamp(36px, 4vw, 72px)',
-            fontWeight: 800,
-            color: modalBorderColor,
-            textShadow: `0 0 30px ${modalBorderColor}55`,
-            letterSpacing: '0.05em'
-          }} data-testid="highlight-patient-room">
-            {currentPatient.room}
-          </span>
         </div>
 
       </div>
