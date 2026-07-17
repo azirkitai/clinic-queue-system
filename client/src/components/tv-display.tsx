@@ -864,41 +864,39 @@ export function TVDisplay({
     return `${Math.floor(newSize)}px`;
   };
 
-  // Calculate font size for multi-line wrapped text within a box.
-  // Considers both width (line wrapping) and height (max lines).
-  // Words are wrapped at natural boundaries (spaces) like the browser does.
-  const calculateWrappedFontSize = (text: string, maxWidth: number, maxHeight: number, baseSize: number, minSize: number = 16, maxLines: number = 3) => {
+  // Calculate font size for text within a fixed box.
+  // Rules:
+  // 1) If any single word > 13 chars, shrink font so that word fits on 1 line
+  // 2) If total chars > 10, allow up to 2 lines (wrap at spaces only)
+  // 3) Never break words mid-word — only wrap at spaces
+  // 4) Use full inner box width (no wasted horizontal space)
+  const calculateWrappedFontSize = (text: string, boxWidth: number, boxHeight: number, baseSize: number, minSize: number = 16) => {
     if (!text) return `${baseSize}px`;
 
-    // Inter/Roboto 900-weight uppercase averages ~0.65× font-size per char.
-    // Calibrated for bold uppercase Malay names — fills the box without overflow.
-    const avgCharWidth = 0.65;
+    // Bold uppercase Malay names: ~0.62× font-size per char
+    const avgCharWidth = 0.62;
     const lineHeight = 1.15;
 
     const words = text.split(' ');
+    const totalChars = text.replace(/\s/g, '').length;
 
-    // Simulate browser word-wrapping for a given font size
+    // Rule 2: total chars > 10 → max 2 lines
+    const maxLines = totalChars > 10 ? 2 : 1;
+
+    // Find longest word for single-line constraint
+    const longestWord = Math.max(...words.map(w => w.length));
+
+    // Simulate wrapping at a given font size (wrap at spaces only)
     const countLines = (fontSize: number) => {
       const charWidth = fontSize * avgCharWidth;
       let lines = 1;
       let currentLineWidth = 0;
       for (let w = 0; w < words.length; w++) {
         const wordWidth = words[w].length * charWidth;
-        // Word is longer than the whole line → must break the word itself
-        if (wordWidth > maxWidth) {
-          // Split the word across as many lines as needed
-          const wordLines = Math.ceil(wordWidth / maxWidth);
-          if (currentLineWidth > 0) {
-            lines += 1; // finish current line first
-            currentLineWidth = 0;
-          }
-          lines += wordLines - 1;
-          currentLineWidth = wordWidth % maxWidth || maxWidth;
-        } else if (currentLineWidth + wordWidth + (currentLineWidth > 0 ? charWidth : 0) <= maxWidth) {
-          // Word fits on current line (add space width if not first word)
-          currentLineWidth += wordWidth + (currentLineWidth > 0 ? charWidth : 0);
+        const spaceWidth = currentLineWidth > 0 ? charWidth : 0;
+        if (currentLineWidth + wordWidth + spaceWidth <= boxWidth) {
+          currentLineWidth += wordWidth + spaceWidth;
         } else {
-          // Word doesn't fit → new line
           lines += 1;
           currentLineWidth = wordWidth;
         }
@@ -914,11 +912,18 @@ export function TVDisplay({
     for (let i = 0; i < 12; i++) {
       if (lo > hi) break;
       const fontSize = Math.floor((lo + hi) / 2);
+      const charWidth = fontSize * avgCharWidth;
+
+      // Rule 1: longest word must fit on one line (no mid-word breaks)
+      if (longestWord * charWidth > boxWidth) {
+        hi = fontSize - 1;
+        continue;
+      }
 
       const lines = countLines(fontSize);
       const textHeight = lines * fontSize * lineHeight;
 
-      if (textHeight <= maxHeight && lines <= maxLines) {
+      if (textHeight <= boxHeight && lines <= maxLines) {
         best = fontSize;
         lo = fontSize + 1;
       } else {
@@ -1163,23 +1168,19 @@ export function TVDisplay({
       const nameBaseSize = isFullSize ? 80 : 60; // Bigger calling name
       const roomBaseSize = isFullSize ? 50 : 40; // Bigger calling room
       
-      // Calculate optimal font sizes
       // Box calling display: text auto-resize, maintain box size, wrap at spaces only
+      // Use full inner box width (no side padding on text), full height budget
       const newNameSize = calculateWrappedFontSize(
         getDisplayName(currentPatient.name),
-        nameContainerWidth,
-        isFullSize ? 140 : 100,  // height budget for 2 lines max
-        isFullSize ? 68 : 48,    // max font
-        20,     // min font
-        2       // max 2 lines so text stays readable
+        nameContainerWidth,      // full inner width
+        isFullSize ? 150 : 110,  // full box height budget
+        isFullSize ? 72 : 52     // max font
       );
       const newRoomSize = calculateWrappedFontSize(
         currentPatient.room,
         roomContainerWidth,
-        isFullSize ? 70 : 50,    // height for 1 line
-        isFullSize ? 44 : 32,    // max font
-        14,
-        1       // room name stays on 1 line
+        isFullSize ? 80 : 60,
+        isFullSize ? 48 : 36
       );
 
       setPatientNameFontSize(newNameSize);
@@ -1763,7 +1764,7 @@ export function TVDisplay({
 
         {/* Current Patient Display */}
         {currentPatient ? (
-          <div className={`${isFullscreen ? 'p-2 mx-4 rounded-md mb-3' : 'p-3 rounded-lg mb-3'} text-center`}
+          <div className={`${isFullscreen ? 'py-2 px-1 mx-4 rounded-md mb-3' : 'py-3 px-1 rounded-lg mb-3'} text-center`}
                style={{
                  ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#16a34a')
                }}>
@@ -1793,7 +1794,7 @@ export function TVDisplay({
             </div>
           </div>
         ) : (
-          <div className={`${isFullscreen ? 'p-2 mx-4 rounded-md mb-3' : 'p-3 rounded-lg mb-3'} text-center`}
+          <div className={`${isFullscreen ? 'py-2 px-1 mx-4 rounded-md mb-3' : 'py-3 px-1 rounded-lg mb-3'} text-center`}
                style={{
                  ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#16a34a')
                }}>
@@ -2045,17 +2046,16 @@ export function TVDisplay({
             <div style={{
               fontSize: calculateWrappedFontSize(
                 getDisplayName(currentPatient.name),
-                880,    // conservative usable width (container ~1080 minus padding & margin)
-                360,    // conservative usable height (container 480 minus padding ~96, minus safety)
-                140,    // max font to try
-                28,     // min font
-                4       // up to 4 lines
+                880,    // conservative usable width
+                360,    // conservative usable height
+                140,    // max font
+                28      // min font
               ),
               fontWeight: 900,
               color: modalTextColor,
               lineHeight: '1.15',
-              wordBreak: 'break-word',
-              overflowWrap: 'break-word',
+              wordBreak: 'normal',
+              overflowWrap: 'normal',
               overflow: 'hidden',
               textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
               letterSpacing: '0.02em',
