@@ -1164,22 +1164,22 @@ export function TVDisplay({
       const roomBaseSize = isFullSize ? 50 : 40; // Bigger calling room
       
       // Calculate optimal font sizes
-      // Use wrapped font sizing so long names wrap naturally at spaces
+      // Box calling display: text auto-resize, maintain box size, wrap at spaces only
       const newNameSize = calculateWrappedFontSize(
         getDisplayName(currentPatient.name),
         nameContainerWidth,
-        isFullSize ? 160 : 110,  // container height budget
-        isFullSize ? 72 : 52,   // max font to try
-        20,   // min font
-        3     // max lines
+        isFullSize ? 140 : 100,  // height budget for 2 lines max
+        isFullSize ? 68 : 48,    // max font
+        20,     // min font
+        2       // max 2 lines so text stays readable
       );
       const newRoomSize = calculateWrappedFontSize(
         currentPatient.room,
         roomContainerWidth,
-        isFullSize ? 90 : 65,
-        isFullSize ? 48 : 36,
+        isFullSize ? 70 : 50,    // height for 1 line
+        isFullSize ? 44 : 32,    // max font
         14,
-        2
+        1       // room name stays on 1 line
       );
 
       setPatientNameFontSize(newNameSize);
@@ -1770,8 +1770,9 @@ export function TVDisplay({
             <div className={`font-bold ${isBlinking ? 'tv-blink-active' : ''}`}
                  style={{ 
                    fontSize: patientNameFontSize,
-                   lineHeight: '1.1',
-                   wordBreak: 'break-word',
+                   lineHeight: '1.15',
+                   wordBreak: 'normal',
+                   overflowWrap: 'normal',
                    overflow: 'hidden',
                    ...getTextStyle(callNameTextMode, callNameTextColor, callNameTextGradient, '#facc15')
                  }} 
@@ -1781,8 +1782,9 @@ export function TVDisplay({
             <div className={isBlinking ? 'tv-blink-active' : ''}
                  style={{ 
                    fontSize: roomNameFontSize,
-                   lineHeight: '1.1',
-                   wordBreak: 'break-word',
+                   lineHeight: '1.15',
+                   wordBreak: 'normal',
+                   overflowWrap: 'normal',
                    overflow: 'hidden',
                    ...getTextStyle(windowTextMode, windowTextColor, windowTextGradient, '#facc15')
                  }} 
