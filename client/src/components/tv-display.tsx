@@ -2032,7 +2032,7 @@ export function TVDisplay({
 
         {/* Patient Name — fills maximum viewport space */}
         <div className="relative w-full flex-1 min-h-0"
-             style={{ margin: '1vh 0' }}>
+             style={{ marginBottom: '0.5vh' }}>
           <div className="rounded-2xl w-full h-full flex items-center justify-center"
                style={{
                  background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
@@ -2062,9 +2062,8 @@ export function TVDisplay({
           </div>
         </div>
 
-        {/* Room info —紧贴 name box */}
-        <div className="flex items-center gap-3 flex-wrap justify-center"
-             style={{ marginTop: '0.5vh' }}>
+        {/* Room info — rapat ke bawah name box */}
+        <div className="flex items-center gap-3 flex-wrap justify-center">
           <span style={{
             fontSize: 'clamp(20px, 2vw, 32px)',
             color: modalTextColor,
