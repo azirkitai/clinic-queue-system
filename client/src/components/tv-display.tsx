@@ -1970,18 +1970,6 @@ export function TVDisplay({
               </span>
             </div>
 
-            {/* Nombor giliran badge */}
-            <div className="mt-8 px-8 py-3 rounded-xl"
-                 style={{
-                   background: `linear-gradient(135deg, ${modalBorderColor}22, transparent)`,
-                   border: `1px solid ${modalBorderColor}44`,
-                   color: modalTextColor,
-                   fontSize: 'clamp(20px, 1.8vw, 32px)',
-                   fontWeight: 600,
-                   opacity: 0.85
-                 }}>
-              No. Giliran {currentPatient.number}
-            </div>
           </div>
         </div>
       )}
