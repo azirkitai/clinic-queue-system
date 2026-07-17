@@ -113,27 +113,30 @@ export function TvLayoutPreview({ highlight }: TvLayoutPreviewProps) {
               KLINIK
             </div>
 
-            {/* CALLING label box */}
-            <div className={`mx-0.5 mt-0.5 rounded-sm text-center py-0.5 ${
-              is('call') ? `${pulse} ${ring}` : ''
-            }`} style={callBg}>
-              <div className={`text-[6px] font-bold ${
-                is('callName') ? pulse : ''
-              }`} style={callNameTxt}>CALLING</div>
-            </div>
-
-            {/* Patient name + room box */}
-            <div className={`mx-0.5 mt-0.5 rounded-sm text-center py-1 ${
+            {/* Unified Calling Box - CALLING + Name + Room */}
+            <div className={`mx-0.5 mt-0.5 rounded-sm text-center overflow-hidden ${
               is(['call', 'callName', 'callWindow']) ? `${pulse} ${ring}` : ''
-            }`} style={callBg}>
-              <div className={`text-[8px] font-bold leading-tight ${
+            }`} style={{
+              ...callBg,
+              border: is('call') ? `2px solid ${s.callBackgroundColor || ACCENT_BG_COLOR}` : `1px solid ${s.callBackgroundColor || ACCENT_BG_COLOR}`,
+              boxShadow: is('call') ? `0 0 4px ${s.callBackgroundColor || ACCENT_BG_COLOR}44` : 'none'
+            }}>
+              {/* CALLING label */}
+              <div className={`text-center py-0.5 ${
                 is('callName') ? pulse : ''
-              }`} style={callNameTxt}>
+              }`} style={{ fontSize: '5px', ...callNameTxt, opacity: 0.9, letterSpacing: '0.1em' }}>
+                CALLING
+              </div>
+              {/* Patient Name */}
+              <div className={`py-1 text-center ${
+                is('callName') ? pulse : ''
+              }`} style={{ fontSize: '8px', fontWeight: 'bold', ...callNameTxt }}>
                 AHMAD
               </div>
-              <div className={`text-[6px] leading-tight ${
+              {/* Room */}
+              <div className={`text-center pb-0.5 ${
                 is('callWindow') ? pulse : ''
-              }`} style={windowTxt}>
+              }`} style={{ fontSize: '6px', ...windowTxt }}>
                 BILIK 1
               </div>
             </div>
@@ -198,19 +201,59 @@ export function TvLayoutPreview({ highlight }: TvLayoutPreviewProps) {
         {/* Modal preview */}
         {is('modal') && (
           <div className={`absolute inset-0 flex items-center justify-center z-10`} style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-            <div className={`relative rounded-sm px-4 py-2 text-center ${pulse} ${ring}`} style={{ backgroundColor: modalBgColor, border: `2px solid ${modalBorderColor}` }}>
-              <div className="absolute top-0 left-0 w-3 h-px" style={{ backgroundColor: modalBorderColor }} />
-              <div className="absolute top-0 left-0 h-3 w-px" style={{ backgroundColor: modalBorderColor }} />
-              <div className="absolute top-0 right-0 w-3 h-px" style={{ backgroundColor: modalBorderColor }} />
-              <div className="absolute top-0 right-0 h-3 w-px" style={{ backgroundColor: modalBorderColor }} />
-              <div className="absolute bottom-0 left-0 w-3 h-px" style={{ backgroundColor: modalBorderColor }} />
-              <div className="absolute bottom-0 left-0 h-3 w-px" style={{ backgroundColor: modalBorderColor }} />
-              <div className="absolute bottom-0 right-0 w-3 h-px" style={{ backgroundColor: modalBorderColor }} />
-              <div className="absolute bottom-0 right-0 h-3 w-px" style={{ backgroundColor: modalBorderColor }} />
-              <div className="text-[6px] mb-0.5" style={{ color: modalTextColor, opacity: 0.8 }}>NAME</div>
-              <div className="text-[9px] font-bold border px-2 py-0.5 rounded-sm mb-1" style={{ color: modalTextColor, borderColor: modalBorderColor }}>AHMAD</div>
-              <div className="text-[6px] mb-0.5" style={{ color: modalTextColor, opacity: 0.8 }}>ROOM</div>
-              <div className="text-[9px] font-bold border px-2 py-0.5 rounded-sm" style={{ color: modalTextColor, borderColor: modalBorderColor }}>BILIK 1</div>
+            <div className="relative flex flex-col items-center justify-center text-center px-2" style={{ maxWidth: '200px', width: '90%' }}>
+              {/* Now Calling badge */}
+              <div className={`mb-1 px-2 py-0.5 rounded-full ${pulse} ${ring}`}
+                   style={{
+                     border: `1px solid ${modalBorderColor}`,
+                     background: `linear-gradient(135deg, ${modalBorderColor}33, ${modalBorderColor}11)`,
+                     color: modalBorderColor,
+                     fontSize: '5px',
+                     fontWeight: 700,
+                     letterSpacing: '0.1em',
+                     textTransform: 'uppercase'
+                   }}>
+                Now Calling
+              </div>
+              {/* Patient Name box */}
+              <div className="relative mb-1 w-full">
+                <div className="px-1 py-1 rounded-sm w-full flex items-center justify-center"
+                     style={{
+                       background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
+                       border: `1px solid rgba(255,255,255,0.1)`
+                     }}>
+                  <div style={{
+                    fontSize: '10px',
+                    fontWeight: 900,
+                    color: modalTextColor,
+                    lineHeight: '1.15',
+                    textAlign: 'center'
+                  }}>
+                    AHMAD
+                  </div>
+                </div>
+              </div>
+              {/* Divider */}
+              <div className="w-full max-w-md mb-1 h-px" style={{
+                background: `linear-gradient(90deg, transparent, ${modalBorderColor}, transparent)`
+              }} />
+              {/* Room info */}
+              <div className="flex items-center gap-1 flex-wrap justify-center">
+                <span style={{
+                  fontSize: '5px',
+                  color: modalTextColor,
+                  opacity: 0.7,
+                  fontWeight: 500,
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase'
+                }}>Please proceed to</span>
+                <span style={{
+                  fontSize: '7px',
+                  fontWeight: 800,
+                  color: modalBorderColor,
+                  letterSpacing: '0.03em'
+                }}>BILIK 1</span>
+              </div>
             </div>
           </div>
         )}
