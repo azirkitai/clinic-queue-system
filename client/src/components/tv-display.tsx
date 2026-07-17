@@ -862,6 +862,41 @@ export function TVDisplay({
     
     return `${Math.floor(newSize)}px`;
   };
+
+  // Calculate font size for multi-line wrapped text within a box.
+  // Considers both width (line wrapping) and height (max lines).
+  const calculateWrappedFontSize = (text: string, maxWidth: number, maxHeight: number, baseSize: number, minSize: number = 16, maxLines: number = 3) => {
+    if (!text) return `${baseSize}px`;
+
+    // All names are upper-cased via getDisplayName.  Bold uppercase sans-serif
+    // averages ~0.72× font-size per character (e.g. Inter / Roboto 900).
+    const avgCharWidth = 0.72;
+    const lineHeight = 1.12;
+
+    // Binary search for largest font that fits
+    let lo = minSize;
+    let hi = baseSize;
+    let best = minSize;
+
+    for (let i = 0; i < 12; i++) {
+      if (lo > hi) break;
+      const fontSize = Math.floor((lo + hi) / 2);
+
+      const charWidth = fontSize * avgCharWidth;
+      const textWidth = text.length * charWidth;
+      const lines = Math.ceil(textWidth / maxWidth);
+      const textHeight = lines * fontSize * lineHeight;
+
+      if (textHeight <= maxHeight && lines <= maxLines) {
+        best = fontSize;
+        lo = fontSize + 1;
+      } else {
+        hi = fontSize - 1;
+      }
+    }
+
+    return `${Math.floor(best)}px`;
+  };
   
   // Timer refs for cleanup
   const highlightTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -1948,9 +1983,9 @@ export function TVDisplay({
               Now Calling
             </div>
 
-            {/* Patient Name - Cinematic big */}
-            <div className="relative mb-8 w-full" style={{ maxHeight: 'min(45vh, 500px)', minHeight: '120px' }}>
-              <div className="px-6 py-4 rounded-2xl w-full h-full flex items-center justify-center"
+            {/* Patient Name — maximizes the entire box using calculated font */}
+            <div className="relative mb-6 w-full" style={{ height: 'min(55vh, 600px)', minHeight: '200px' }}>
+              <div className="px-4 py-3 rounded-2xl w-full h-full flex items-center justify-center"
                    style={{
                      background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
                      border: `1px solid rgba(255,255,255,0.1)`,
@@ -1958,14 +1993,21 @@ export function TVDisplay({
                      overflow: 'hidden'
                    }}>
                 <div style={{
-                  fontSize: patientNameFontSize,
+                  fontSize: calculateWrappedFontSize(
+                    getDisplayName(currentPatient.name),
+                    1000,   // usable width inside the box (accounting for padding)
+                    520,    // usable height inside the box
+                    180,    // max font to try
+                    40      // min font
+                  ),
                   fontWeight: 900,
                   color: modalTextColor,
-                  lineHeight: '1.1',
+                  lineHeight: '1.12',
                   wordBreak: 'break-word',
                   overflow: 'hidden',
                   textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
-                  letterSpacing: '0.02em'
+                  letterSpacing: '0.02em',
+                  textAlign: 'center'
                 }} data-testid="highlight-patient-name">
                   {getDisplayName(currentPatient.name)}
                 </div>
