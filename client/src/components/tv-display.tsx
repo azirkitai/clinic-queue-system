@@ -246,13 +246,10 @@ function FitText({
           fontSize: `${fontSize}px`,
           whiteSpace: shouldWrap ? 'normal' : 'nowrap',
           overflowWrap: shouldWrap ? 'break-word' : 'normal',
-          wordBreak: shouldWrap ? 'break-all' : 'normal',
+          wordBreak: shouldWrap ? 'break-word' : 'normal',
           lineHeight: shouldWrap ? 1.05 : 1.1,
-          display: shouldWrap ? 'block' : 'inline-block',
-          width: shouldWrap ? '100%' : undefined,
-          // NOTE: no maxWidth here! Clamping the span makes scrollWidth report
-          // the clamped width instead of the true text width, which breaks the
-          // fit measurement and lets long names render too big (clipped).
+          display: 'inline-block',
+          maxWidth: shouldWrap ? '100%' : undefined,
           transform: overflowScale < 1 ? `scale(${overflowScale})` : undefined,
           transformOrigin: 'center center',
         }}
@@ -1951,29 +1948,27 @@ export function TVDisplay({
               Now Calling
             </div>
 
-            {/* Patient Name - Cinematic big with FitText */}
-            <div className="relative mb-8 w-full" style={{ height: 'min(40vh, 420px)', minHeight: '160px' }}>
-              <div className="px-6 py-4 rounded-2xl w-full h-full"
+            {/* Patient Name - Cinematic big */}
+            <div className="relative mb-8 w-full" style={{ maxHeight: 'min(45vh, 500px)', minHeight: '120px' }}>
+              <div className="px-6 py-4 rounded-2xl w-full h-full flex items-center justify-center"
                    style={{
                      background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
                      border: `1px solid rgba(255,255,255,0.1)`,
-                     backdropFilter: 'blur(8px)'
+                     backdropFilter: 'blur(8px)',
+                     overflow: 'hidden'
                    }}>
-                <FitText
-                  text={getDisplayName(currentPatient.name)}
-                  baseStyle={{
-                    fontWeight: 900,
-                    color: modalTextColor,
-                    textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
-                    letterSpacing: '0.02em',
-                    textAlign: 'center'
-                  }}
-                  maxFontSize={160}
-                  minFontSize={28}
-                  align="center"
-                  wrap
-                  testId="highlight-patient-name"
-                />
+                <div style={{
+                  fontSize: patientNameFontSize,
+                  fontWeight: 900,
+                  color: modalTextColor,
+                  lineHeight: '1.1',
+                  wordBreak: 'break-word',
+                  overflow: 'hidden',
+                  textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
+                  letterSpacing: '0.02em'
+                }} data-testid="highlight-patient-name">
+                  {getDisplayName(currentPatient.name)}
+                </div>
               </div>
             </div>
 
