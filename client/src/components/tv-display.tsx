@@ -2062,8 +2062,9 @@ export function TVDisplay({
           </div>
         </div>
 
-        {/* Room info */}
-        <div className="flex items-center gap-3 flex-wrap justify-center">
+        {/* Room info —紧贴 name box */}
+        <div className="flex items-center gap-3 flex-wrap justify-center"
+             style={{ marginTop: '0.5vh' }}>
           <span style={{
             fontSize: 'clamp(20px, 2vw, 32px)',
             color: modalTextColor,
