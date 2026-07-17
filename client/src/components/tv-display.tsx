@@ -122,6 +122,7 @@ function FitText({
   maxFontSize = 56,
   minFontSize = 14,
   align = 'center',
+  wrap = false,
 }: {
   text: string;
   baseStyle?: React.CSSProperties;
@@ -130,11 +131,18 @@ function FitText({
   maxFontSize?: number;
   minFontSize?: number;
   align?: 'start' | 'center' | 'end';
+  wrap?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const spanRef = useRef<HTMLSpanElement | null>(null);
   const [fontSize, setFontSize] = useState(maxFontSize);
   const [overflowScale, setOverflowScale] = useState(1);
+
+  // Determine if we should allow wrapping:
+  // If wrap=true AND text has 2+ words, allow multi-line.
+  // Single-word text always stays on one line.
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  const shouldWrap = wrap && words.length > 1;
 
   useLayoutEffect(() => {
     let rafId = 0;
@@ -201,7 +209,7 @@ function FitText({
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [text, maxFontSize, minFontSize]);
+  }, [text, maxFontSize, minFontSize, shouldWrap]);
 
   return (
     <div
@@ -215,8 +223,8 @@ function FitText({
         style={{
           ...baseStyle,
           fontSize: `${fontSize}px`,
-          whiteSpace: 'nowrap',
-          lineHeight: 1.1,
+          whiteSpace: shouldWrap ? 'normal' : 'nowrap',
+          lineHeight: shouldWrap ? 1.2 : 1.1,
           display: 'inline-block',
           // NOTE: no maxWidth here! Clamping the span makes scrollWidth report
           // the clamped width instead of the true text width, which breaks the
@@ -1919,24 +1927,29 @@ export function TVDisplay({
               Now Calling
             </div>
 
-            {/* Patient Name - Cinematic big */}
-            <div className="relative mb-8 w-full">
-              <div className="px-6 py-4 rounded-2xl"
+            {/* Patient Name - Cinematic big with FitText */}
+            <div className="relative mb-8 w-full" style={{ maxHeight: '35vh', minHeight: '120px' }}>
+              <div className="px-6 py-4 rounded-2xl w-full h-full"
                    style={{
                      background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
                      border: `1px solid rgba(255,255,255,0.1)`,
                      backdropFilter: 'blur(8px)'
                    }}>
-                <div style={{
-                  fontSize: 'clamp(60px, 8vw, 130px)',
-                  fontWeight: 900,
-                  color: modalTextColor,
-                  lineHeight: 1.05,
-                  textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
-                  letterSpacing: '0.02em'
-                }} data-testid="highlight-patient-name">
-                  {getDisplayName(currentPatient.name)}
-                </div>
+                <FitText
+                  text={getDisplayName(currentPatient.name)}
+                  baseStyle={{
+                    fontWeight: 900,
+                    color: modalTextColor,
+                    textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
+                    letterSpacing: '0.02em',
+                    textAlign: 'center'
+                  }}
+                  maxFontSize={130}
+                  minFontSize={28}
+                  align="center"
+                  wrap
+                  testId="highlight-patient-name"
+                />
               </div>
             </div>
 
