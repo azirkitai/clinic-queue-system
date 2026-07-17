@@ -224,8 +224,10 @@ function FitText({
           ...baseStyle,
           fontSize: `${fontSize}px`,
           whiteSpace: shouldWrap ? 'normal' : 'nowrap',
-          lineHeight: shouldWrap ? 1.2 : 1.1,
-          display: 'inline-block',
+          overflowWrap: shouldWrap ? 'break-word' : 'normal',
+          lineHeight: shouldWrap ? 1.05 : 1.1,
+          display: shouldWrap ? 'block' : 'inline-block',
+          width: shouldWrap ? '100%' : undefined,
           // NOTE: no maxWidth here! Clamping the span makes scrollWidth report
           // the clamped width instead of the true text width, which breaks the
           // fit measurement and lets long names render too big (clipped).
