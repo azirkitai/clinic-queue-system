@@ -1728,74 +1728,73 @@ export function TVDisplay({
              ...(isFullscreen && enableMarquee ? { paddingBottom: '70px' } : {}),
              ...getBackgroundStyle(headerBackgroundMode, headerBackgroundColor, headerBackgroundGradient, '#0f172a')
            }}>
-        {/* Header */}
-        <div className={`text-center ${isFullscreen ? 'mb-3 pt-4 px-4' : 'mb-4'}`}>
-          {/* Logo Display - Use uploaded logo if enabled */}
-          {showClinicLogo && clinicLogo && (
-            <div className={isFullscreen ? 'mb-3' : 'mb-4'}>
-              <div className="rounded-lg p-4 shadow-lg w-full flex items-center justify-center tv-white-bg" style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)' }}>
-                <img 
-                  src={clinicLogo} 
-                  alt="Clinic Logo" 
-                  className="h-32 w-auto object-contain"
-                  style={{ maxWidth: '350px' }}
-                  data-testid="clinic-logo"
-                />
-              </div>
+        {/* Logo Display - Use uploaded logo if enabled */}
+        {showClinicLogo && clinicLogo && (
+          <div className={`text-center ${isFullscreen ? 'mb-3 pt-4 px-4' : 'mb-4'}`}>
+            <div className="rounded-lg p-4 shadow-lg w-full flex items-center justify-center tv-white-bg" style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)' }}>
+              <img 
+                src={clinicLogo} 
+                alt="Clinic Logo" 
+                className="h-32 w-auto object-contain"
+                style={{ maxWidth: '350px' }}
+                data-testid="clinic-logo"
+              />
             </div>
-          )}
-          <div className={`px-4 py-2 ${isFullscreen ? 'rounded-md' : 'rounded-lg mt-2'}`}
-               style={{
-                 ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#16a34a'),
-                 color: '#ffffff'
-               }}>
-            <h2 className="font-bold" style={{ 
-              fontSize: 'var(--tv-fs-xl, 32px)', // Responsive: auto-scales from 22px to 48px
-              ...getTextGroupStyles('title', true), // Exclude color overrides so Settings can override
-              ...getTextStyle(callNameTextMode, callNameTextColor, callNameTextGradient, '#ffffff')
-            }}>CALLING</h2>
-          </div>
-        </div>
-
-        {/* Current Patient Display */}
-        {currentPatient ? (
-          <div className={`${isFullscreen ? 'py-2 px-1 mx-4 rounded-md mb-3' : 'py-3 px-1 rounded-lg mb-3'} text-center`}
-               style={{
-                 ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#16a34a')
-               }}>
-            <div className={`font-bold ${isBlinking ? 'tv-blink-active' : ''}`}
-                 style={{ 
-                   fontSize: patientNameFontSize,
-                   lineHeight: '1.15',
-                   wordBreak: 'normal',
-                   overflowWrap: 'normal',
-                   overflow: 'hidden',
-                   ...getTextStyle(callNameTextMode, callNameTextColor, callNameTextGradient, '#facc15')
-                 }} 
-                 data-testid="current-patient-display">
-              {getDisplayName(currentPatient.name)}
-            </div>
-            <div className={isBlinking ? 'tv-blink-active' : ''}
-                 style={{ 
-                   fontSize: roomNameFontSize,
-                   lineHeight: '1.15',
-                   wordBreak: 'normal',
-                   overflowWrap: 'normal',
-                   overflow: 'hidden',
-                   ...getTextStyle(windowTextMode, windowTextColor, windowTextGradient, '#facc15')
-                 }} 
-                 data-testid="current-room">
-              {currentPatient.room}
-            </div>
-          </div>
-        ) : (
-          <div className={`${isFullscreen ? 'py-2 px-1 mx-4 rounded-md mb-3' : 'py-3 px-1 rounded-lg mb-3'} text-center`}
-               style={{
-                 ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#16a34a')
-               }}>
-            <div style={{ fontSize: 'var(--tv-fs-2xl, 48px)', color: '#ffffff' }}>N/A</div>
           </div>
         )}
+
+        {/* Unified Calling Box - CALLING + Name + Room in one box with glow border */}
+        <div className={`${isFullscreen ? 'mx-4 mb-3' : 'mb-4'} text-center tv-highlight-pulse-border rounded-xl overflow-hidden`}
+             style={{
+               ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#16a34a'),
+               border: `3px solid ${callBackgroundColor || '#16a34a'}`,
+               boxShadow: `0 0 20px ${callBackgroundColor || '#16a34a'}66, 0 0 40px ${callBackgroundColor || '#16a34a'}33`
+             }}>
+          {/* CALLING label */}
+          <div className={`font-bold ${isFullscreen ? 'py-2 px-3' : 'py-2 px-3'} text-center`}
+               style={{
+                 fontSize: 'var(--tv-fs-lg, 28px)',
+                 ...getTextStyle(callNameTextMode, callNameTextColor, callNameTextGradient, '#ffffff'),
+                 opacity: 0.9,
+                 letterSpacing: '0.15em'
+               }}>
+            CALLING
+          </div>
+
+          {/* Patient Name + Room */}
+          {currentPatient ? (
+            <div className={`${isFullscreen ? 'py-2 px-1' : 'py-3 px-1'} text-center`}>
+              <div className={`font-bold ${isBlinking ? 'tv-blink-active' : ''}`}
+                   style={{ 
+                     fontSize: patientNameFontSize,
+                     lineHeight: '1.15',
+                     wordBreak: 'normal',
+                     overflowWrap: 'normal',
+                     overflow: 'hidden',
+                     ...getTextStyle(callNameTextMode, callNameTextColor, callNameTextGradient, '#facc15')
+                   }} 
+                   data-testid="current-patient-display">
+                {getDisplayName(currentPatient.name)}
+              </div>
+              <div className={isBlinking ? 'tv-blink-active' : ''}
+                   style={{ 
+                     fontSize: roomNameFontSize,
+                     lineHeight: '1.15',
+                     wordBreak: 'normal',
+                     overflowWrap: 'normal',
+                     overflow: 'hidden',
+                     ...getTextStyle(windowTextMode, windowTextColor, windowTextGradient, '#facc15')
+                   }} 
+                   data-testid="current-room">
+                {currentPatient.room}
+              </div>
+            </div>
+          ) : (
+            <div className={`${isFullscreen ? 'py-2 px-1' : 'py-3 px-1'} text-center`}>
+              <div style={{ fontSize: 'var(--tv-fs-2xl, 48px)', color: '#ffffff' }}>N/A</div>
+            </div>
+          )}
+        </div>
 
         {/* History Section - Recent Calling History */}
         <div className={`flex-1 flex flex-col min-h-0 ${isFullscreen ? 'px-4 pb-4' : 'mt-4'}`}>
