@@ -2012,17 +2012,17 @@ export function TVDisplay({
              style={{ width: 'min(85vw, 1400px)', height: 'min(75vh, 800px)', margin: 'auto' }} />
       </div>
 
-      {/* Main content */}
-      <div className="relative z-10 flex flex-col items-center justify-center text-center px-8"
-           style={{ maxWidth: '1200px', width: '90%' }}>
+      {/* Main content — fills entire viewport, zero padding/gap */}
+      <div className="relative z-10 flex flex-col items-center justify-center text-center w-full h-full"
+           style={{ padding: '2vh 2vw' }}>
 
         {/* CALLING badge */}
-        <div className="mb-6 px-10 py-3 rounded-full tv-highlight-pulse-border"
+        <div className="px-6 py-2 rounded-full tv-highlight-pulse-border"
              style={{
                border: `2px solid ${modalBorderColor}`,
                background: `linear-gradient(135deg, ${modalBorderColor}33, ${modalBorderColor}11)`,
                color: modalBorderColor,
-               fontSize: 'clamp(28px, 3vw, 44px)',
+               fontSize: 'clamp(20px, 2.5vw, 36px)',
                fontWeight: 700,
                letterSpacing: '0.15em',
                textTransform: 'uppercase'
@@ -2030,9 +2030,10 @@ export function TVDisplay({
           Now Calling
         </div>
 
-        {/* Patient Name — maximizes the box using wrapped font sizing */}
-        <div className="relative mb-6 w-full" style={{ flex: 1, height: 'min(50vh, 480px)', minHeight: 'min(50vh, 480px)' }}>
-          <div className="px-6 py-6 rounded-2xl w-full h-full flex items-center justify-center"
+        {/* Patient Name — fills maximum viewport space */}
+        <div className="relative w-full flex-1 min-h-0"
+             style={{ margin: '1vh 0' }}>
+          <div className="rounded-2xl w-full h-full flex items-center justify-center"
                style={{
                  background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
                  border: `1px solid rgba(255,255,255,0.1)`,
@@ -2041,14 +2042,14 @@ export function TVDisplay({
             <div style={{
               fontSize: calculateWrappedFontSize(
                 getDisplayName(currentPatient.name),
-                880,    // conservative usable width
-                360,    // conservative usable height
-                140,    // max font
-                28      // min font
+                96 * window.innerWidth / 100,   // 96vw
+                65 * window.innerHeight / 100,  // 65vh
+                200,    // max font
+                32      // min font
               ),
               fontWeight: 900,
               color: modalTextColor,
-              lineHeight: '1.15',
+              lineHeight: '1.1',
               wordBreak: 'normal',
               overflowWrap: 'normal',
               overflow: 'hidden',
@@ -2061,17 +2062,10 @@ export function TVDisplay({
           </div>
         </div>
 
-        {/* Divider line with glow */}
-        <div className="w-full max-w-2xl mb-8 h-px"
-             style={{
-               background: `linear-gradient(90deg, transparent, ${modalBorderColor}, transparent)`,
-               boxShadow: `0 0 12px ${modalBorderColor}66`
-             }} />
-
         {/* Room info */}
-        <div className="flex items-center gap-4 flex-wrap justify-center">
+        <div className="flex items-center gap-3 flex-wrap justify-center">
           <span style={{
-            fontSize: 'clamp(24px, 2.5vw, 40px)',
+            fontSize: 'clamp(20px, 2vw, 32px)',
             color: modalTextColor,
             opacity: 0.7,
             fontWeight: 500,
@@ -2081,7 +2075,7 @@ export function TVDisplay({
             Please proceed to
           </span>
           <span style={{
-            fontSize: 'clamp(36px, 4vw, 72px)',
+            fontSize: 'clamp(28px, 3.5vw, 56px)',
             fontWeight: 800,
             color: modalBorderColor,
             textShadow: `0 0 30px ${modalBorderColor}55`,
