@@ -1157,6 +1157,7 @@ export default function Settings() {
                       <div>
                         <p className="text-sm text-gray-600 font-medium">Upload New Images</p>
                         <p className="text-xs text-gray-500 mt-1">Supported formats: PNG, JPEG only (Max 2MB)</p>
+                        <p className="text-xs text-amber-600 mt-1 font-medium">Recommended size: 1420 × 870 pixels (16:10 ratio)</p>
                       </div>
                     </div>
                     
