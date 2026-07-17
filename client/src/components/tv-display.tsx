@@ -1164,9 +1164,24 @@ export function TVDisplay({
       const roomBaseSize = isFullSize ? 50 : 40; // Bigger calling room
       
       // Calculate optimal font sizes
-      const newNameSize = calculateFontSize(getDisplayName(currentPatient.name), nameContainerWidth, nameBaseSize, 20);
-      const newRoomSize = calculateFontSize(currentPatient.room, roomContainerWidth, roomBaseSize, 16);
-      
+      // Use wrapped font sizing so long names wrap naturally at spaces
+      const newNameSize = calculateWrappedFontSize(
+        getDisplayName(currentPatient.name),
+        nameContainerWidth,
+        isFullSize ? 160 : 110,  // container height budget
+        isFullSize ? 72 : 52,   // max font to try
+        20,   // min font
+        3     // max lines
+      );
+      const newRoomSize = calculateWrappedFontSize(
+        currentPatient.room,
+        roomContainerWidth,
+        isFullSize ? 90 : 65,
+        isFullSize ? 48 : 36,
+        14,
+        2
+      );
+
       setPatientNameFontSize(newNameSize);
       setRoomNameFontSize(newRoomSize);
     }
