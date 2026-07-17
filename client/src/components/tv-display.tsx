@@ -178,17 +178,6 @@ function FitText({
         const ratio = Math.min(1, tw > 0 ? cw / tw : 1, th > 0 ? ch / th : 1);
         const finalScale = ratio < 1 ? ratio * 0.96 : 1;
         setOverflowScale(finalScale);
-        // Debug log so we can verify in browser console
-        // eslint-disable-next-line no-console
-        console.log('[FitText]', JSON.stringify({
-          text: text.substring(0, 30),
-          cw, ch, safeW, safeH, best, tw, th,
-          finalScale,
-          maxFontSize, minFontSize,
-          computedFs: getComputedStyle(span).fontSize,
-          scrollW: span.scrollWidth,
-          rectW: span.getBoundingClientRect().width
-        }));
       });
     };
     fit();
@@ -1887,93 +1876,111 @@ export function TVDisplay({
         </div>
       )}
 
-      {/* Highlight Card Overlay - Rectangle showing name and window */}
+      {/* Highlight Overlay - Cinematic calling display */}
       {showHighlight && currentPatient && (
-        <div className="fixed inset-0 flex items-center justify-center z-[100]" 
-             style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center tv-highlight-animate"
+             style={{
+               background: 'radial-gradient(ellipse at center, rgba(15,23,42,0.95) 0%, rgba(0,0,0,0.98) 70%)'
+             }}
              data-testid="highlight-overlay">
-          {/* Modal Container with Lines Design - BIGGER! */}
-          <div className="relative p-16 rounded-lg shadow-2xl"
-               style={{
-                 backgroundColor: modalBackgroundColor,
-                 minWidth: '900px',
-                 maxWidth: '1600px'
-               }}>
-            
-            {/* Corner Lines Design - THICKER & LONGER! */}
-            <div className="absolute inset-0 pointer-events-none">
-              {/* Top-left corner */}
-              <div className="absolute top-0 left-0 w-32 h-1" 
-                   style={{ backgroundColor: modalBorderColor }}></div>
-              <div className="absolute top-0 left-0 w-1 h-32" 
-                   style={{ backgroundColor: modalBorderColor }}></div>
-              
-              {/* Top-right corner */}
-              <div className="absolute top-0 right-0 w-32 h-1" 
-                   style={{ backgroundColor: modalBorderColor }}></div>
-              <div className="absolute top-0 right-0 w-1 h-32" 
-                   style={{ backgroundColor: modalBorderColor }}></div>
-              
-              {/* Bottom-left corner */}
-              <div className="absolute bottom-0 left-0 w-32 h-1" 
-                   style={{ backgroundColor: modalBorderColor }}></div>
-              <div className="absolute bottom-0 left-0 w-1 h-32" 
-                   style={{ backgroundColor: modalBorderColor }}></div>
-              
-              {/* Bottom-right corner */}
-              <div className="absolute bottom-0 right-0 w-32 h-1" 
-                   style={{ backgroundColor: modalBorderColor }}></div>
-              <div className="absolute bottom-0 right-0 w-1 h-32" 
-                   style={{ backgroundColor: modalBorderColor }}></div>
+          {/* Animated glow ring behind content */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="rounded-3xl tv-highlight-glow"
+                 style={{
+                   width: 'min(85vw, 1400px)',
+                   height: 'min(75vh, 800px)',
+                   border: `3px solid ${modalBorderColor}`,
+                   background: `linear-gradient(135deg, ${modalBackgroundColor}ee 0%, ${modalBackgroundColor}99 100%)`
+                 }} />
+          </div>
+
+          {/* Shimmer overlay */}
+          <div className="absolute inset-0 pointer-events-none tv-highlight-fade-in"
+               style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
+            <div className="tv-highlight-shimmer absolute inset-0 opacity-30 rounded-3xl"
+                 style={{ width: 'min(85vw, 1400px)', height: 'min(75vh, 800px)', margin: 'auto' }} />
+          </div>
+
+          {/* Main content */}
+          <div className="relative z-10 flex flex-col items-center justify-center text-center px-8"
+               style={{ maxWidth: '1200px', width: '90%' }}>
+
+            {/* CALLING badge */}
+            <div className="mb-6 px-10 py-3 rounded-full tv-highlight-pulse-border"
+                 style={{
+                   border: `2px solid ${modalBorderColor}`,
+                   background: `linear-gradient(135deg, ${modalBorderColor}33, ${modalBorderColor}11)`,
+                   color: modalBorderColor,
+                   fontSize: 'clamp(28px, 3vw, 44px)',
+                   fontWeight: 700,
+                   letterSpacing: '0.15em',
+                   textTransform: 'uppercase'
+                 }}>
+              Now Calling
             </div>
 
-            {/* Modal Content */}
-            <div className="text-center space-y-8 relative z-10">
-              {/* NAME Label - BIGGER! */}
-              <div className="font-semibold tracking-wider mb-4" 
-                   style={{ color: modalTextColor, opacity: 0.8, fontSize: 'var(--tv-fs-2xl, 48px)' }}>
-                NAME
-              </div>
-              
-              {/* Patient Name - BIGGER! */}
-              <div className="px-12 py-8 rounded border-4"
+            {/* Patient Name - Cinematic big */}
+            <div className="relative mb-8 w-full">
+              <div className="px-6 py-4 rounded-2xl"
                    style={{
-                     borderColor: modalBorderColor,
-                     backgroundColor: 'rgba(0, 0, 0, 0.2)'
+                     background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
+                     border: `1px solid rgba(255,255,255,0.1)`,
+                     backdropFilter: 'blur(8px)'
                    }}>
-                <div className="font-bold" 
-                     style={{ 
-                       fontSize: 'clamp(80px, 10vw, 140px)', // BIGGER: Responsive 80px-140px
-                       color: modalTextColor,
-                       lineHeight: '1.1'
-                     }}
-                     data-testid="highlight-patient-name">
+                <div style={{
+                  fontSize: 'clamp(60px, 8vw, 130px)',
+                  fontWeight: 900,
+                  color: modalTextColor,
+                  lineHeight: 1.05,
+                  textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
+                  letterSpacing: '0.02em'
+                }} data-testid="highlight-patient-name">
                   {getDisplayName(currentPatient.name)}
                 </div>
               </div>
+            </div>
 
-              {/* ROOM Label - BIGGER! */}
-              <div className="font-semibold tracking-wider mb-4" 
-                   style={{ color: modalTextColor, opacity: 0.8, fontSize: 'var(--tv-fs-2xl, 48px)' }}>
-                ROOM
-              </div>
+            {/* Divider line with glow */}
+            <div className="w-full max-w-2xl mb-8 h-px"
+                 style={{
+                   background: `linear-gradient(90deg, transparent, ${modalBorderColor}, transparent)`,
+                   boxShadow: `0 0 12px ${modalBorderColor}66`
+                 }} />
 
-              {/* Room Name - BIGGER! */}
-              <div className="px-12 py-8 rounded border-4"
-                   style={{
-                     borderColor: modalBorderColor,
-                     backgroundColor: 'rgba(0, 0, 0, 0.2)'
-                   }}>
-                <div className="font-bold" 
-                     style={{ 
-                       fontSize: 'clamp(60px, 8vw, 100px)', // BIGGER: Responsive 60px-100px
-                       color: modalTextColor,
-                       lineHeight: '1.1'
-                     }}
-                     data-testid="highlight-patient-room">
-                  {currentPatient.room}
-                </div>
-              </div>
+            {/* Room info */}
+            <div className="flex items-center gap-4 flex-wrap justify-center">
+              <span style={{
+                fontSize: 'clamp(24px, 2.5vw, 40px)',
+                color: modalTextColor,
+                opacity: 0.7,
+                fontWeight: 500,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase'
+              }}>
+                Please proceed to
+              </span>
+              <span style={{
+                fontSize: 'clamp(36px, 4vw, 72px)',
+                fontWeight: 800,
+                color: modalBorderColor,
+                textShadow: `0 0 30px ${modalBorderColor}55`,
+                letterSpacing: '0.05em'
+              }} data-testid="highlight-patient-room">
+                {currentPatient.room}
+              </span>
+            </div>
+
+            {/* Number badge */}
+            <div className="mt-8 px-8 py-3 rounded-xl"
+                 style={{
+                   background: `linear-gradient(135deg, ${modalBorderColor}22, transparent)`,
+                   border: `1px solid ${modalBorderColor}44`,
+                   color: modalTextColor,
+                   fontSize: 'clamp(20px, 1.8vw, 32px)',
+                   fontWeight: 600,
+                   opacity: 0.85
+                 }}>
+              Queue No. {currentPatient.number}
             </div>
           </div>
         </div>
