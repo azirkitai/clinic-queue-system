@@ -1654,7 +1654,7 @@ export function TVDisplay({
     <>
       {/* Top Row - Advertisement Area with 16:9 ratio */}
       <div className={`${isFullscreen ? 'm-0 p-0 w-full h-full' : 'p-4 w-full'}`}>
-        <div className="overflow-hidden flex items-center justify-center w-full h-full relative" style={{ backgroundColor: '#f3f4f6', colorScheme: 'light', color: '#111827' }}>
+        <div className="overflow-hidden flex items-center justify-center w-full h-full relative" style={{ aspectRatio: isFullscreen ? undefined : '16/9', backgroundColor: '#f3f4f6', colorScheme: 'light', color: '#111827' }}>
           {currentMedia ? (
             <div 
               className="absolute inset-0 w-full h-full transition-opacity ease-in-out"
