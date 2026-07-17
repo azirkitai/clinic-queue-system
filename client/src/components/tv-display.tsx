@@ -1970,7 +1970,7 @@ export function TVDisplay({
               </span>
             </div>
 
-            {/* Number badge */}
+            {/* Nombor giliran badge */}
             <div className="mt-8 px-8 py-3 rounded-xl"
                  style={{
                    background: `linear-gradient(135deg, ${modalBorderColor}22, transparent)`,
@@ -1980,7 +1980,7 @@ export function TVDisplay({
                    fontWeight: 600,
                    opacity: 0.85
                  }}>
-              Queue No. {currentPatient.number}
+              No. Giliran {currentPatient.number}
             </div>
           </div>
         </div>
