@@ -1673,21 +1673,25 @@ export function TVDisplay({
                   data-testid="youtube-content"
                 />
               ) : currentMedia.type === "image" ? (
-                <img
-                  src={currentMedia.url}
-                  alt="Media Content"
-                  className="w-full h-full object-contain"
-                  data-testid="media-content"
-                />
+                <div className="absolute inset-0 flex items-center justify-center w-full h-full">
+                  <img
+                    src={currentMedia.url}
+                    alt="Media Content"
+                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                    data-testid="media-content"
+                  />
+                </div>
               ) : (
-                <video
-                  src={currentMedia.url}
-                  className="w-full h-full object-contain"
-                  autoPlay
-                  muted
-                  loop
-                  data-testid="media-content"
-                />
+                <div className="absolute inset-0 flex items-center justify-center w-full h-full">
+                  <video
+                    src={currentMedia.url}
+                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                    autoPlay
+                    muted
+                    loop
+                    data-testid="media-content"
+                  />
+                </div>
               )}
             </div>
           ) : (
