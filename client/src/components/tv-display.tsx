@@ -2015,10 +2015,10 @@ export function TVDisplay({
 
       {/* Main content */}
       <div className="relative z-10 flex flex-col items-center justify-center text-center px-8"
-           style={{ maxWidth: '1200px', width: '90%' }}>
+           style={{ maxWidth: '1200px', width: '90%', gap: '1.5rem' }}>
 
         {/* CALLING badge */}
-        <div className="mb-6 px-10 py-3 rounded-full tv-highlight-pulse-border"
+        <div className="px-10 py-3 rounded-full tv-highlight-pulse-border"
              style={{
                border: `2px solid ${modalBorderColor}`,
                background: `linear-gradient(135deg, ${modalBorderColor}33, ${modalBorderColor}11)`,
@@ -2032,44 +2032,40 @@ export function TVDisplay({
         </div>
 
         {/* Patient Name — maximizes the box using wrapped font sizing */}
-        <div className="relative mb-6 w-full" style={{ flex: 1, height: 'min(50vh, 480px)', minHeight: 'min(50vh, 480px)' }}>
+        <div className="relative w-full flex items-center justify-center"
+             style={{ height: 'min(45vh, 420px)' }}>
           <div className="px-6 py-6 rounded-2xl w-full h-full flex items-center justify-center"
                style={{
                  background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
                  border: `1px solid rgba(255,255,255,0.1)`,
                  backdropFilter: 'blur(8px)'
                }}>
-            <div style={{
-              fontSize: calculateWrappedFontSize(
-                getDisplayName(currentPatient.name),
-                880,
-                360,
-                140,
-                28
-              ),
-              fontWeight: 900,
-              color: modalTextColor,
-              lineHeight: '1.15',
-              wordBreak: 'normal',
-              overflowWrap: 'normal',
-              overflow: 'hidden',
-              textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
-              letterSpacing: '0.02em',
-              textAlign: 'center',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'column',
-              width: '100%',
-              height: '100%'
-            }} data-testid="highlight-patient-name">
+            <div className="flex items-center justify-center flex-col w-full h-full"
+                 style={{
+                   fontSize: calculateWrappedFontSize(
+                     getDisplayName(currentPatient.name),
+                     880,
+                     360,
+                     140,
+                     28
+                   ),
+                   fontWeight: 900,
+                   color: modalTextColor,
+                   lineHeight: '1.15',
+                   wordBreak: 'normal',
+                   overflowWrap: 'normal',
+                   overflow: 'hidden',
+                   textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
+                   letterSpacing: '0.02em',
+                   textAlign: 'center'
+                 }} data-testid="highlight-patient-name">
               {getDisplayName(currentPatient.name)}
             </div>
           </div>
         </div>
 
         {/* Divider line with glow */}
-        <div className="w-full max-w-2xl mb-8 h-px"
+        <div className="w-full max-w-2xl h-px"
              style={{
                background: `linear-gradient(90deg, transparent, ${modalBorderColor}, transparent)`,
                boxShadow: `0 0 12px ${modalBorderColor}66`
