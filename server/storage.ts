@@ -406,6 +406,7 @@ export class MemStorage implements IStorage {
       status: "waiting",
       isPriority: insertPatient.isPriority || false,
       priorityReason: insertPatient.priorityReason || null,
+      chiefComplaint: insertPatient.chiefComplaint || null,
       readyForDispensary: false,
       windowId: null,
       lastWindowId: null,

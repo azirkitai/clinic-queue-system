@@ -25,6 +25,7 @@ interface QueuePatient extends Omit<Patient, 'status' | 'trackingHistory' | 'win
   windowName?: string;
   lastWindowId?: string;
   lastWindowName?: string;
+  chiefComplaint?: string | null;
   trackingHistory?: any[];
 }
 

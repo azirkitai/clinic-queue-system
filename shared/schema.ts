@@ -53,6 +53,7 @@ export const patients = pgTable("patients", {
   status: text("status").notNull().default("waiting"), // 'waiting', 'called', 'in-progress', 'completed', 'requeue', 'dispensary'
   isPriority: boolean("is_priority").notNull().default(false), // Priority patient flag
   priorityReason: text("priority_reason"), // Reason for priority status
+  chiefComplaint: text("chief_complaint"), // Chief complaint / reason for visit (e.g. DEMAM, BATUK, SAKIT PERUT)
   readyForDispensary: boolean("ready_for_dispensary").notNull().default(false), // Patient ready for dispensary (status/window remain unchanged)
   windowId: varchar("window_id"),
   lastWindowId: varchar("last_window_id"), // Preserve last room they were called to
@@ -161,6 +162,7 @@ export const insertPatientSchema = createInsertSchema(patients).pick({
   number: true,
   isPriority: true,
   priorityReason: true,
+  chiefComplaint: true,
   userId: true,
 }).extend({
   name: z.string().nullable().refine(

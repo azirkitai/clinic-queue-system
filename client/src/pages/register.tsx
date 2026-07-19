@@ -40,7 +40,7 @@ export default function Register() {
 
   // Create patient mutation
   const createPatientMutation = useMutation({
-    mutationFn: async (patientData: { name: string | null; number: number; isPriority?: boolean; priorityReason?: string }) => {
+    mutationFn: async (patientData: { name: string | null; number: number; isPriority?: boolean; priorityReason?: string; chiefComplaint?: string }) => {
       const response = await apiRequest("POST", "/api/patients", patientData);
       return response.json();
     },
@@ -100,7 +100,7 @@ export default function Register() {
       }));
   }, [todayPatients]);
 
-  const handleRegister = (patient: { name: string | null; number: number; type: "name" | "number"; isPriority?: boolean; priorityReason?: string }) => {
+  const handleRegister = (patient: { name: string | null; number: number; type: "name" | "number"; isPriority?: boolean; priorityReason?: string; chiefComplaint?: string }) => {
     console.log("Registering patient:", patient);
     createPatientMutation.mutate(patient);
   };

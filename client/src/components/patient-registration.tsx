@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 
 interface PatientRegistrationProps {
-  onRegister: (patient: { name: string | null; number: number; type: "name" | "number"; isPriority?: boolean; priorityReason?: string }) => void;
+  onRegister: (patient: { name: string | null; number: number; type: "name" | "number"; isPriority?: boolean; priorityReason?: string; chiefComplaint?: string }) => void;
   nextNumber: number;
   isRegistering?: boolean;
 }
@@ -18,6 +18,7 @@ export function PatientRegistration({ onRegister, nextNumber, isRegistering = fa
   const [patientName, setPatientName] = useState("");
   const [isPriority, setIsPriority] = useState(false);
   const [priorityReason, setPriorityReason] = useState("");
+  const [chiefComplaint, setChiefComplaint] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +30,8 @@ export function PatientRegistration({ onRegister, nextNumber, isRegistering = fa
         number: nextNumber,
         type: "name" as const,
         isPriority: isPriority,
-        priorityReason: isPriority ? priorityReason.trim() : undefined
+        priorityReason: isPriority ? priorityReason.trim() : undefined,
+        chiefComplaint: chiefComplaint.trim() || undefined
       };
 
       console.log("Registering patient:", patientData);
@@ -39,6 +41,7 @@ export function PatientRegistration({ onRegister, nextNumber, isRegistering = fa
       setPatientName("");
       setIsPriority(false);
       setPriorityReason("");
+      setChiefComplaint("");
       
     } catch (error) {
       console.error("Registration failed:", error);
@@ -102,6 +105,20 @@ export function PatientRegistration({ onRegister, nextNumber, isRegistering = fa
               </Label>
             </div>
           )}
+
+          {/* Chief Complaint Input */}
+          <div className="space-y-2">
+            <Label htmlFor="chiefComplaint">Chief Complaint</Label>
+            <Textarea
+              id="chiefComplaint"
+              value={chiefComplaint}
+              onChange={(e) => setChiefComplaint(e.target.value.toUpperCase())}
+              placeholder="Enter chief complaint (e.g., DEMAM, BATUK, SAKIT PERUT, UBATAN)"
+              maxLength={100}
+              rows={2}
+              data-testid="input-chief-complaint"
+            />
+          </div>
 
           {/* Priority Reason Input - Only show when priority is checked */}
           {isPriority && (
