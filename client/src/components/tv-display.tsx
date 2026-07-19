@@ -1967,7 +1967,7 @@ export function TVDisplay({
               <span
                 className="px-8 font-bold"
                 style={{
-                  fontSize: '48px',
+                  fontSize: '36px',
                   color: marqueeColor
                 }}
               >
@@ -1976,7 +1976,7 @@ export function TVDisplay({
               <span
                 className="px-8 font-bold"
                 style={{
-                  fontSize: '48px',
+                  fontSize: '36px',
                   color: marqueeColor
                 }} 
                 aria-hidden="true"
@@ -2026,7 +2026,7 @@ export function TVDisplay({
                border: `2px solid ${modalBorderColor}`,
                background: `linear-gradient(135deg, ${modalBorderColor}33, ${modalBorderColor}11)`,
                color: modalBorderColor,
-               fontSize: '48px',
+               fontSize: 'var(--tv-fs-2xl)',
                fontWeight: 700,
                letterSpacing: '0.15em',
                textTransform: 'uppercase'
@@ -2095,7 +2095,7 @@ export function TVDisplay({
         {/* Room info */}
         <div className="flex items-center gap-4 flex-wrap justify-center">
           <span style={{
-            fontSize: '36px',
+            fontSize: 'var(--tv-fs-lg)',
             color: modalTextColor,
             opacity: 0.7,
             fontWeight: 500,
@@ -2105,7 +2105,7 @@ export function TVDisplay({
             Please proceed to
           </span>
           <span style={{
-            fontSize: '72px',
+            fontSize: 'var(--tv-fs-3xl)',
             fontWeight: 800,
             color: modalBorderColor,
             textShadow: `0 0 30px ${modalBorderColor}55`,
