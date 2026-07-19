@@ -279,7 +279,7 @@ export function PatientCard({
         {patient.chiefComplaint && (
           <div className="flex items-center gap-2">
             <Badge className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-900" data-testid={`badge-chief-complaint-${patient.id}`}>
-              <span className="font-semibold">CC:</span> {patient.chiefComplaint}
+              <span className="font-semibold">Reason:</span> {patient.chiefComplaint}
             </Badge>
           </div>
         )}

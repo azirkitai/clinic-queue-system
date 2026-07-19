@@ -194,7 +194,7 @@ export default function Register() {
                             </div>
                             {patient.chiefComplaint && (
                               <div className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">
-                                CC: {patient.chiefComplaint}
+                                Reason: {patient.chiefComplaint}
                               </div>
                             )}
                             <div className="text-sm text-muted-foreground flex items-center gap-2">
