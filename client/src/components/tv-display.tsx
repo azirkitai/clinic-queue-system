@@ -26,14 +26,14 @@ const IsolatedClock = memo(function IsolatedClock() {
   return (
     <div className="flex items-center justify-center space-x-5" style={{ color: '#111827' }}>
       <div className="text-center">
-        <div className="font-bold" style={{ color: '#000000', fontSize: 'clamp(40px, 4vmin, 72px)' }}>{day}</div>
+        <div className="font-bold" style={{ color: '#000000', fontSize: '64px' }}>{day}</div>
       </div>
       <div className="text-center">
-        <div className="font-bold leading-tight" style={{ color: '#111827', fontSize: 'clamp(18px, 2vmin, 36px)' }}>{dayName}</div>
-        <div className="leading-tight" style={{ color: '#4B5563', fontSize: 'clamp(14px, 1.5vmin, 28px)' }}>{month} {year}</div>
+        <div className="font-bold leading-tight" style={{ color: '#111827', fontSize: '30px' }}>{dayName}</div>
+        <div className="leading-tight" style={{ color: '#4B5563', fontSize: '24px' }}>{month} {year}</div>
       </div>
       <div className="text-center">
-        <div className="font-mono font-bold" style={{ color: '#111827', fontSize: 'clamp(36px, 4vmin, 72px)' }} data-testid="display-time">
+        <div className="font-mono font-bold" style={{ color: '#111827', fontSize: '64px' }} data-testid="display-time">
           {formatTime(now)}
         </div>
       </div>
@@ -415,11 +415,11 @@ export function TVDisplay({
   // Update font sizes when TV Mode changes
   useEffect(() => {
     if (isTVMode) {
-      setPatientNameFontSize('clamp(96px, 8vmin, 180px)');
-      setRoomNameFontSize('clamp(36px, 3.5vmin, 64px)');
+      setPatientNameFontSize('112px');
+      setRoomNameFontSize('40px');
     } else {
-      setPatientNameFontSize('clamp(48px, 5vmin, 90px)');
-      setRoomNameFontSize('clamp(20px, 2.2vmin, 36px)');
+      setPatientNameFontSize('112px');
+      setRoomNameFontSize('40px');
     }
   }, [isTVMode]);
   
@@ -840,8 +840,8 @@ export function TVDisplay({
   const [isMediaVisible, setIsMediaVisible] = useState(true);
   
   // Auto-resize text functionality (TV Mode multiplies by 2x)
-  const [patientNameFontSize, setPatientNameFontSize] = useState(() => isTVMode ? 'clamp(96px, 8vmin, 180px)' : 'clamp(48px, 5vmin, 90px)');
-  const [roomNameFontSize, setRoomNameFontSize] = useState(() => isTVMode ? 'clamp(36px, 3.5vmin, 64px)' : 'clamp(20px, 2.2vmin, 36px)');
+  const [patientNameFontSize, setPatientNameFontSize] = useState(() => isTVMode ? '112px' : '112px');
+  const [roomNameFontSize, setRoomNameFontSize] = useState(() => isTVMode ? '40px' : '40px');
   const [historyFontSizes, setHistoryFontSizes] = useState<Record<string, {name: string, room: string}>>({});
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -1698,10 +1698,10 @@ export function TVDisplay({
           ) : (
             <div className="h-full flex items-center justify-center">
               <div className="text-center" style={{ color: '#6B7280' }}>
-                <div className="font-bold mb-4" style={{ fontSize: 'clamp(32px, 3.5vmin, 56px)' }} data-testid="no-display-message">
+                <div className="font-bold mb-4" style={{ fontSize: '48px' }} data-testid="no-display-message">
                   NO DISPLAY
                 </div>
-                <p style={{ fontSize: 'clamp(14px, 1.5vmin, 24px)' }}>No media uploaded</p>
+                <p style={{ fontSize: '20px' }}>No media uploaded</p>
               </div>
             </div>
           )}
@@ -1758,7 +1758,7 @@ export function TVDisplay({
           {/* CALLING label */}
           <div className={`font-bold ${isFullscreen ? 'py-2 px-3' : 'py-2 px-3'} text-center`}
                style={{
-                 fontSize: 'clamp(18px, 2.2vmin, 32px)',
+                 fontSize: '28px',
                  ...getTextStyle(callNameTextMode, callNameTextColor, callNameTextGradient, '#ffffff'),
                  opacity: 0.9,
                  letterSpacing: '0.15em'
@@ -1796,7 +1796,7 @@ export function TVDisplay({
             </div>
           ) : (
             <div className={`${isFullscreen ? 'py-2 px-1' : 'py-3 px-1'} text-center`}>
-              <div style={{ fontSize: 'clamp(28px, 3.5vmin, 56px)', color: '#ffffff' }}>N/A</div>
+              <div style={{ fontSize: '48px', color: '#ffffff' }}>N/A</div>
             </div>
           )}
         </div>
@@ -1856,7 +1856,7 @@ export function TVDisplay({
             style={{
               ...getTextGroupStyles('clinic_name', true), // Exclude color overrides so Settings can override
               ...getTextStyle(clinicNameTextMode, clinicNameTextColor, clinicNameTextGradient, '#ffffff'),
-              fontSize: 'clamp(20px, 2.5vmin, 40px)',
+              fontSize: '32px',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -1879,12 +1879,12 @@ export function TVDisplay({
             {showPrayerTimes && (
               <div className="flex items-center gap-4" data-testid="prayer-times-inline">
                 <div className="text-center leading-tight">
-                  <span style={{ color: '#b45309', fontSize: 'clamp(20px, 2.2vmin, 36px)' }}>🕌</span>
-                  <div className="font-bold" style={{ color: '#111827', fontSize: 'clamp(12px, 1.3vmin, 22px)' }}>PRAYER<br />TIME</div>
+                  <span style={{ color: '#b45309', fontSize: '36px' }}>🕌</span>
+                  <div className="font-bold" style={{ color: '#111827', fontSize: '20px' }}>PRAYER<br />TIME</div>
                 </div>
 
                 {prayerTimesLoading && (
-                  <div style={{ color: '#4B5563', fontSize: 'clamp(10px, 1.1vmin, 18px)' }}>Loading prayer times...</div>
+                  <div style={{ color: '#4B5563', fontSize: '16px' }}>Loading prayer times...</div>
                 )}
 
                 {!prayerTimesLoading && displayPrayerTimes.length > 0 && (
@@ -1894,10 +1894,10 @@ export function TVDisplay({
                       const color = isCurrentPrayer ? '#d97706' : '#111827';
                       return (
                         <div key={prayer.key || index} className="text-center leading-tight">
-                          <div className={`font-bold ${isCurrentPrayer ? 'animate-pulse' : ''}`} style={{ color, fontSize: 'clamp(16px, 1.8vmin, 30px)' }}>
+                          <div className={`font-bold ${isCurrentPrayer ? 'animate-pulse' : ''}`} style={{ color, fontSize: '24px' }}>
                             {prayer.name}
                           </div>
-                          <div className={`${isCurrentPrayer ? 'font-bold' : ''}`} style={{ color: isCurrentPrayer ? '#d97706' : '#374151', fontSize: 'clamp(16px, 1.8vmin, 30px)' }}>
+                          <div className={`${isCurrentPrayer ? 'font-bold' : ''}`} style={{ color: isCurrentPrayer ? '#d97706' : '#374151', fontSize: '24px' }}>
                             {prayer.time}
                           </div>
                         </div>
@@ -1907,7 +1907,7 @@ export function TVDisplay({
                 )}
 
                 {!prayerTimesLoading && displayPrayerTimes.length === 0 && (
-                  <div style={{ color: '#4B5563', fontSize: 'clamp(10px, 1.1vmin, 18px)' }}>Prayer times not available</div>
+                  <div style={{ color: '#4B5563', fontSize: '16px' }}>Prayer times not available</div>
                 )}
               </div>
             )}
@@ -1916,27 +1916,27 @@ export function TVDisplay({
             {showWeather && (
               <div className="flex items-center gap-3" data-testid="weather-inline">
                 {weatherLoading ? (
-                  <div style={{ color: '#4B5563', fontSize: 'clamp(10px, 1.1vmin, 18px)' }}>Loading weather...</div>
+                  <div style={{ color: '#4B5563', fontSize: '16px' }}>Loading weather...</div>
                 ) : weatherData ? (
                   <>
-                    <span style={{ fontSize: 'clamp(28px, 3.2vmin, 52px)' }}>{weatherData.current.icon}</span>
-                    <span className="font-bold" style={{ color: '#111827', fontSize: 'clamp(22px, 2.5vmin, 42px)' }}>
+                    <span style={{ fontSize: '48px' }}>{weatherData.current.icon}</span>
+                    <span className="font-bold" style={{ color: '#111827', fontSize: '40px' }}>
                       {weatherData.current.temperature}{weatherData.units.temperature}
                     </span>
                     {/* Hide extra details when prayer times are also shown, to guarantee single-row fit */}
                     {!showPrayerTimes && (
                       <>
-                        <span className="truncate" style={{ color: '#374151', maxWidth: '260px', fontSize: 'clamp(10px, 1.1vmin, 18px)' }}>
+                        <span className="truncate" style={{ color: '#374151', maxWidth: '260px', fontSize: '14px' }}>
                           {weatherData.current.description}
                         </span>
-                        <span style={{ color: '#4B5563', fontSize: 'clamp(10px, 1.1vmin, 18px)' }}>
+                        <span style={{ color: '#4B5563', fontSize: '14px' }}>
                           💧 {weatherData.current.humidity}{weatherData.units.humidity}
                         </span>
                       </>
                     )}
                   </>
                 ) : (
-                  <div style={{ color: '#4B5563', fontSize: 'clamp(10px, 1.1vmin, 18px)' }}>Weather unavailable</div>
+                  <div style={{ color: '#4B5563', fontSize: '16px' }}>Weather unavailable</div>
                 )}
               </div>
             )}
@@ -1964,10 +1964,10 @@ export function TVDisplay({
                 animationDuration: `${marqueeDuration}s`
               }}
             >
-              <span 
+              <span
                 className="px-8 font-bold"
                 style={{
-                  fontSize: 'var(--tv-fs-2xl)',
+                  fontSize: '48px',
                   color: marqueeColor
                 }}
               >
@@ -1976,7 +1976,7 @@ export function TVDisplay({
               <span
                 className="px-8 font-bold"
                 style={{
-                  fontSize: 'var(--tv-fs-2xl)',
+                  fontSize: '48px',
                   color: marqueeColor
                 }} 
                 aria-hidden="true"
@@ -2026,7 +2026,7 @@ export function TVDisplay({
                border: `2px solid ${modalBorderColor}`,
                background: `linear-gradient(135deg, ${modalBorderColor}33, ${modalBorderColor}11)`,
                color: modalBorderColor,
-               fontSize: 'var(--tv-fs-2xl)',
+               fontSize: '48px',
                fontWeight: 700,
                letterSpacing: '0.15em',
                textTransform: 'uppercase'
@@ -2095,7 +2095,7 @@ export function TVDisplay({
         {/* Room info */}
         <div className="flex items-center gap-4 flex-wrap justify-center">
           <span style={{
-            fontSize: 'var(--tv-fs-lg)',
+            fontSize: '36px',
             color: modalTextColor,
             opacity: 0.7,
             fontWeight: 500,
@@ -2105,7 +2105,7 @@ export function TVDisplay({
             Please proceed to
           </span>
           <span style={{
-            fontSize: 'var(--tv-fs-3xl)',
+            fontSize: '72px',
             fontWeight: 800,
             color: modalBorderColor,
             textShadow: `0 0 30px ${modalBorderColor}55`,
@@ -2161,7 +2161,7 @@ export function TVDisplay({
             data-testid="badge-audio-diagnostic"
             className="fixed bottom-4 left-4 z-[9998] px-3 py-1.5 rounded-md font-semibold pointer-events-none"
             style={{
-              fontSize: 'var(--tv-fs-xs)',
+              fontSize: 'clamp(10px, 1.2vmin, 16px)',
               backgroundColor: 'rgba(220, 38, 38, 0.85)',
               color: '#ffffff',
               fontFamily: 'monospace',
@@ -2183,13 +2183,13 @@ export function TVDisplay({
           >
             <div className="text-center px-8" style={{ maxWidth: '900px' }}>
               <Volume2 className="mx-auto mb-8" style={{ width: '8rem', height: '8rem' }} />
-              <div style={{ fontSize: 'var(--tv-fs-3xl)', fontWeight: 700, marginBottom: '1.5rem' }}>
+              <div style={{ fontSize: 'clamp(36px, 5vmin, 72px)', fontWeight: 700, marginBottom: '1.5rem' }}>
                 TAP TO START
               </div>
-              <div style={{ fontSize: 'var(--tv-fs-xl)', opacity: 0.9, marginBottom: '1rem' }}>
+              <div style={{ fontSize: 'clamp(20px, 3vmin, 36px)', opacity: 0.9, marginBottom: '1rem' }}>
                 Tekan skrin atau OK pada remote untuk aktifkan audio
               </div>
-              <div style={{ fontSize: 'var(--tv-fs-lg)', opacity: 0.7 }}>
+              <div style={{ fontSize: 'clamp(16px, 2.5vmin, 28px)', opacity: 0.7 }}>
                 Press screen or OK on remote to enable audio
               </div>
             </div>
