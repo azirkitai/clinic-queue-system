@@ -434,7 +434,7 @@ export function PatientCard({
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2">
           {(patient.status === "waiting" || patient.readyForDispensary) && (
-            patient.isGroupLeader && patient.groupId && patient.groupMembers && patient.groupMembers.length > 0 ? (
+            patient.groupId && patient.groupMembers && patient.groupMembers.length > 0 ? (
               <Button
                 onClick={handleCallFamily}
                 disabled={shouldDisableButtons}

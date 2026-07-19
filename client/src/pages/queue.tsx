@@ -268,6 +268,12 @@ export default function Queue() {
     const patient = enhancedPatients.find(p => p.id === patientId);
     if (!patient) return;
 
+    // If patient is part of a family group, call the entire group instead
+    if (patient.groupId && patient.groupMembers && patient.groupMembers.length > 0) {
+      handleCallFamily(patientId);
+      return;
+    }
+
     // Update patient status first (non-blocking)
     updatePatientStatusMutation.mutate({
       patientId,
