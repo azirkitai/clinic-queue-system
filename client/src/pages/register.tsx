@@ -92,6 +92,7 @@ export default function Register() {
         id: patient.id,
         name: patient.name,
         number: patient.number,
+        chiefComplaint: patient.chiefComplaint,
         registeredAt: new Date(patient.registeredAt).toLocaleTimeString('en-US', { 
           hour: '2-digit', 
           minute: '2-digit',

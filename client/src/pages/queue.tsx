@@ -25,13 +25,7 @@ interface QueuePatient extends Omit<Patient, 'status' | 'trackingHistory' | 'win
   windowName?: string;
   lastWindowId?: string;
   lastWindowName?: string;
-  chiefComplaint?: string | null;
   trackingHistory?: any[];
-  // Family/Batch group fields
-  groupId?: string | null;
-  groupName?: string | null;
-  isGroupLeader?: boolean;
-  groupMembers?: Array<{ id: string; name: string | null; number: number }>;
 }
 
 export default function Queue() {
@@ -222,22 +216,9 @@ export default function Queue() {
     };
   }, [settings]);
 
-  // Enhanced patients with window names and group members
+  // Enhanced patients with window names — groupMembers now computed server-side
   const enhancedPatients = useMemo((): QueuePatient[] => {
-    // Build groupMembers map from all patients in the current data set
-    const groupMembersMap = new Map<string, Array<{ id: string; name: string | null; number: number }>>();
-    for (const p of patients) {
-      if (p.groupId) {
-        const existing = groupMembersMap.get(p.groupId) || [];
-        existing.push({ id: p.id, name: p.name, number: p.number });
-        groupMembersMap.set(p.groupId, existing);
-      }
-    }
-
     return patients.map(patient => {
-      const allMembers = patient.groupId ? groupMembersMap.get(patient.groupId) : null;
-      const groupMembers = allMembers && allMembers.length > 1 ? allMembers : null;
-
       return {
         ...patient,
         status: patient.status as "waiting" | "called" | "in-progress" | "completed" | "requeue",
@@ -249,7 +230,7 @@ export default function Queue() {
         groupId: patient.groupId || null,
         groupName: patient.groupName || null,
         isGroupLeader: patient.isGroupLeader,
-        groupMembers,
+        groupMembers: patient.groupMembers,
       };
     });
   }, [patients, windows]);

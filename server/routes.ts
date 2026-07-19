@@ -933,7 +933,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(cached);
       }
       
-      const tvPatients = await withReadRetry(() => storage.getTvPatients(req.session.userId));
+      const tvPatients = await withReadRetry(() => storage.getTvPatients(req.session.userId!));
       
       // Cache the result (same TTL as active patients)
       setCache('tv-patients', req.session.userId, tvPatients);
@@ -1003,7 +1003,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const windows = await withReadRetry(() => storage.getWindows(req.session.userId));
         const currentWindow = windows.find(w => w.currentPatientId === id);
         if (currentWindow) {
-          await storage.updateWindowPatient(currentWindow.id, req.session.userId, undefined);
+          await storage.updateWindowPatient(currentWindow.id!, req.session.userId!, undefined);
         }
       }
       
@@ -1101,10 +1101,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
 
-      const { groupLeaderId, windowId, groupId } = req.body;
+      // Validate request body using Zod
+      const parseResult = callPatientGroupSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid request", details: parseResult.error.flatten() });
+      }
+
+      const { groupLeaderId, windowId, groupId } = parseResult.data;
 
       if (!windowId) {
         return res.status(400).json({ error: "windowId is required" });
+      }
+
+      // SECURITY: Verify window belongs to current user before proceeding
+      const window = await storage.getWindow(windowId);
+      if (!window || window.userId !== req.session.userId) {
+        return res.status(403).json({ error: "Window not found or access denied" });
       }
 
       // Resolve groupId: can be sent directly or derived from groupLeaderId
@@ -1125,7 +1137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "No patients found in group or all already called" });
       }
 
-      // Update window
+      // Update window (userId already verified above)
       await storage.updateWindowPatient(windowId, req.session.userId, groupPatients[0].id);
 
       invalidateCache(req.session.userId, undefined, true);
@@ -1139,7 +1151,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      res.json(groupPatients);
+      // Return consistent object shape matching WebSocket payload
+      res.json({ patients: groupPatients, groupId: resolvedGroupId, windowId });
     } catch (error) {
       console.error("Error calling patient group:", error);
       res.status(500).json({ error: "Failed to call patient group" });

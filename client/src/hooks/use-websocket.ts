@@ -175,11 +175,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       if (data.patient) {
         queryClient.setQueryData(['/api/patients'], (old: any) => {
           if (!old) return old;
-          return old.map((p: any) => 
-            p.id === data.patient.id ? data.patient : p
-          );
+          return old.map((p: any) => {
+            if (p.id !== data.patient.id) return p;
+            // Preserve groupMembers from existing cache if server payload lacks it
+            return data.patient.groupMembers ? data.patient : { ...data.patient, groupMembers: p.groupMembers };
+          });
         });
-        
+
         // Update active patients cache
         if (data.patient.status === 'completed') {
           // Remove completed patients from active cache
@@ -191,13 +193,14 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
           // Update active patients (waiting, called, in-progress, dispensary)
           queryClient.setQueryData(['/api/patients/active'], (old: any) => {
             if (!old) return old;
-            return old.map((p: any) => 
-              p.id === data.patient.id ? data.patient : p
-            );
+            return old.map((p: any) => {
+              if (p.id !== data.patient.id) return p;
+              return data.patient.groupMembers ? data.patient : { ...data.patient, groupMembers: p.groupMembers };
+            });
           });
         }
       }
-      
+
       // Invalidate dependent queries (lightweight)
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       debouncedTvRefetch();
@@ -208,16 +211,18 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       if (data.patient) {
         queryClient.setQueryData(['/api/patients'], (old: any) => {
           if (!old) return old;
-          return old.map((p: any) => 
-            p.id === data.patient.id ? data.patient : p
-          );
+          return old.map((p: any) => {
+            if (p.id !== data.patient.id) return p;
+            return data.patient.groupMembers ? data.patient : { ...data.patient, groupMembers: p.groupMembers };
+          });
         });
-        
+
         queryClient.setQueryData(['/api/patients/active'], (old: any) => {
           if (!old) return old;
-          return old.map((p: any) => 
-            p.id === data.patient.id ? data.patient : p
-          );
+          return old.map((p: any) => {
+            if (p.id !== data.patient.id) return p;
+            return data.patient.groupMembers ? data.patient : { ...data.patient, groupMembers: p.groupMembers };
+          });
         });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
@@ -244,24 +249,28 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     socket.on('patient:group-called', (data: any) => {
       // Family group call: update ALL group members in cache simultaneously
       if (data.patients && Array.isArray(data.patients)) {
-        const patientIds = new Set(data.patients.map((p: any) => p.id));
-        
         queryClient.setQueryData(['/api/patients'], (old: any) => {
           if (!old) return old;
           return old.map((p: any) => {
             const updated = data.patients.find((up: any) => up.id === p.id);
-            return updated || p;
+            if (!updated) return p;
+            // Preserve groupMembers from existing cache if server payload lacks it
+            return updated.groupMembers ? updated : { ...updated, groupMembers: p.groupMembers };
           });
         });
-        
+
         queryClient.setQueryData(['/api/patients/active'], (old: any) => {
           if (!old) return old;
           return old.map((p: any) => {
             const updated = data.patients.find((up: any) => up.id === p.id);
-            return updated || p;
+            if (!updated) return p;
+            return updated.groupMembers ? updated : { ...updated, groupMembers: p.groupMembers };
           });
         });
       }
+      // CRITICAL: Also invalidate patient queries to force refetch with computed groupMembers
+      queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
       debouncedTvRefetch();

@@ -37,7 +37,7 @@ interface Patient {
   groupId?: string | null;
   groupName?: string | null;
   isGroupLeader?: boolean;
-  groupMembers?: Array<{ id: string; name: string | null; number: number }>;
+  groupMembers?: Array<{ id: string; name: string | null; number: number }> | null;
 }
 
 interface PatientCardProps {

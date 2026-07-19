@@ -1134,7 +1134,7 @@ export function TVDisplay({
           patientName: currentPatient.name,
           patientNumber: parseInt(currentPatient.number, 10),
           windowName: currentPatient.room,
-          groupMembers: currentPatient.groupMembers,
+          groupMembers: currentPatient.groupMembers?.map(m => ({ name: m.name, number: m.number })),
           groupName: currentPatient.groupName
         }, audioSettings).then(restoreAudio).catch(error => {
           console.error('Failed to play calling sound:', error);

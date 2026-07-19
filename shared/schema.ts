@@ -190,7 +190,8 @@ export const linkPatientGroupSchema = z.object({
 
 // Family group call schema
 export const callPatientGroupSchema = z.object({
-  groupId: z.string().min(1, "Group ID is required"),
+  groupId: z.string().min(1, "Group ID is required").optional(),
+  groupLeaderId: z.string().min(1, "Group Leader ID is required").optional(),
   windowId: z.string().min(1, "Window ID is required"),
 });
 
@@ -299,7 +300,9 @@ export type InsertQrSession = z.infer<typeof insertQrSessionSchema>;
 // Select types
 export type User = typeof users.$inferSelect;
 export type Window = typeof windows.$inferSelect;
-export type Patient = typeof patients.$inferSelect;
+export type Patient = typeof patients.$inferSelect & {
+  groupMembers?: Array<{ id: string; name: string | null; number: number }> | null;
+};
 export type Setting = typeof settings.$inferSelect;
 export type Media = typeof media.$inferSelect;
 export type TextGroup = typeof textGroups.$inferSelect;

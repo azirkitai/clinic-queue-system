@@ -435,14 +435,51 @@ export class MemStorage implements IStorage {
 
   async getPatients(userId: string): Promise<Patient[]> {
     // Filter out archived patients (soft delete)
-    return Array.from(this.patients.values()).filter(p => p.userId === userId && !p.archivedAt);
+    const patients = Array.from(this.patients.values()).filter(p => p.userId === userId && !p.archivedAt);
+
+    // Build groupMembers map for family groups
+    const groupMembersMap = new Map<string, Array<{ id: string; name: string | null; number: number }>>();
+    for (const p of patients) {
+      if (p.groupId) {
+        const existing = groupMembersMap.get(p.groupId) || [];
+        existing.push({ id: p.id, name: p.name, number: p.number });
+        groupMembersMap.set(p.groupId, existing);
+      }
+    }
+
+    return patients.map(p => {
+      const allMembers = p.groupId ? groupMembersMap.get(p.groupId) : null;
+      return {
+        ...p,
+        groupMembers: allMembers && allMembers.length > 1 ? allMembers : null
+      } as Patient;
+    });
   }
 
   async getActivePatients(userId: string): Promise<Patient[]> {
     // Filter out archived AND completed patients (lighter response for dashboards)
-    return Array.from(this.patients.values()).filter(
+    const patients = Array.from(this.patients.values()).filter(
       p => p.userId === userId && !p.archivedAt && p.status !== 'completed'
     );
+
+    // Build groupMembers map for family groups
+    const groupMembersMap = new Map<string, Array<{ id: string; name: string | null; number: number }>>();
+    for (const p of patients) {
+      if (p.groupId) {
+        const existing = groupMembersMap.get(p.groupId) || [];
+        existing.push({ id: p.id, name: p.name, number: p.number });
+        groupMembersMap.set(p.groupId, existing);
+      }
+    }
+
+    // Attach groupMembers to each patient
+    return patients.map(p => {
+      const allMembers = p.groupId ? groupMembersMap.get(p.groupId) : null;
+      return {
+        ...p,
+        groupMembers: allMembers && allMembers.length > 1 ? allMembers : null
+      } as Patient;
+    });
   }
 
   async getTvPatients(userId: string): Promise<schema.TvQueueItem[]> {
@@ -2168,21 +2205,39 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // Patient methods (using memStorage for now due to type complexity)
+  // Patient methods
   async getPatients(userId: string): Promise<Patient[]> {
     // Filter out archived patients (soft delete)
-    return await db.select().from(schema.patients)
+    const patients = await db.select().from(schema.patients)
       .where(
         and(
           eq(schema.patients.userId, userId),
           sql`${schema.patients.archivedAt} IS NULL`
         )
       );
+
+    // Build groupMembers map
+    const groupMembersMap = new Map<string, Array<{ id: string; name: string | null; number: number }>>();
+    for (const p of patients) {
+      if (p.groupId) {
+        const existing = groupMembersMap.get(p.groupId) || [];
+        existing.push({ id: p.id, name: p.name, number: p.number });
+        groupMembersMap.set(p.groupId, existing);
+      }
+    }
+
+    return patients.map(p => {
+      const allMembers = p.groupId ? groupMembersMap.get(p.groupId) : null;
+      return {
+        ...p,
+        groupMembers: allMembers && allMembers.length > 1 ? allMembers : null
+      } as Patient;
+    });
   }
 
   async getActivePatients(userId: string): Promise<Patient[]> {
     // Filter out archived AND completed patients (lighter response for dashboards)
-    return await db.select().from(schema.patients)
+    const patients = await db.select().from(schema.patients)
       .where(
         and(
           eq(schema.patients.userId, userId),
@@ -2190,6 +2245,24 @@ export class DatabaseStorage implements IStorage {
           sql`${schema.patients.status} != 'completed'`
         )
       );
+
+    // Build groupMembers map
+    const groupMembersMap = new Map<string, Array<{ id: string; name: string | null; number: number }>>();
+    for (const p of patients) {
+      if (p.groupId) {
+        const existing = groupMembersMap.get(p.groupId) || [];
+        existing.push({ id: p.id, name: p.name, number: p.number });
+        groupMembersMap.set(p.groupId, existing);
+      }
+    }
+
+    return patients.map(p => {
+      const allMembers = p.groupId ? groupMembersMap.get(p.groupId) : null;
+      return {
+        ...p,
+        groupMembers: allMembers && allMembers.length > 1 ? allMembers : null
+      } as Patient;
+    });
   }
 
   async getTvPatients(userId: string): Promise<schema.TvQueueItem[]> {
@@ -2581,11 +2654,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async callPatientGroup(groupId: string, windowId: string, userId: string): Promise<Patient[]> {
+    // SECURITY: Verify window belongs to user before any updates
+    const window = await this.getWindow(windowId);
+    if (!window || window.userId !== userId) return [];
+
     const groupPatients = await this.getPatientsByGroupId(groupId, userId);
     if (groupPatients.length === 0) return [];
 
-    const window = await this.getWindow(windowId);
-    const windowName = window?.name || "Unknown Room";
+    const windowName = window.name || "Unknown Room";
     const now = new Date();
 
     const updated: Patient[] = [];
@@ -2611,15 +2687,15 @@ export class DatabaseStorage implements IStorage {
 
       if (result) {
         updated.push(result);
-        // Update window to show first patient
-        if (window && updated.length === 1) {
+        // Update window to show first patient (userId already verified above)
+        if (updated.length === 1) {
           await db.update(schema.windows)
             .set({
               currentPatientId: patient.id,
               currentPatientName: patient.name || undefined,
               currentPatientNumber: patient.number
             })
-            .where(eq(schema.windows.id, windowId));
+            .where(and(eq(schema.windows.id, windowId), eq(schema.windows.userId, userId)));
         }
       }
     }

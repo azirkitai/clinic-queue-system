@@ -50,8 +50,8 @@ export interface CallInfo {
   patientNumber: number;
   windowName: string;
   // Family/Batch group support
-  groupMembers?: Array<{ name: string; number: number }>;
-  groupName?: string;
+  groupMembers?: Array<{ name: string | null; number: number }>;
+  groupName?: string | null;
 }
 
 export class AudioSystem {
