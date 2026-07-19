@@ -2077,7 +2077,6 @@ export function TVDisplay({
                   {currentPatient.groupMembers.map((member: any, idx: number) => (
                     <div key={idx}>
                       {getDisplayName(member.name)}
-                      <span className="text-sm opacity-60 ml-2">#{member.number.toString().padStart(3, '0')}</span>
                     </div>
                   ))}
                 </div>
