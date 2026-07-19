@@ -310,6 +310,13 @@ export default function Queue() {
       if (!response.ok) {
         throw new Error("Failed to call family group");
       }
+      // Invalidate all patient caches so cards refresh and move to Active section
+      await queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/patients/active'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/patients/tv'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+
       toast({
         title: "Success",
         description: "Family group called successfully",

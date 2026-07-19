@@ -241,6 +241,32 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       debouncedTvRefetch();
     });
 
+    socket.on('patient:group-called', (data: any) => {
+      // Family group call: update ALL group members in cache simultaneously
+      if (data.patients && Array.isArray(data.patients)) {
+        const patientIds = new Set(data.patients.map((p: any) => p.id));
+        
+        queryClient.setQueryData(['/api/patients'], (old: any) => {
+          if (!old) return old;
+          return old.map((p: any) => {
+            const updated = data.patients.find((up: any) => up.id === p.id);
+            return updated || p;
+          });
+        });
+        
+        queryClient.setQueryData(['/api/patients/active'], (old: any) => {
+          if (!old) return old;
+          return old.map((p: any) => {
+            const updated = data.patients.find((up: any) => up.id === p.id);
+            return updated || p;
+          });
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/windows'] });
+      debouncedTvRefetch();
+    });
+
     socket.on('queue:reset', () => {
       // Queue reset affects everything - full invalidation needed for all patient caches
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
