@@ -222,21 +222,36 @@ export default function Queue() {
     };
   }, [settings]);
 
-  // Enhanced patients with window names
+  // Enhanced patients with window names and group members
   const enhancedPatients = useMemo((): QueuePatient[] => {
-    return patients.map(patient => ({
-      ...patient,
-      status: patient.status as "waiting" | "called" | "in-progress" | "completed" | "requeue",
-      windowId: patient.windowId || undefined,
-      windowName: patient.windowId ? windows.find(w => w.id === patient.windowId)?.name : undefined,
-      lastWindowId: patient.lastWindowId || undefined,
-      lastWindowName: patient.lastWindowId ? windows.find(w => w.id === patient.lastWindowId)?.name : undefined,
-      trackingHistory: Array.isArray(patient.trackingHistory) ? patient.trackingHistory : undefined,
-      groupId: patient.groupId || null,
-      groupName: patient.groupName || null,
-      isGroupLeader: patient.isGroupLeader,
-      groupMembers: patient.groupMembers
-    }));
+    // Build groupMembers map from all patients in the current data set
+    const groupMembersMap = new Map<string, Array<{ id: string; name: string | null; number: number }>>();
+    for (const p of patients) {
+      if (p.groupId) {
+        const existing = groupMembersMap.get(p.groupId) || [];
+        existing.push({ id: p.id, name: p.name, number: p.number });
+        groupMembersMap.set(p.groupId, existing);
+      }
+    }
+
+    return patients.map(patient => {
+      const allMembers = patient.groupId ? groupMembersMap.get(patient.groupId) : null;
+      const groupMembers = allMembers && allMembers.length > 1 ? allMembers : null;
+
+      return {
+        ...patient,
+        status: patient.status as "waiting" | "called" | "in-progress" | "completed" | "requeue",
+        windowId: patient.windowId || undefined,
+        windowName: patient.windowId ? windows.find(w => w.id === patient.windowId)?.name : undefined,
+        lastWindowId: patient.lastWindowId || undefined,
+        lastWindowName: patient.lastWindowId ? windows.find(w => w.id === patient.lastWindowId)?.name : undefined,
+        trackingHistory: Array.isArray(patient.trackingHistory) ? patient.trackingHistory : undefined,
+        groupId: patient.groupId || null,
+        groupName: patient.groupName || null,
+        isGroupLeader: patient.isGroupLeader,
+        groupMembers,
+      };
+    });
   }, [patients, windows]);
 
   const handleCallPatient = async (patientId: string) => {
@@ -298,13 +313,19 @@ export default function Queue() {
     const window = windows.find(w => w.id === selectedWindow);
     if (!window) return;
 
+    // Check if window is serving another patient - allow if same family group
     if (window.currentPatientId && window.currentPatientId !== patientId) {
-      toast({
-        title: "Error",
-        description: "This room is serving another patient",
-        variant: "destructive",
-      });
-      return;
+      const currentPatient = patients.find((p: any) => p.id === window.currentPatientId);
+      const callingPatient = patients.find((p: any) => p.id === patientId);
+      const sameGroup = currentPatient?.groupId && callingPatient?.groupId && currentPatient.groupId === callingPatient.groupId;
+      if (!sameGroup) {
+        toast({
+          title: "Error",
+          description: "This room is serving another patient",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     // Call the group via API
