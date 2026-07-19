@@ -120,7 +120,7 @@ export function useTvPatients(): UseTvPatientsResult {
   }, [tvPatients]);
 
   const { currentPatient, queueWaiting, queueHistory } = useMemo(() => {
-    const transformToQueueItem = (patient: TvQueueItem): QueueItem => {
+    const transformToQueueItem = (patient: TvQueueItem, allPatients: TvQueueItem[]): QueueItem => {
       let displayStatus: "waiting" | "calling" | "completed";
       if (patient.status === "called") {
         displayStatus = "calling";
@@ -129,6 +129,19 @@ export function useTvPatients(): UseTvPatientsResult {
       } else {
         displayStatus = "waiting";
       }
+
+      // TV batch detection: only show groupMembers if ALL members are called to the SAME room
+      // (true batch call). Otherwise show single name only.
+      const tvGroupMembers = (() => {
+        if (!patient.groupId || !patient.windowId || !patient.groupMembers) return undefined;
+        // Find all group members that are ALSO called to the same window
+        const sameRoomMembers = patient.groupMembers.filter(m => {
+          const member = allPatients.find(p => p.id === m.id);
+          return member && member.status === "called" && member.windowId === patient.windowId;
+        });
+        // Show batch only if more than 1 member (including self) are in the same room
+        return sameRoomMembers.length > 1 ? sameRoomMembers : undefined;
+      })();
 
       return {
         id: patient.id,
@@ -139,7 +152,7 @@ export function useTvPatients(): UseTvPatientsResult {
         timestamp: patient.calledAt ? new Date(patient.calledAt) : new Date(),
         calledAt: patient.calledAt ? new Date(patient.calledAt) : null,
         requeueReason: patient.requeueReason,
-        groupMembers: patient.groupMembers || undefined,
+        groupMembers: tvGroupMembers,
         groupName: patient.groupName || undefined,
       };
     };
@@ -147,7 +160,7 @@ export function useTvPatients(): UseTvPatientsResult {
     const current = (() => {
       const calledPatients = tvPatients
         .filter(p => p.status === "called")
-        .map(transformToQueueItem)
+        .map(p => transformToQueueItem(p, tvPatients))
         .sort((a, b) => {
           if (!a.calledAt) return 1;
           if (!b.calledAt) return -1;
@@ -158,7 +171,7 @@ export function useTvPatients(): UseTvPatientsResult {
 
     const waiting = tvPatients
       .filter(p => p.status !== "completed" && p.status !== "called")
-      .map(transformToQueueItem);
+      .map(p => transformToQueueItem(p, tvPatients));
 
     const history: QueueItem[] = [...callLogRef.current]
       .sort((a, b) => b.calledAt.getTime() - a.calledAt.getTime())
