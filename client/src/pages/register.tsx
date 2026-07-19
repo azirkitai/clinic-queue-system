@@ -175,8 +175,15 @@ export default function Register() {
                             <div className="font-medium">
                               {patient.name || "Without Name"}
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              {patient.registeredAt}
+                            {patient.chiefComplaint && (
+                              <div className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">
+                                CC: {patient.chiefComplaint}
+                              </div>
+                            )}
+                            <div className="text-sm text-muted-foreground flex items-center gap-2">
+                              <span>Cons. No: #{patient.number.toString().padStart(3, '0')}</span>
+                              <span>·</span>
+                              <span>{patient.registeredAt}</span>
                             </div>
                           </div>
                         </div>
