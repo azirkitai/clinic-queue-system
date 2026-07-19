@@ -260,22 +260,8 @@ export default function Queue() {
       return;
     }
 
-    // Get patient information for audio
-    const patient = enhancedPatients.find(p => p.id === patientId);
-    if (!patient) return;
-
-    // Family batch call: only when ALL members are still waiting/requeue AND the clicked patient is the group leader
-    const allGroupStillPending = patient.groupMembers?.every(m => {
-      const member = enhancedPatients.find(p => p.id === m.id);
-      return member?.status === "waiting" || member?.status === "requeue";
-    });
-    // Only trigger batch call if leader clicked while entire group is still pending (before any call happened)
-    if (patient.isGroupLeader && patient.status === "waiting" && patient.groupId && patient.groupMembers && patient.groupMembers.length > 0 && allGroupStillPending) {
-      handleCallFamily(patientId);
-      return;
-    }
-
     // Update patient status first (non-blocking)
+    // "Call" button is ALWAYS single call — batch call is handled via the separate "Call Family" button
     updatePatientStatusMutation.mutate({
       patientId,
       status: "called",

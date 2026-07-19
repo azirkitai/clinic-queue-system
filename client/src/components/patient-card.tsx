@@ -435,16 +435,30 @@ export function PatientCard({
         <div className="flex flex-wrap gap-2">
           {(patient.status === "waiting" || patient.readyForDispensary) && (
             patient.isGroupLeader && patient.groupId && patient.groupMembers && patient.groupMembers.length > 0 ? (
-              <Button
-                onClick={handleCallFamily}
-                disabled={shouldDisableButtons}
-                size="sm"
-                className="flex-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
-                data-testid={`button-call-family-${patient.id}`}
-              >
-                <Users className="h-4 w-4 mr-1" />
-                Call Family
-              </Button>
+              <>
+                {/* Single call for the leader itself */}
+                <Button
+                  onClick={handleCall}
+                  disabled={shouldDisableButtons}
+                  size="sm"
+                  className="flex-1"
+                  data-testid={`button-call-${patient.id}`}
+                >
+                  <Bell className="h-4 w-4 mr-1" />
+                  Call
+                </Button>
+                {/* Batch call for entire family */}
+                <Button
+                  onClick={handleCallFamily}
+                  disabled={shouldDisableButtons}
+                  size="sm"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
+                  data-testid={`button-call-family-${patient.id}`}
+                >
+                  <Users className="h-4 w-4 mr-1" />
+                  Call Family
+                </Button>
+              </>
             ) : (
               <Button
                 onClick={handleCall}
