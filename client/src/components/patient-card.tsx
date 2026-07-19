@@ -219,10 +219,10 @@ export function PatientCard({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="text-2xl font-bold text-primary flex items-center gap-2">
-              #{patient.number.toString().padStart(3, '0')}
+            <div className="text-sm font-bold text-primary">
+              Cons. No: {patient.number.toString().padStart(3, '0')}
               {patient.isPriority && (
-                <Star className="h-5 w-5 fill-red-500 text-red-500 dark:fill-red-400 dark:text-red-400" data-testid={`icon-priority-${patient.id}`} />
+                <Star className="h-5 w-5 fill-red-500 text-red-500 dark:fill-red-400 dark:text-red-400 inline-block ml-1 align-middle" data-testid={`icon-priority-${patient.id}`} />
               )}
             </div>
             {patient.name && (
