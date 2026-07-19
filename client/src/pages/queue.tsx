@@ -264,8 +264,13 @@ export default function Queue() {
     const patient = enhancedPatients.find(p => p.id === patientId);
     if (!patient) return;
 
-    // If patient is part of a family group, call the entire group instead
-    if (patient.groupId && patient.groupMembers && patient.groupMembers.length > 0) {
+    // Family batch call: only when ALL members are still waiting/requeue AND the clicked patient is the group leader
+    const allGroupStillPending = patient.groupMembers?.every(m => {
+      const member = enhancedPatients.find(p => p.id === m.id);
+      return member?.status === "waiting" || member?.status === "requeue";
+    });
+    // Only trigger batch call if leader clicked while entire group is still pending (before any call happened)
+    if (patient.isGroupLeader && patient.status === "waiting" && patient.groupId && patient.groupMembers && patient.groupMembers.length > 0 && allGroupStillPending) {
       handleCallFamily(patientId);
       return;
     }

@@ -434,7 +434,7 @@ export function PatientCard({
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2">
           {(patient.status === "waiting" || patient.readyForDispensary) && (
-            patient.groupId && patient.groupMembers && patient.groupMembers.length > 0 ? (
+            patient.isGroupLeader && patient.groupId && patient.groupMembers && patient.groupMembers.length > 0 ? (
               <Button
                 onClick={handleCallFamily}
                 disabled={shouldDisableButtons}
@@ -461,6 +461,7 @@ export function PatientCard({
 
           {patient.status === "requeue" && (
             <>
+              {/* Requeue: always single call regardless of family group */}
               <Button
                 onClick={handleCall}
                 disabled={shouldDisableButtons}
