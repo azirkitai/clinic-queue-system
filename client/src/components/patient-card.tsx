@@ -216,19 +216,13 @@ export function PatientCard({
 
   return (
     <Card className="w-full hover-elevate">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 space-y-2">
+        {/* 1) Cons. No + Status Badge */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="text-sm font-bold text-primary">
-              Cons. No: {patient.number.toString().padStart(3, '0')}
-              {patient.isPriority && (
-                <Star className="h-5 w-5 fill-red-500 text-red-500 dark:fill-red-400 dark:text-red-400 inline-block ml-1 align-middle" data-testid={`icon-priority-${patient.id}`} />
-              )}
-            </div>
-            {patient.name && (
-              <div className="text-lg font-medium" data-testid={`text-patient-name-${patient.id}`}>
-                {patient.name}
-              </div>
+          <div className="text-sm font-bold text-primary">
+            Cons. No: {patient.number.toString().padStart(3, '0')}
+            {patient.isPriority && (
+              <Star className="h-5 w-5 fill-red-500 text-red-500 dark:fill-red-400 dark:text-red-400 inline-block ml-1 align-middle" data-testid={`icon-priority-${patient.id}`} />
             )}
           </div>
           <Badge 
@@ -238,18 +232,25 @@ export function PatientCard({
             {getStatusLabel(patient.status)}
           </Badge>
         </div>
-        
-        {/* Waiting Time Indicator - Only for waiting patients */}
+
+        {/* 2) Patient Name */}
+        {patient.name && (
+          <div className="text-lg font-medium" data-testid={`text-patient-name-${patient.id}`}>
+            {patient.name}
+          </div>
+        )}
+
+        {/* 3) Waiting Time */}
         {patient.status === "waiting" && (() => {
           const waitingMinutes = getWaitingMinutes();
           const colorClass = getWaitingTimeColor(waitingMinutes);
-          const textColorClass = waitingMinutes <= 10 ? "text-green-700 dark:text-green-400" : 
+          const textColorClass = waitingMinutes <= 10 ? "text-green-700 dark:text-green-400" :
                                  waitingMinutes <= 20 ? "text-yellow-700 dark:text-yellow-400" :
                                  waitingMinutes <= 30 ? "text-orange-700 dark:text-orange-400" :
                                  "text-red-700 dark:text-red-400";
-          
+
           return (
-            <div className="mt-2 flex items-center gap-2" data-testid={`waiting-time-${patient.id}`}>
+            <div className="flex items-center gap-2" data-testid={`waiting-time-${patient.id}`}>
               <div className={`w-3 h-3 rounded-full ${colorClass} animate-pulse`} />
               <span className={`text-base font-bold ${textColorClass} flex items-center gap-1`}>
                 <Timer className="h-4 w-4" />
@@ -258,28 +259,33 @@ export function PatientCard({
             </div>
           );
         })()}
-        
+
+        {/* 4) Chief Complaint */}
+        {patient.chiefComplaint && (
+          <div className="flex items-center gap-2">
+            <Badge className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-900" data-testid={`badge-chief-complaint-${patient.id}`}>
+              <span className="font-semibold">CC:</span> {patient.chiefComplaint}
+            </Badge>
+          </div>
+        )}
+
+        {/* Priority Reason */}
+        {patient.isPriority && patient.priorityReason && (
+          <div className="flex items-center gap-2">
+            <Badge className="bg-red-100 text-red-800 border-red-300 dark:bg-red-950 dark:text-red-400 dark:border-red-900" data-testid={`badge-priority-reason-${patient.id}`}>
+              <Star className="h-3 w-3 mr-1 fill-red-600 text-red-600 dark:fill-red-500 dark:text-red-500" />
+              Priority: {patient.priorityReason}
+            </Badge>
+          </div>
+        )}
+
+        {/* Room/Window info */}
         {(patient.windowName || patient.lastWindowName) && (
           <div className="text-sm text-muted-foreground" data-testid={`text-window-${patient.id}`}>
             {patient.windowName || patient.lastWindowName}
             {patient.lastWindowName && !patient.windowName && (
               <span className="text-xs text-gray-400 ml-1">(Last Room)</span>
             )}
-          </div>
-        )}
-        {patient.chiefComplaint && (
-          <div className="mt-2 flex items-center gap-2">
-            <Badge className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-900" data-testid={`badge-chief-complaint-${patient.id}`}>
-              <span className="font-semibold">CC:</span> {patient.chiefComplaint}
-            </Badge>
-          </div>
-        )}
-        {patient.isPriority && patient.priorityReason && (
-          <div className="mt-2 flex items-center gap-2">
-            <Badge className="bg-red-100 text-red-800 border-red-300 dark:bg-red-950 dark:text-red-400 dark:border-red-900" data-testid={`badge-priority-reason-${patient.id}`}>
-              <Star className="h-3 w-3 mr-1 fill-red-600 text-red-600 dark:fill-red-500 dark:text-red-500" />
-              Priority: {patient.priorityReason}
-            </Badge>
           </div>
         )}
       </CardHeader>
