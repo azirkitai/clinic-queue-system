@@ -447,7 +447,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#ffffff', colorScheme: 'light' }}>
         <div className="text-center space-y-4">
           <div className="w-10 h-10 border-4 rounded-full animate-spin mx-auto" style={{ borderColor: '#3b82f6', borderTopColor: 'transparent' }} />
-          <p className="text-lg" style={{ color: '#4B5563' }}>Mengesahkan pautan TV...</p>
+          <p style={{ color: '#4B5563', fontSize: 'clamp(14px, 1.5vmin, 22px)' }}>Mengesahkan pautan TV...</p>
         </div>
       </div>
     );
@@ -460,9 +460,9 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
           <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center" style={{ backgroundColor: '#fee2e2' }}>
             <Monitor className="w-8 h-8" style={{ color: '#ef4444' }} />
           </div>
-          <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>Pautan TV Tidak Sah</h1>
-          <p style={{ color: '#4B5563' }}>{error}</p>
-          <p className="text-sm" style={{ color: '#9CA3AF' }}>Sila minta admin klinik untuk memberikan pautan TV yang betul.</p>
+          <h1 className="font-bold" style={{ color: '#111827', fontSize: 'clamp(20px, 2.5vmin, 36px)' }}>Pautan TV Tidak Sah</h1>
+          <p style={{ color: '#4B5563', fontSize: 'clamp(12px, 1.3vmin, 20px)' }}>{error}</p>
+          <p style={{ color: '#9CA3AF', fontSize: 'clamp(10px, 1.1vmin, 16px)' }}>Sila minta admin klinik untuk memberikan pautan TV yang betul.</p>
         </div>
       </div>
     );
@@ -525,8 +525,8 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
           <Monitor className="w-10 h-10" style={{ color: '#2563eb' }} />
         </div>
         <div>
-          <h1 className="text-3xl font-bold mb-2" style={{ color: '#111827' }} data-testid="text-clinic-name">{clinicName}</h1>
-          <p className="text-lg" style={{ color: '#6B7280' }}>Paparan TV Klinik</p>
+          <h1 className="font-bold mb-2" style={{ color: '#111827', fontSize: 'clamp(24px, 3vmin, 44px)' }} data-testid="text-clinic-name">{clinicName}</h1>
+          <p style={{ color: '#6B7280', fontSize: 'clamp(14px, 1.5vmin, 22px)' }}>Paparan TV Klinik</p>
         </div>
         <div className="rounded-xl shadow-lg p-6 space-y-4" style={{ backgroundColor: '#ffffff' }}>
           <p style={{ color: '#4B5563' }}>
@@ -534,8 +534,8 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
           </p>
           <Button
             onClick={enterFullscreen}
-            className="w-full py-6 text-lg"
-            style={{ backgroundColor: '#2563eb', color: '#ffffff' }}
+            className="w-full py-6"
+            style={{ backgroundColor: '#2563eb', color: '#ffffff', fontSize: 'clamp(14px, 1.5vmin, 22px)' }}
             size="lg"
             data-testid="button-start-tv"
           >
@@ -543,7 +543,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
             Mulakan Paparan TV
           </Button>
         </div>
-        <p className="text-xs" style={{ color: '#9CA3AF' }}>
+        <p style={{ color: '#9CA3AF', fontSize: 'clamp(9px, 1.0vmin, 14px)' }}>
           Paparan ini akan dikemas kini secara automatik setiap 30 saat.
           <br />Tiada login diperlukan.
         </p>
