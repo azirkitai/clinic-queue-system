@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UserPlus, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,15 +19,22 @@ export function PatientRegistration({ onRegister, nextNumber, isRegistering = fa
   const [isPriority, setIsPriority] = useState(false);
   const [priorityReason, setPriorityReason] = useState("");
   const [chiefComplaint, setChiefComplaint] = useState("");
+  const [consultationNo, setConsultationNo] = useState(nextNumber.toString());
+
+  // Sync when nextNumber prop changes (e.g. after registration)
+  useEffect(() => {
+    setConsultationNo(nextNumber.toString());
+  }, [nextNumber]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isRegistering) return;
 
     try {
+      const parsedNumber = parseInt(consultationNo.trim(), 10);
       const patientData = {
         name: patientName.trim() || null,
-        number: nextNumber,
+        number: isNaN(parsedNumber) || parsedNumber <= 0 ? nextNumber : parsedNumber,
         type: "name" as const,
         isPriority: isPriority,
         priorityReason: isPriority ? priorityReason.trim() : undefined,
@@ -58,18 +65,23 @@ export function PatientRegistration({ onRegister, nextNumber, isRegistering = fa
       </CardHeader>
       
       <CardContent className="space-y-6">
-        {/* Next Number Display */}
-        <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-          <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-            Next Number:
-          </span>
-          <Badge 
-            variant="outline" 
-            className="text-lg font-bold px-3 py-1 border-blue-300 text-blue-700"
-            data-testid="badge-next-number"
-          >
-            #{nextNumber.toString().padStart(3, '0')}
-          </Badge>
+        {/* Cons. No Input */}
+        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="space-y-2">
+            <Label htmlFor="consultationNo" className="text-sm font-medium text-blue-700 dark:text-blue-300">
+              Cons. No
+            </Label>
+            <Input
+              id="consultationNo"
+              type="number"
+              value={consultationNo}
+              onChange={(e) => setConsultationNo(e.target.value)}
+              placeholder="Enter cons. no"
+              min={1}
+              data-testid="input-consultation-no"
+              className="text-lg font-bold text-blue-700 dark:text-blue-300 bg-white dark:bg-gray-800"
+            />
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
