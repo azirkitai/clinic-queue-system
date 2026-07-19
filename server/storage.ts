@@ -1621,6 +1621,7 @@ export class DatabaseStorage implements IStorage {
       await db.execute(sql`ALTER TABLE patients ADD COLUMN IF NOT EXISTS requeue_reason TEXT`);
       await db.execute(sql`ALTER TABLE patients ADD COLUMN IF NOT EXISTS tracking_history JSON DEFAULT '[]'::json`);
       await db.execute(sql`ALTER TABLE patients ADD COLUMN IF NOT EXISTS archived_at TIMESTAMP`);
+      await db.execute(sql`ALTER TABLE patients ADD COLUMN IF NOT EXISTS chief_complaint TEXT`);
       await db.execute(sql`ALTER TABLE windows ADD COLUMN IF NOT EXISTS is_permanent BOOLEAN NOT NULL DEFAULT false`);
       await db.execute(sql`ALTER TABLE windows ADD COLUMN IF NOT EXISTS is_dispensary BOOLEAN NOT NULL DEFAULT false`);
       // Auto-tag legacy windows named DISPENSARY (one per user) so existing deployments work seamlessly
@@ -2448,8 +2449,17 @@ export class DatabaseStorage implements IStorage {
       timestamp: now.toISOString(),
       action: 'registered'
     }];
+    // Only pass valid columns to the database insert, strip any extra frontend fields
     const patientData = {
-      ...insertPatient,
+      name: insertPatient.name,
+      number: insertPatient.number,
+      isPriority: insertPatient.isPriority,
+      priorityReason: insertPatient.priorityReason,
+      chiefComplaint: insertPatient.chiefComplaint,
+      userId: insertPatient.userId,
+      groupId: insertPatient.groupId,
+      groupName: insertPatient.groupName,
+      isGroupLeader: insertPatient.isGroupLeader,
       trackingHistory: sql`${JSON.stringify(trackingHistory)}::json`
     };
     const [patient] = await db.insert(schema.patients).values(patientData).returning();
