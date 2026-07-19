@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
-import { insertPatientSchema, insertUserSchema, insertTextGroupSchema, insertThemeSchema, insertQrSessionSchema } from "@shared/schema";
+import { insertPatientSchema, insertUserSchema, insertTextGroupSchema, insertThemeSchema, insertQrSessionSchema, linkPatientGroupSchema, callPatientGroupSchema } from "@shared/schema";
 import { createHash, randomBytes } from "crypto";
 import { z } from "zod";
 import { getOnlineUserIds } from "./websocket";
@@ -836,9 +836,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("[PATIENT] POST /api/patients - Request body:", req.body);
       
+      // Auto-assign next queue number if not provided
+      let nextNumber = req.body.number;
+      if (!nextNumber || isNaN(nextNumber) || nextNumber <= 0) {
+        nextNumber = await storage.getNextPatientNumber(req.session.userId);
+      }
+      
       // Add userId from session to patient data
       const patientDataWithUser = {
         ...req.body,
+        number: nextNumber,
         userId: req.session.userId
       };
       
@@ -1049,6 +1056,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error toggling patient priority:", error);
       res.status(500).json({ error: "Failed to toggle patient priority" });
+    }
+  });
+
+  // Link patient to family group
+  app.post("/api/patients/:id/link-group", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Session inactive" });
+      }
+
+      const { id } = req.params;
+      const { groupId, groupName } = req.body;
+
+      if (!groupId || !groupName) {
+        return res.status(400).json({ error: "groupId and groupName are required" });
+      }
+
+      const patient = await storage.linkPatientToGroup(id, groupId, groupName, req.session.userId);
+      if (!patient) {
+        return res.status(404).json({ error: "Patient not found" });
+      }
+
+      invalidateCache(req.session.userId);
+
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('patient:group-linked', {
+          patient,
+          timestamp: Date.now()
+        });
+      }
+
+      res.json(patient);
+    } catch (error) {
+      console.error("Error linking patient to group:", error);
+      res.status(500).json({ error: "Failed to link patient to group" });
+    }
+  });
+
+  // Call all patients in a family group
+  app.post("/api/patients/call-group", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Session inactive" });
+      }
+
+      const { groupLeaderId, windowId, groupId } = req.body;
+
+      if (!windowId) {
+        return res.status(400).json({ error: "windowId is required" });
+      }
+
+      // Resolve groupId: can be sent directly or derived from groupLeaderId
+      let resolvedGroupId = groupId;
+      if (!resolvedGroupId && groupLeaderId) {
+        const leaderPatient = await storage.getPatient(groupLeaderId);
+        if (leaderPatient && leaderPatient.userId === req.session.userId) {
+          resolvedGroupId = leaderPatient.groupId || undefined;
+        }
+      }
+
+      if (!resolvedGroupId) {
+        return res.status(400).json({ error: "groupId or groupLeaderId (with a valid group) is required" });
+      }
+
+      const groupPatients = await storage.callPatientGroup(resolvedGroupId, windowId, req.session.userId);
+      if (groupPatients.length === 0) {
+        return res.status(404).json({ error: "No patients found in group or all already called" });
+      }
+
+      // Update window
+      await storage.updateWindowPatient(windowId, req.session.userId, groupPatients[0].id);
+
+      invalidateCache(req.session.userId, undefined, true);
+
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit('patient:group-called', {
+          patients: groupPatients,
+          groupId: resolvedGroupId,
+          windowId,
+          timestamp: Date.now()
+        });
+      }
+
+      res.json(groupPatients);
+    } catch (error) {
+      console.error("Error calling patient group:", error);
+      res.status(500).json({ error: "Failed to call patient group" });
+    }
+  });
+
+  // Get patients by group ID
+  app.get("/api/patients/group/:groupId", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Session inactive" });
+      }
+
+      const { groupId } = req.params;
+      const groupPatients = await storage.getPatientsByGroupId(groupId, req.session.userId);
+      res.json(groupPatients);
+    } catch (error) {
+      console.error("Error fetching group patients:", error);
+      res.status(500).json({ error: "Failed to fetch group patients" });
     }
   });
 

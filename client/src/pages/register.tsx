@@ -40,7 +40,7 @@ export default function Register() {
 
   // Create patient mutation
   const createPatientMutation = useMutation({
-    mutationFn: async (patientData: { name: string | null; number: number; isPriority?: boolean; priorityReason?: string; chiefComplaint?: string }) => {
+    mutationFn: async (patientData: { name: string | null; number: number; isPriority?: boolean; priorityReason?: string; chiefComplaint?: string; groupId?: string | null; groupName?: string | null; isGroupLeader?: boolean }) => {
       const response = await apiRequest("POST", "/api/patients", patientData);
       return response.json();
     },
@@ -100,7 +100,22 @@ export default function Register() {
       }));
   }, [todayPatients]);
 
-  const handleRegister = (patient: { name: string | null; number: number; type: "name" | "number"; isPriority?: boolean; priorityReason?: string; chiefComplaint?: string }) => {
+  // Derive available family groups from today's waiting patients
+  const availableGroups = useMemo(() => {
+    if (!todayPatients) return [];
+    const actualTodayPatients = filterTodayPatients(todayPatients);
+    // Find patients who are group leaders with groupId
+    return actualTodayPatients
+      .filter(p => p.isGroupLeader && p.groupId && p.status === "waiting")
+      .map(p => ({
+        id: p.groupId!,
+        name: p.groupName || "Family Group",
+        leaderName: p.name,
+        leaderNumber: p.number
+      }));
+  }, [todayPatients]);
+
+  const handleRegister = (patient: { name: string | null; number: number; type: "name" | "number"; isPriority?: boolean; priorityReason?: string; chiefComplaint?: string; groupId?: string | null; groupName?: string | null; isGroupLeader?: boolean }) => {
     console.log("Registering patient:", patient);
     createPatientMutation.mutate(patient);
   };
@@ -120,6 +135,7 @@ export default function Register() {
             onRegister={handleRegister}
             nextNumber={nextNumberData?.nextNumber || 1}
             isRegistering={createPatientMutation.isPending}
+            availableGroups={availableGroups}
           />
         </div>
 

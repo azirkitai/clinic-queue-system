@@ -373,6 +373,7 @@ export default function Dispensary() {
                 key={patient.id}
                 patient={patient as any}
                 onCall={handleCallPatient}
+                onCallFamily={undefined}
                 onCallAgain={handleCallAgain}
                 onRecall={handleRecall}
                 onDelete={handleDeletePatient}
@@ -408,6 +409,7 @@ export default function Dispensary() {
                 key={patient.id}
                 patient={patient as any}
                 onCall={handleCallPatient}
+                onCallFamily={undefined}
                 onCallAgain={handleCallAgain}
                 onRecall={handleRecall}
                 onDelete={handleDeletePatient}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { UserPlus, Star } from "lucide-react";
+import { UserPlus, Star, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,19 +7,34 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface PatientRegistrationProps {
-  onRegister: (patient: { name: string | null; number: number; type: "name" | "number"; isPriority?: boolean; priorityReason?: string; chiefComplaint?: string }) => void;
-  nextNumber: number;
-  isRegistering?: boolean;
+interface AvailableGroup {
+  id: string;
+  name: string;
+  leaderName: string | null;
+  leaderNumber: number;
 }
 
-export function PatientRegistration({ onRegister, nextNumber, isRegistering = false }: PatientRegistrationProps) {
+interface PatientRegistrationProps {
+  onRegister: (patient: { name: string | null; number: number; type: "name" | "number"; isPriority?: boolean; priorityReason?: string; chiefComplaint?: string; groupId?: string | null; groupName?: string | null; isGroupLeader?: boolean }) => void;
+  nextNumber: number;
+  isRegistering?: boolean;
+  availableGroups?: AvailableGroup[]; // Existing family groups to join
+}
+
+function generateUUID() {
+  return crypto.randomUUID();
+}
+
+export function PatientRegistration({ onRegister, nextNumber, isRegistering = false, availableGroups = [] }: PatientRegistrationProps) {
   const [patientName, setPatientName] = useState("");
   const [isPriority, setIsPriority] = useState(false);
   const [priorityReason, setPriorityReason] = useState("");
   const [chiefComplaint, setChiefComplaint] = useState("");
   const [consultationNo, setConsultationNo] = useState(nextNumber.toString());
+  const [selectedGroup, setSelectedGroup] = useState("none"); // "none" | "new" | groupId
+  const [newGroupName, setNewGroupName] = useState("");
 
   // Sync when nextNumber prop changes (e.g. after registration)
   useEffect(() => {
@@ -32,13 +47,33 @@ export function PatientRegistration({ onRegister, nextNumber, isRegistering = fa
 
     try {
       const parsedNumber = parseInt(consultationNo.trim(), 10);
+
+      // Family group logic
+      let groupId: string | null = null;
+      let groupName: string | null = null;
+      let isGroupLeader = false;
+
+      if (selectedGroup === "new") {
+        groupId = generateUUID();
+        groupName = newGroupName.trim() || "Family Group";
+        isGroupLeader = true;
+      } else if (selectedGroup !== "none") {
+        groupId = selectedGroup;
+        const group = availableGroups.find(g => g.id === selectedGroup);
+        groupName = group?.name || null;
+        isGroupLeader = false;
+      }
+
       const patientData = {
         name: patientName.trim() || null,
         number: isNaN(parsedNumber) || parsedNumber <= 0 ? nextNumber : parsedNumber,
         type: "name" as const,
         isPriority: isPriority,
         priorityReason: isPriority ? priorityReason.trim() : undefined,
-        chiefComplaint: chiefComplaint.trim() || undefined
+        chiefComplaint: chiefComplaint.trim() || undefined,
+        groupId,
+        groupName,
+        isGroupLeader
       };
 
       console.log("Registering patient:", patientData);
@@ -49,7 +84,9 @@ export function PatientRegistration({ onRegister, nextNumber, isRegistering = fa
       setIsPriority(false);
       setPriorityReason("");
       setChiefComplaint("");
-      
+      setSelectedGroup("none");
+      setNewGroupName("");
+
     } catch (error) {
       console.error("Registration failed:", error);
     }
@@ -117,6 +154,47 @@ export function PatientRegistration({ onRegister, nextNumber, isRegistering = fa
               </Label>
             </div>
           )}
+
+          {/* Family Group Dropdown */}
+          <div className="space-y-2">
+            <Label htmlFor="familyGroup" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Family Group
+            </Label>
+            <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+              <SelectTrigger id="familyGroup" data-testid="select-family-group">
+                <SelectValue placeholder="No group (individual)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No group (individual)</SelectItem>
+                <SelectItem value="new">+ Create new group</SelectItem>
+                {availableGroups.map((group) => (
+                  <SelectItem key={group.id} value={group.id}>
+                    {group.name} ({group.leaderName} #{group.leaderNumber.toString().padStart(3, '0')})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* New group name input */}
+            {selectedGroup === "new" && (
+              <div className="space-y-2 mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <Label htmlFor="newGroupName" className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  New Group Name
+                </Label>
+                <Input
+                  id="newGroupName"
+                  type="text"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value.toUpperCase())}
+                  placeholder="e.g., KELUARGA AHMAD"
+                  maxLength={50}
+                  data-testid="input-new-group-name"
+                  className="bg-white dark:bg-gray-800"
+                />
+              </div>
+            )}
+          </div>
 
           {/* Chief Complaint Input */}
           <div className="space-y-2">

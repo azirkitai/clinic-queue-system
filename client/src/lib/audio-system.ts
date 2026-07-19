@@ -49,6 +49,9 @@ export interface CallInfo {
   patientName?: string;
   patientNumber: number;
   windowName: string;
+  // Family/Batch group support
+  groupMembers?: Array<{ name: string; number: number }>;
+  groupName?: string;
 }
 
 export class AudioSystem {
@@ -347,22 +350,45 @@ export class AudioSystem {
   }
 
   private buildTtsText(callInfo: CallInfo, lang: 'ms-MY' | 'en-US'): string {
-    const name = getTtsName(callInfo.patientName, lang);
     const room = this.translateRoomName(callInfo.windowName || '', lang);
 
     let text: string;
-    if (lang === 'ms-MY') {
-      const parts: string[] = [];
-      if (name) parts.push(name);
-      if (room) parts.push(`sila ke ${room}`);
-      text = parts.join(', ');
+
+    // Family/Batch group: multiple names
+    if (callInfo.groupMembers && callInfo.groupMembers.length > 1) {
+      const names = callInfo.groupMembers.map(m => getTtsName(m.name, lang));
+      if (lang === 'ms-MY') {
+        const namesPart = names.length === 2
+          ? `${names[0]} dan ${names[1]}`
+          : names.length > 2
+            ? names.slice(0, -1).join(', ') + ` dan ${names[names.length - 1]}`
+            : names[0];
+        text = `${namesPart}, sila ke ${room}`;
+      } else {
+        const namesPart = names.length === 2
+          ? `${names[0]} and ${names[1]}`
+          : names.length > 2
+            ? names.slice(0, -1).join(', ') + ` and ${names[names.length - 1]}`
+            : names[0];
+        text = `${namesPart}, please proceed to ${room}`;
+      }
     } else {
-      const parts: string[] = [];
-      if (name) parts.push(name);
-      if (room) parts.push(`please proceed to ${room}`);
-      text = parts.join(', ');
+      // Single patient
+      const name = getTtsName(callInfo.patientName, lang);
+      if (lang === 'ms-MY') {
+        const parts: string[] = [];
+        if (name) parts.push(name);
+        if (room) parts.push(`sila ke ${room}`);
+        text = parts.join(', ');
+      } else {
+        const parts: string[] = [];
+        if (name) parts.push(name);
+        if (room) parts.push(`please proceed to ${room}`);
+        text = parts.join(', ');
+      }
     }
-    console.log(`[TTS] buildTtsText: raw="${callInfo.patientName}" → name="${name}" → text="${text}" | pronunciations loaded: ${this.currentPronunciations?.length || 0}`);
+
+    console.log(`[TTS] buildTtsText: raw="${callInfo.patientName}" groupMembers=${callInfo.groupMembers?.length || 0} → text="${text}" | pronunciations loaded: ${this.currentPronunciations?.length || 0}`);
     return this.applyPronunciations(text, lang);
   }
 

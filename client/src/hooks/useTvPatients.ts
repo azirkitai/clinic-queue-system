@@ -11,6 +11,9 @@ interface QueueItem {
   timestamp: Date;
   calledAt?: Date | null;
   requeueReason?: string | null;
+  // Family/Batch group fields
+  groupMembers?: Array<{ id: string; name: string | null; number: number }>;
+  groupName?: string | null;
 }
 
 interface CallLogEntry {
@@ -136,6 +139,8 @@ export function useTvPatients(): UseTvPatientsResult {
         timestamp: patient.calledAt ? new Date(patient.calledAt) : new Date(),
         calledAt: patient.calledAt ? new Date(patient.calledAt) : null,
         requeueReason: patient.requeueReason,
+        groupMembers: patient.groupMembers || undefined,
+        groupName: patient.groupName || undefined,
       };
     };
 

@@ -50,6 +50,9 @@ interface QueueItem {
   timestamp: Date;
   calledAt?: Date | null;
   requeueReason?: string | null;
+  // Family/Batch group fields
+  groupMembers?: Array<{ id: string; name: string | null; number: number }>;
+  groupName?: string | null;
 }
 
 interface PrayerTime {
@@ -1130,7 +1133,9 @@ export function TVDisplay({
         audioSystem.playCallingSequence({
           patientName: currentPatient.name,
           patientNumber: parseInt(currentPatient.number, 10),
-          windowName: currentPatient.room
+          windowName: currentPatient.room,
+          groupMembers: currentPatient.groupMembers,
+          groupName: currentPatient.groupName
         }, audioSettings).then(restoreAudio).catch(error => {
           console.error('Failed to play calling sound:', error);
           restoreAudio();
@@ -2042,13 +2047,21 @@ export function TVDisplay({
                }}>
             <div className="flex items-center justify-center flex-col w-full h-full"
                  style={{
-                   fontSize: calculateWrappedFontSize(
-                     getDisplayName(currentPatient.name),
-                     880,
-                     360,
-                     140,
-                     28
-                   ),
+                   fontSize: currentPatient.groupMembers && currentPatient.groupMembers.length > 1
+                     ? calculateWrappedFontSize(
+                         currentPatient.groupMembers.map((m: any) => getDisplayName(m.name)).join(' \u00b7 '),
+                         880,
+                         360,
+                         80,
+                         28
+                       )
+                     : calculateWrappedFontSize(
+                         getDisplayName(currentPatient.name),
+                         880,
+                         360,
+                         140,
+                         28
+                       ),
                    fontWeight: 900,
                    color: modalTextColor,
                    lineHeight: '1.15',
@@ -2059,7 +2072,18 @@ export function TVDisplay({
                    letterSpacing: '0.02em',
                    textAlign: 'center'
                  }} data-testid="highlight-patient-name">
-              {getDisplayName(currentPatient.name)}
+              {currentPatient.groupMembers && currentPatient.groupMembers.length > 1 ? (
+                <div className="flex flex-col items-center gap-2">
+                  {currentPatient.groupMembers.map((member: any, idx: number) => (
+                    <div key={idx}>
+                      {getDisplayName(member.name)}
+                      <span className="text-sm opacity-60 ml-2">#{member.number.toString().padStart(3, '0')}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                getDisplayName(currentPatient.name)
+              )}
             </div>
           </div>
         </div>

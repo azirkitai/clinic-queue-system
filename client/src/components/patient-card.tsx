@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Bell, Trash2, RotateCcw, CheckCircle, X, Volume2, PhoneCall, Clock, ChevronDown, ChevronUp, Star, Pill, Timer } from "lucide-react";
+import { Bell, Trash2, RotateCcw, CheckCircle, X, Volume2, PhoneCall, Clock, ChevronDown, ChevronUp, Star, Pill, Timer, Users } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { getDisplayName } from "@/lib/name-utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -32,12 +33,18 @@ interface Patient {
   calledAt?: Date | string | null;
   completedAt?: Date | string | null;
   requeueReason?: string | null;
+  // Family/Batch group fields
+  groupId?: string | null;
+  groupName?: string | null;
+  isGroupLeader?: boolean;
+  groupMembers?: Array<{ id: string; name: string | null; number: number }>;
 }
 
 interface PatientCardProps {
   patient: Patient;
   onCall: (patientId: string) => void;
   onCallAgain: (patientId: string) => void;
+  onCallFamily?: (patientId: string) => void; // Batch call family group
   onRecall: (patientId: string) => void;
   onDelete: (patientId: string) => void;
   onComplete: (patientId: string) => void;
@@ -57,6 +64,7 @@ export function PatientCard({
   onComplete,
   onDispense,
   onRequeue,
+  onCallFamily,
   disabled = false,
   selectedWindow,
   showDeleteButton = true // Default to true for backward compatibility
@@ -109,6 +117,13 @@ export function PatientCard({
   const handleCall = () => {
     console.log(`Calling patient ${patient.id}`);
     onCall(patient.id);
+  };
+
+  const handleCallFamily = () => {
+    console.log(`Calling family group for patient ${patient.id}`);
+    if (onCallFamily) {
+      onCallFamily(patient.id);
+    }
   };
 
   const handleCallAgain = () => {
@@ -289,7 +304,29 @@ export function PatientCard({
           </div>
         )}
       </CardHeader>
-      
+
+      {/* Group Members Badge */}
+      {patient.groupId && patient.groupMembers && patient.groupMembers.length > 0 && (
+        <div className="px-6 pb-2">
+          <div className="flex items-center gap-2 mb-1">
+            <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm text-blue-600 dark:text-blue-400 font-semibold">
+              Family Group: {patient.groupName}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            <Badge className="bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-900">
+              #{patient.number.toString().padStart(3, '0')} {getDisplayName(patient.name)}
+            </Badge>
+            {patient.groupMembers.map((member) => (
+              <Badge key={member.id} className="bg-blue-100/50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-900/50">
+                #{member.number.toString().padStart(3, '0')} {getDisplayName(member.name)}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
       <CardContent>
         {/* Enhanced Journey History - Timeline View */}
         <div className="mb-4 space-y-2">
@@ -397,16 +434,29 @@ export function PatientCard({
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2">
           {(patient.status === "waiting" || patient.readyForDispensary) && (
-            <Button
-              onClick={handleCall}
-              disabled={shouldDisableButtons}
-              size="sm"
-              className="flex-1"
-              data-testid={`button-call-${patient.id}`}
-            >
-              <Bell className="h-4 w-4 mr-1" />
-              Call
-            </Button>
+            patient.isGroupLeader && patient.groupId && patient.groupMembers && patient.groupMembers.length > 0 ? (
+              <Button
+                onClick={handleCallFamily}
+                disabled={shouldDisableButtons}
+                size="sm"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
+                data-testid={`button-call-family-${patient.id}`}
+              >
+                <Users className="h-4 w-4 mr-1" />
+                Call Family
+              </Button>
+            ) : (
+              <Button
+                onClick={handleCall}
+                disabled={shouldDisableButtons}
+                size="sm"
+                className="flex-1"
+                data-testid={`button-call-${patient.id}`}
+              >
+                <Bell className="h-4 w-4 mr-1" />
+                Call
+              </Button>
+            )
           )}
 
           {patient.status === "requeue" && (

@@ -27,6 +27,11 @@ interface QueuePatient extends Omit<Patient, 'status' | 'trackingHistory' | 'win
   lastWindowName?: string;
   chiefComplaint?: string | null;
   trackingHistory?: any[];
+  // Family/Batch group fields
+  groupId?: string | null;
+  groupName?: string | null;
+  isGroupLeader?: boolean;
+  groupMembers?: Array<{ id: string; name: string | null; number: number }>;
 }
 
 export default function Queue() {
@@ -226,7 +231,11 @@ export default function Queue() {
       windowName: patient.windowId ? windows.find(w => w.id === patient.windowId)?.name : undefined,
       lastWindowId: patient.lastWindowId || undefined,
       lastWindowName: patient.lastWindowId ? windows.find(w => w.id === patient.lastWindowId)?.name : undefined,
-      trackingHistory: Array.isArray(patient.trackingHistory) ? patient.trackingHistory : undefined
+      trackingHistory: Array.isArray(patient.trackingHistory) ? patient.trackingHistory : undefined,
+      groupId: patient.groupId || null,
+      groupName: patient.groupName || null,
+      isGroupLeader: patient.isGroupLeader,
+      groupMembers: patient.groupMembers
     }));
   }, [patients, windows]);
 
@@ -267,6 +276,52 @@ export default function Queue() {
     });
 
     // Audio will be played by TV Display only (not from Queue page)
+  };
+
+  // Family/Batch group call - calls all members of the group to the same room
+  const handleCallFamily = async (patientId: string) => {
+    if (!selectedWindow) {
+      toast({
+        title: "Error",
+        description: "Please select room first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const window = windows.find(w => w.id === selectedWindow);
+    if (!window) return;
+
+    if (window.currentPatientId && window.currentPatientId !== patientId) {
+      toast({
+        title: "Error",
+        description: "This room is serving another patient",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Call the group via API
+    try {
+      const response = await apiRequest("POST", "/api/patients/call-group", {
+        groupLeaderId: patientId,
+        windowId: selectedWindow
+      });
+      if (!response.ok) {
+        throw new Error("Failed to call family group");
+      }
+      toast({
+        title: "Success",
+        description: "Family group called successfully",
+      });
+    } catch (error) {
+      console.error("Family call failed:", error);
+      toast({
+        title: "Error",
+        description: "Failed to call family group",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCallAgain = (patientId: string) => {
@@ -476,6 +531,7 @@ export default function Queue() {
                 key={patient.id}
                 patient={patient}
                 onCall={handleCallPatient}
+                onCallFamily={handleCallFamily}
                 onCallAgain={handleCallAgain}
                 onRecall={handleRecall}
                 onDelete={handleDeletePatient}
@@ -503,6 +559,7 @@ export default function Queue() {
                 key={patient.id}
                 patient={patient}
                 onCall={handleCallPatient}
+                onCallFamily={handleCallFamily}
                 onCallAgain={handleCallAgain}
                 onRecall={handleRecall}
                 onDelete={handleDeletePatient}
@@ -538,6 +595,7 @@ export default function Queue() {
                 key={patient.id}
                 patient={patient}
                 onCall={handleCallPatient}
+                onCallFamily={handleCallFamily}
                 onCallAgain={handleCallAgain}
                 onRecall={handleRecall}
                 onDelete={handleDeletePatient}

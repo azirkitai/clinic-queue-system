@@ -63,6 +63,10 @@ export const patients = pgTable("patients", {
   requeueReason: text("requeue_reason"), // Reason for requeue: NEBULISER, AMBIL UBATAN, MENUNGGU KEPUTUSAN UJIAN, MGTT
   trackingHistory: json("tracking_history").default(sql`'[]'::json`), // JSON array of journey events: {timestamp, action, roomName?, requeueReason?}
   archivedAt: timestamp("archived_at"), // Soft delete timestamp for queue reset (24-hour clinics)
+  // Family/batch group support - link multiple patients called together
+  groupId: varchar("group_id"), // Nullable - links patients in same family/group
+  groupName: text("group_name"), // Display name for the group (e.g., "KELUARGA AHMAD")
+  isGroupLeader: boolean("is_group_leader").notNull().default(false), // True for first patient in group (controls group display)
   // Account isolation
   userId: varchar("user_id").notNull(),
 });
@@ -164,11 +168,30 @@ export const insertPatientSchema = createInsertSchema(patients).pick({
   priorityReason: true,
   chiefComplaint: true,
   userId: true,
+  groupId: true,
+  groupName: true,
+  isGroupLeader: true,
 }).extend({
   name: z.string().nullable().refine(
     (val) => !val || val.length <= 100,
     { message: "Nama pesakit tidak boleh melebihi 100 karakter" }
-  )
+  ),
+  number: z.number().int().positive().optional(),
+  groupId: z.string().uuid().nullable().optional(),
+  groupName: z.string().max(50).nullable().optional(),
+  isGroupLeader: z.boolean().optional(),
+});
+
+// Family group link schema (for adding a patient to an existing group)
+export const linkPatientGroupSchema = z.object({
+  groupId: z.string().min(1, "Group ID is required"),
+  groupName: z.string().min(1, "Group name is required"),
+});
+
+// Family group call schema
+export const callPatientGroupSchema = z.object({
+  groupId: z.string().min(1, "Group ID is required"),
+  windowId: z.string().min(1, "Window ID is required"),
 });
 
 export const insertSettingSchema = createInsertSchema(settings).pick({
@@ -297,4 +320,9 @@ export type TvQueueItem = {
   calledAt: string | null;
   requeueReason: string | null;
   callHistory: Array<{ room: string; calledAt: string }> | null;
+  // Family/Batch group fields
+  groupId: string | null;
+  groupName: string | null;
+  isGroupLeader: boolean;
+  groupMembers: Array<{ id: string; name: string | null; number: number }> | null;
 };
