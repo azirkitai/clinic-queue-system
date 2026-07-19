@@ -17,6 +17,9 @@ interface QueueItem {
   timestamp: Date;
   calledAt?: Date | null;
   requeueReason?: string | null;
+  // Family/Batch group fields
+  groupMembers?: Array<{ id: string; name: string | null; number: number }>;
+  groupName?: string | null;
 }
 
 interface TvStandaloneProps {
@@ -127,12 +130,11 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('[TV-WS] Connected:', socket.id);
       socket.emit('tv:join', { token });
     });
 
     socket.on('tv:joined', (data) => {
-      console.log('[TV-WS] Joined clinic room:', data);
+      // TV joined clinic room
     });
 
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -174,8 +176,8 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
       queryClient.invalidateQueries({ queryKey: [`/api/tv/${token}/patients`] });
     });
 
-    socket.on('disconnect', (reason) => {
-      console.log('[TV-WS] Disconnected:', reason);
+    socket.on('disconnect', () => {
+      // TV disconnected
     });
 
     return () => {
@@ -307,6 +309,28 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
         });
       const p = calledPatients[0];
       if (!p) return null;
+
+      // TV batch detection: only show groupMembers if ALL members are called to the SAME room
+      // AND within 30 seconds of each other (true batch call). Otherwise show single name only.
+      const tvGroupMembers = (() => {
+        if (!p.groupId || !p.windowId || !p.groupMembers) return undefined;
+        const sameRoomMembers = p.groupMembers.filter(m => {
+          const member = tvPatients.find(pt => pt.id === m.id);
+          return member && member.status === "called" && member.windowId === p.windowId;
+        });
+        if (sameRoomMembers.length <= 1) return undefined;
+        const calledAts = sameRoomMembers
+          .map(m => {
+            const member = tvPatients.find(pt => pt.id === m.id);
+            return member?.calledAt;
+          })
+          .filter(Boolean) as string[];
+        if (calledAts.length <= 1) return undefined;
+        const timestamps = calledAts.map(t => new Date(t).getTime()).sort((a, b) => a - b);
+        const maxDiff = timestamps[timestamps.length - 1] - timestamps[0];
+        return maxDiff <= 30000 ? sameRoomMembers : undefined;
+      })();
+
       return {
         id: p.id,
         name: p.name || `No. ${p.number}`,
@@ -316,6 +340,8 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
         timestamp: p.calledAt ? new Date(p.calledAt) : new Date(),
         calledAt: p.calledAt ? new Date(p.calledAt) : null,
         requeueReason: p.requeueReason,
+        groupMembers: tvGroupMembers,
+        groupName: p.groupName ?? undefined,
       };
     })();
 

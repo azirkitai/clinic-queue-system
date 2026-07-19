@@ -131,7 +131,7 @@ export function useTvPatients(): UseTvPatientsResult {
       }
 
       // TV batch detection: only show groupMembers if ALL members are called to the SAME room
-      // (true batch call). Otherwise show single name only.
+      // AND within 30 seconds of each other (true batch call). Otherwise show single name only.
       const tvGroupMembers = (() => {
         if (!patient.groupId || !patient.windowId || !patient.groupMembers) return undefined;
         // Find all group members that are ALSO called to the same window
@@ -139,8 +139,23 @@ export function useTvPatients(): UseTvPatientsResult {
           const member = allPatients.find(p => p.id === m.id);
           return member && member.status === "called" && member.windowId === patient.windowId;
         });
-        // Show batch only if more than 1 member (including self) are in the same room
-        return sameRoomMembers.length > 1 ? sameRoomMembers : undefined;
+        if (sameRoomMembers.length <= 1) return undefined;
+
+        // Batch call detection: all members must have been called within 30 seconds
+        // This distinguishes true batch calls from independent single calls to the same room
+        const calledAts = sameRoomMembers
+          .map(m => {
+            const member = allPatients.find(p => p.id === m.id);
+            return member?.calledAt;
+          })
+          .filter(Boolean) as string[];
+        if (calledAts.length <= 1) return undefined;
+
+        const timestamps = calledAts.map(t => new Date(t).getTime()).sort((a, b) => a - b);
+        const maxDiff = timestamps[timestamps.length - 1] - timestamps[0];
+
+        // Only show as batch if all members called within 30 seconds
+        return maxDiff <= 30000 ? sameRoomMembers : undefined;
       })();
 
       return {

@@ -522,12 +522,32 @@ export class MemStorage implements IStorage {
         const callHistory = history
           .filter((e: any, idx: number) => e.action === 'called' && e.roomName && e.timestamp && (dispensaryIdx === -1 || idx < dispensaryIdx))
           .map((e: any) => ({ room: e.roomName, calledAt: e.timestamp }));
-        // Find ALL group members (including self) for TV display
-        const groupMembers = p.groupId
-          ? Array.from(this.patients.values())
-              .filter(gp => gp.groupId === p.groupId)
-              .map(gp => ({ id: gp.id, name: gp.name, number: gp.number }))
-          : null;
+        // Find group members for TV display - only include those called to the same room
+        // within a 30-second batch window. This distinguishes true batch calls from
+        // independent single calls of family members.
+        let groupMembers: Array<{ id: string; name: string | null; number: number }> | null = null;
+        if (p.groupId && p.windowId && p.calledAt) {
+          const sameRoomGroupMembers = Array.from(this.patients.values())
+            .filter(gp =>
+              gp.groupId === p.groupId &&
+              gp.status === 'called' &&
+              gp.windowId === p.windowId &&
+              gp.calledAt
+            );
+          if (sameRoomGroupMembers.length > 1) {
+            const calledAts = sameRoomGroupMembers
+              .map(gp => gp.calledAt!.getTime())
+              .sort((a, b) => a - b);
+            const maxDiff = calledAts[calledAts.length - 1] - calledAts[0];
+            if (maxDiff <= 30000) {
+              groupMembers = sameRoomGroupMembers.map(gp => ({
+                id: gp.id,
+                name: gp.name,
+                number: gp.number
+              }));
+            }
+          }
+        }
 
         return {
           id: p.id,
@@ -2313,32 +2333,14 @@ export class DatabaseStorage implements IStorage {
     
     const validStatuses = new Set(["waiting", "called", "in-progress", "completed", "requeue", "dispensary"]);
     
-    // Collect unique groupIds for batch member lookup
-    const uniqueGroupIds = [...new Set(results.map(r => r.groupId).filter((g): g is string => !!g))];
-
-    // Fetch all group members in a single query (if any groups exist)
-    let groupMembersMap = new Map<string, Array<{ id: string; name: string | null; number: number }>>();
-    if (uniqueGroupIds.length > 0) {
-      const allGroupMembers = await db
-        .select({
-          id: schema.patients.id,
-          name: schema.patients.name,
-          number: schema.patients.number,
-          groupId: schema.patients.groupId,
-        })
-        .from(schema.patients)
-        .where(
-          and(
-            eq(schema.patients.userId, userId),
-            inArray(schema.patients.groupId, uniqueGroupIds)
-          )
-        );
-
-      for (const member of allGroupMembers) {
-        if (!member.groupId) continue;
-        const existing = groupMembersMap.get(member.groupId) || [];
-        existing.push({ id: member.id, name: member.name, number: member.number });
-        groupMembersMap.set(member.groupId, existing);
+    // Pre-compute in-memory group lookup from already-fetched results
+    // for efficient 30-second batch detection without extra DB queries.
+    const groupPatientsByGroupId = new Map<string, typeof results>();
+    for (const r of results) {
+      if (r.groupId) {
+        const existing = groupPatientsByGroupId.get(r.groupId) || [];
+        existing.push(r);
+        groupPatientsByGroupId.set(r.groupId, existing);
       }
     }
 
@@ -2351,10 +2353,26 @@ export class DatabaseStorage implements IStorage {
           .filter((e: any, idx: number) => e.action === 'called' && e.roomName && e.timestamp && (dispensaryIdx === -1 || idx < dispensaryIdx))
           .map((e: any) => ({ room: e.roomName, calledAt: e.timestamp }));
 
-        const allMembers = r.groupId ? groupMembersMap.get(r.groupId) : null;
-        // Include ALL group members (including self) so TV display always has complete list
-        // regardless of which patient happens to be the "current" called patient
-        const groupMembers = allMembers && allMembers.length > 1 ? allMembers : null;
+        // TV batch detection: only include groupMembers if ALL members are called
+        // to the SAME room within 30 seconds of each other (true batch call).
+        let groupMembers: Array<{ id: string; name: string | null; number: number }> | null = null;
+        if (r.groupId && r.windowId && r.calledAt) {
+          const sameRoomMembers = (groupPatientsByGroupId.get(r.groupId) || [])
+            .filter(m => m.status === 'called' && m.windowId === r.windowId && m.calledAt);
+          if (sameRoomMembers.length > 1) {
+            const calledAts = sameRoomMembers
+              .map(m => m.calledAt!.getTime())
+              .sort((a, b) => a - b);
+            const maxDiff = calledAts[calledAts.length - 1] - calledAts[0];
+            if (maxDiff <= 30000) {
+              groupMembers = sameRoomMembers.map(m => ({
+                id: m.id,
+                name: m.name,
+                number: m.number
+              }));
+            }
+          }
+        }
 
         return {
           id: r.id,
