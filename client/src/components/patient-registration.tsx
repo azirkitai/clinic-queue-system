@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { UserPlus, Star, Users } from "lucide-react";
+import { UserPlus, Star, Users, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ function generateUUID() {
 }
 
 export function PatientRegistration({ onRegister, nextNumber, isRegistering = false, availableGroups = [] }: PatientRegistrationProps) {
+  const { toast } = useToast();
   const [patientName, setPatientName] = useState("");
   const [isPriority, setIsPriority] = useState(false);
   const [priorityReason, setPriorityReason] = useState("");
@@ -44,6 +46,16 @@ export function PatientRegistration({ onRegister, nextNumber, isRegistering = fa
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isRegistering) return;
+
+    // Validate required chief complaint field
+    if (!chiefComplaint.trim()) {
+      toast({
+        title: "Chief Complaint Required",
+        description: "Please enter a chief complaint before registering the patient.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       const parsedNumber = parseInt(consultationNo.trim(), 10);
