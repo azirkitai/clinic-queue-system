@@ -395,8 +395,14 @@
   }
 
   @keyframes card-blink-alert {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.7); border-color: rgba(239, 68, 68, 0.8) !important; }
-    50% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0); border-color: rgba(239, 68, 68, 0.2) !important; }
+    0%, 100% { 
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.8), 0 0 20px 4px rgba(239, 68, 68, 0.15) inset; 
+      border-color: rgba(239, 68, 68, 0.9) !important;
+    }
+    50% { 
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0), 0 0 20px 4px rgba(239, 68, 68,0) inset; 
+      border-color: rgba(239, 68, 68, 0.3) !important;
+    }
   }
 
   .animate-card-blink {
