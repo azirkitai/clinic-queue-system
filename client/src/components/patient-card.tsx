@@ -441,21 +441,11 @@ export function PatientCard({
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2">
+          {/* WAITING STATUS: Family group = Call Family ONLY (single call hidden until called) */}
           {(patient.status === "waiting" || patient.readyForDispensary) && (
             patient.isGroupLeader && patient.groupId && patient.groupMembers && patient.groupMembers.length > 0 ? (
               <>
-                {/* Single call for the leader itself */}
-                <Button
-                  onClick={handleCall}
-                  disabled={shouldDisableButtons}
-                  size="sm"
-                  className="flex-1"
-                  data-testid={`button-call-${patient.id}`}
-                >
-                  <Bell className="h-4 w-4 mr-1" />
-                  Call
-                </Button>
-                {/* Batch call for entire family */}
+                {/* Batch call for entire family — ONLY option before first call */}
                 <Button
                   onClick={handleCallFamily}
                   disabled={shouldDisableButtons}
