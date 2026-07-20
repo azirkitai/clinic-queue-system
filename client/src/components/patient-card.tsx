@@ -285,8 +285,8 @@ export function PatientCard({
 
         {/* 4) Chief Complaint */}
         {patient.chiefComplaint && (
-          <div className="flex items-center gap-2">
-            <Badge className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-900" data-testid={`badge-chief-complaint-${patient.id}`}>
+          <div className="flex items-start gap-2">
+            <Badge className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-900 whitespace-normal break-words max-w-full" data-testid={`badge-chief-complaint-${patient.id}`}>
               <span className="font-semibold">Reason:</span> {patient.chiefComplaint}
             </Badge>
           </div>
@@ -294,9 +294,9 @@ export function PatientCard({
 
         {/* Priority Reason */}
         {patient.isPriority && patient.priorityReason && (
-          <div className="flex items-center gap-2">
-            <Badge className="bg-red-100 text-red-800 border-red-300 dark:bg-red-950 dark:text-red-400 dark:border-red-900" data-testid={`badge-priority-reason-${patient.id}`}>
-              <Star className="h-3 w-3 mr-1 fill-red-600 text-red-600 dark:fill-red-500 dark:text-red-500" />
+          <div className="flex items-start gap-2">
+            <Badge className="bg-red-100 text-red-800 border-red-300 dark:bg-red-950 dark:text-red-400 dark:border-red-900 whitespace-normal break-words max-w-full" data-testid={`badge-priority-reason-${patient.id}`}>
+              <Star className="h-3 w-3 mr-1 fill-red-600 text-red-600 dark:fill-red-500 dark:text-red-500 flex-shrink-0" />
               Priority: {patient.priorityReason}
             </Badge>
           </div>
