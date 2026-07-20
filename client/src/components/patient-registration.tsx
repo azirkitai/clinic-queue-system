@@ -198,7 +198,9 @@ export function PatientRegistration({ onRegister, nextNumber, isRegistering = fa
 
           {/* Chief Complaint Input */}
           <div className="space-y-2">
-            <Label htmlFor="chiefComplaint">Chief Complaint</Label>
+            <Label htmlFor="chiefComplaint">
+              Chief Complaint <span className="text-red-500">*</span>
+            </Label>
             <Textarea
               id="chiefComplaint"
               value={chiefComplaint}
@@ -206,6 +208,7 @@ export function PatientRegistration({ onRegister, nextNumber, isRegistering = fa
               placeholder="Enter chief complaint (e.g., DEMAM, BATUK, SAKIT PERUT, UBATAN)"
               maxLength={100}
               rows={2}
+              required
               data-testid="input-chief-complaint"
             />
           </div>
@@ -229,7 +232,7 @@ export function PatientRegistration({ onRegister, nextNumber, isRegistering = fa
           {/* Submit Button */}
           <Button
             type="submit"
-            disabled={isRegistering || !patientName.trim() || (isPriority && !priorityReason.trim())}
+            disabled={isRegistering || !patientName.trim() || !chiefComplaint.trim() || (isPriority && !priorityReason.trim())}
             className="w-full"
             data-testid="button-register-patient"
           >
