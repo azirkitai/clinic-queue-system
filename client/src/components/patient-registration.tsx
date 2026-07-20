@@ -244,7 +244,7 @@ export function PatientRegistration({ onRegister, nextNumber, isRegistering = fa
           {/* Submit Button */}
           <Button
             type="submit"
-            disabled={isRegistering || !patientName.trim() || !chiefComplaint.trim() || (isPriority && !priorityReason.trim())}
+            disabled={isRegistering || !patientName.trim() || (isPriority && !priorityReason.trim())}
             className="w-full"
             data-testid="button-register-patient"
           >
