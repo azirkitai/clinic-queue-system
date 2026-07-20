@@ -459,8 +459,8 @@ export default function Queue() {
     // Play sound only when count INCREASES (new patient added)
     // Skip on first mount (prev count = 0, initial data)
     if (prevWaitingCountRef.current > 0 && currentCount > prevWaitingCountRef.current) {
-      // Play simple synthesized beep notification (non-blocking)
-      audioSystem.playSimpleBeep(40).catch(() => {
+      // Play alert chime notification (non-blocking)
+      audioSystem.playAlertChime(60).catch(() => {
         // Silently ignore audio errors (e.g., browser autoplay policy)
       });
     }

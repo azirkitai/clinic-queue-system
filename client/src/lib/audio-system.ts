@@ -118,10 +118,10 @@ export class AudioSystem {
   }
 
   /**
-   * Play a simple synthesized beep tone using Web Audio API.
-   * This is a lightweight, reliable beep that doesn't require loading audio files.
+   * Play an alert chime sound using Web Audio API.
+   * Two-tone "ding-dong" pattern - attention-grabbing but not harsh.
    */
-  public async playSimpleBeep(volume: number = 40): Promise<void> {
+  public async playAlertChime(volume: number = 60): Promise<void> {
     try {
       const audioContext = this.getAudioContext();
 
@@ -130,28 +130,39 @@ export class AudioSystem {
         await audioContext.resume();
       }
 
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5 note
-      oscillator.frequency.exponentialRampToValueAtTime(440, audioContext.currentTime + 0.1); // Drop to A4
-
+      const now = audioContext.currentTime;
       const vol = Math.max(0, Math.min(1, volume / 100));
-      gainNode.gain.setValueAtTime(vol, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.15);
 
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      // First tone - higher pitch "ding" (E6)
+      const osc1 = audioContext.createOscillator();
+      const gain1 = audioContext.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(1318.51, now); // E6
+      gain1.gain.setValueAtTime(vol, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+      osc1.connect(gain1);
+      gain1.connect(audioContext.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.3);
 
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.15);
+      // Second tone - lower pitch "dong" (C6) after a brief pause
+      const osc2 = audioContext.createOscillator();
+      const gain2 = audioContext.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(1046.50, now + 0.25); // C6
+      gain2.gain.setValueAtTime(vol, now + 0.25);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+      osc2.connect(gain2);
+      gain2.connect(audioContext.destination);
+      osc2.start(now + 0.25);
+      osc2.stop(now + 0.55);
 
+      // Wait for both tones to finish
       return new Promise((resolve) => {
-        oscillator.onended = () => resolve();
+        osc2.onended = () => resolve();
       });
     } catch (error) {
-      console.error('Error playing simple beep:', error);
+      console.error('Error playing alert chime:', error);
       throw error;
     }
   }
