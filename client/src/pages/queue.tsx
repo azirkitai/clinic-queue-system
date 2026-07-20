@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { PatientCard } from "@/components/patient-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -451,6 +451,26 @@ export default function Queue() {
     p.windowName !== "DISPENSARY" &&
     !p.readyForDispensary
   );
+
+  // Notification sound when new patients enter the waiting queue
+  const prevWaitingCountRef = useRef(0);
+  useEffect(() => {
+    const currentCount = waitingPatients.length + priorityPatients.length;
+    // Play sound only when count INCREASES (new patient added)
+    // Skip on first mount (prev count = 0, initial data)
+    if (prevWaitingCountRef.current > 0 && currentCount > prevWaitingCountRef.current) {
+      // Play short notification sound (non-blocking)
+      audioSystem.playNotificationSound({
+        enableSound: true,
+        volume: 50,
+        soundMode: 'preset',
+        presetKey: 'happy_bells_937',
+      }).catch(() => {
+        // Silently ignore audio errors (e.g., browser autoplay policy)
+      });
+    }
+    prevWaitingCountRef.current = currentCount;
+  }, [waitingPatients.length, priorityPatients.length]);
 
   return (
     <div className="p-6 space-y-6">
