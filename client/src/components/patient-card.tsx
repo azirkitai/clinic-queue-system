@@ -229,8 +229,11 @@ export function PatientCard({
     }
   };
 
+  // Determine if this waiting patient has been waiting too long (>30 min)
+  const isLongWait = patient.status === "waiting" && getWaitingMinutes() > 30;
+
   return (
-    <Card className="w-full hover-elevate">
+    <Card className={`w-full hover-elevate ${isLongWait ? 'animate-card-blink border-red-500' : ''}`}>
       <CardHeader className="pb-3 space-y-2">
         {/* 1) Cons. No + Status Badge */}
         <div className="flex items-center justify-between">
