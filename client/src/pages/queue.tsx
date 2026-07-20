@@ -459,13 +459,8 @@ export default function Queue() {
     // Play sound only when count INCREASES (new patient added)
     // Skip on first mount (prev count = 0, initial data)
     if (prevWaitingCountRef.current > 0 && currentCount > prevWaitingCountRef.current) {
-      // Play short notification sound (non-blocking)
-      audioSystem.playNotificationSound({
-        enableSound: true,
-        volume: 50,
-        soundMode: 'preset',
-        presetKey: 'happy_bells_937',
-      }).catch(() => {
+      // Play simple synthesized beep notification (non-blocking)
+      audioSystem.playSimpleBeep(40).catch(() => {
         // Silently ignore audio errors (e.g., browser autoplay policy)
       });
     }

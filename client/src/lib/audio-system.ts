@@ -117,6 +117,45 @@ export class AudioSystem {
     return this.audioContext;
   }
 
+  /**
+   * Play a simple synthesized beep tone using Web Audio API.
+   * This is a lightweight, reliable beep that doesn't require loading audio files.
+   */
+  public async playSimpleBeep(volume: number = 40): Promise<void> {
+    try {
+      const audioContext = this.getAudioContext();
+
+      // Resume AudioContext if suspended (autoplay policy)
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5 note
+      oscillator.frequency.exponentialRampToValueAtTime(440, audioContext.currentTime + 0.1); // Drop to A4
+
+      const vol = Math.max(0, Math.min(1, volume / 100));
+      gainNode.gain.setValueAtTime(vol, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.15);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.15);
+
+      return new Promise((resolve) => {
+        oscillator.onended = () => resolve();
+      });
+    } catch (error) {
+      console.error('Error playing simple beep:', error);
+      throw error;
+    }
+  }
+
   // Load and cache audio file
   private async loadAudioFile(url: string): Promise<AudioBuffer> {
     // Check cache first
