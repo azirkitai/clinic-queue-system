@@ -210,8 +210,8 @@ export default function Dispensary() {
       ((p.status === 'called' || p.status === 'in-progress') && dispensaryWindow && p.windowId === dispensaryWindow.id)
     )
   );
-  const priorityDispensary = dispensaryPatients.filter(p => p.isPriority);
-  const normalDispensary = dispensaryPatients.filter(p => !p.isPriority);
+  const priorityDispensary = dispensaryPatients.filter(p => p.isPriority).sort((a, b) => a.number - b.number);
+  const normalDispensary = dispensaryPatients.filter(p => !p.isPriority).sort((a, b) => a.number - b.number);
 
   // Handle call patient to dispensary
   const handleCallPatient = async (patientId: string) => {
