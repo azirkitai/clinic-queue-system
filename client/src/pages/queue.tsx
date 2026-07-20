@@ -443,8 +443,8 @@ export default function Queue() {
     (p.status === "waiting" || p.status === "requeue") && 
     !p.readyForDispensary
   );
-  const priorityPatients = allWaitingPatients.filter(p => p.isPriority).sort((a, b) => a.number - b.number);
-  const waitingPatients = allWaitingPatients.filter(p => !p.isPriority).sort((a, b) => a.number - b.number);
+  const priorityPatients = allWaitingPatients.filter(p => p.isPriority).sort((a, b) => new Date(a.registeredAt).getTime() - new Date(b.registeredAt).getTime());
+  const waitingPatients = allWaitingPatients.filter(p => !p.isPriority).sort((a, b) => new Date(a.registeredAt).getTime() - new Date(b.registeredAt).getTime());
   // Exclude dispensary patients from Queue page - they appear only in Dispensary page
   const activePatients = enhancedPatients.filter(p => 
     (p.status === "called" || p.status === "in-progress") && 
