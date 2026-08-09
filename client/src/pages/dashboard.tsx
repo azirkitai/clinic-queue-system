@@ -35,8 +35,10 @@ export default function Dashboard() {
   const [fullscreen, setFullscreen] = useState(false);
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
   const [showExitButton, setShowExitButton] = useState(false);
+  const [tvPreviewScale, setTvPreviewScale] = useState(1);
   const { theme, setTheme } = useTheme();
   const prevThemeRef = useRef<string | null>(null);
+  const tvPreviewFrameRef = useRef<HTMLDivElement>(null);
   
   // WebSocket connection for real-time updates
   const { connected: wsConnected } = useWebSocket({
@@ -129,6 +131,34 @@ export default function Dashboard() {
       // Show prompt to enter fullscreen
       setShowFullscreenPrompt(true);
     }
+  }, []);
+
+  // Keep the dashboard preview as a true 1920×1080 TV stage, scaled to the
+  // available 16:9 frame instead of relying on a fixed percentage scale.
+  useEffect(() => {
+    const frame = tvPreviewFrameRef.current;
+    if (!frame) return;
+
+    const updatePreviewScale = () => {
+      const width = frame.clientWidth;
+      if (width > 0) {
+        setTvPreviewScale(width / 1920);
+      }
+    };
+
+    updatePreviewScale();
+    let observer: ResizeObserver | null = null;
+    try {
+      observer = new ResizeObserver(updatePreviewScale);
+      observer.observe(frame);
+    } catch {
+      window.addEventListener('resize', updatePreviewScale);
+    }
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', updatePreviewScale);
+    };
   }, []);
 
   // Handle fullscreen prompt click (from QR auth)
@@ -448,8 +478,21 @@ export default function Dashboard() {
           <CardTitle>TV Display Preview</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden max-w-2xl mx-auto ring-1 ring-border" style={{ aspectRatio: '16/9' }}>
-            <div className="h-full scale-[0.42] origin-top-left" style={{ width: '238%', height: '238%' }}>
+          <div
+            ref={tvPreviewFrameRef}
+            className="relative bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden max-w-2xl mx-auto ring-1 ring-border"
+            style={{ aspectRatio: '16 / 9' }}
+            data-testid="tv-preview-frame"
+          >
+            <div
+              className="absolute left-0 top-0 origin-top-left overflow-hidden"
+              style={{
+                width: '1920px',
+                height: '1080px',
+                transform: `scale(${tvPreviewScale})`,
+              }}
+              data-testid="tv-preview-stage"
+            >
               <TVDisplay
                 currentPatient={currentPatient || undefined}
                 queueWaiting={queueWaiting.slice(0, 4)}
@@ -463,6 +506,7 @@ export default function Dashboard() {
                 showPrayerTimes={showPrayerTimes}
                 showWeather={showWeather}
                 disableAudio={true}
+                previewMode={true}
               />
             </div>
           </div>

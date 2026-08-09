@@ -110,6 +110,7 @@ interface TVDisplayProps {
   mediaItems?: MediaItem[];
   prayerTimes?: PrayerTime[];
   isFullscreen?: boolean;
+  previewMode?: boolean;
   showPrayerTimes?: boolean;
   showWeather?: boolean;
   disableAudio?: boolean; // Mute audio for preview mode
@@ -367,11 +368,13 @@ export function TVDisplay({
   mediaItems = [],
   prayerTimes = [],
   isFullscreen = false,
+  previewMode = false,
   showPrayerTimes = false,
   showWeather = false,
   disableAudio = false,
   tvToken
 }: TVDisplayProps) {
+  const isStageMode = isFullscreen || previewMode;
   
   const stageRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
@@ -1176,7 +1179,7 @@ export function TVDisplay({
     if (currentPatient) {
       // Box calling display: text auto-resize, maintain box size, wrap at spaces only
       // Right panel is 500px in fullscreen; subtract mx-4 (32px) + px-1 (8px) = ~460px inner
-      const isFullSize = isFullscreen;
+       const isFullSize = isStageMode;
       const nameContainerWidth = isFullSize ? 460 : 340;
       const roomContainerWidth = isFullSize ? 460 : 340;
 
@@ -1196,7 +1199,7 @@ export function TVDisplay({
       setPatientNameFontSize(newNameSize);
       setRoomNameFontSize(newRoomSize);
     }
-  }, [currentPatient?.name, currentPatient?.room, isFullscreen]);
+  }, [currentPatient?.name, currentPatient?.room, isStageMode]);
 
   // Auto-resize text effect for history items
   useEffect(() => {
@@ -1204,7 +1207,7 @@ export function TVDisplay({
       const newHistoryFontSizes: Record<string, {name: string, room: string}> = {};
       
       // Calculate container widths for history items (bigger containers for bigger text)
-      const isFullSize = isFullscreen;
+       const isFullSize = isStageMode;
       const historyNameContainerWidth = isFullSize ? 450 : 350; // Bigger name column width
       const historyRoomContainerWidth = isFullSize ? 300 : 250; // Bigger room column width
       
@@ -1224,7 +1227,7 @@ export function TVDisplay({
       
       setHistoryFontSizes(newHistoryFontSizes);
     }
-  }, [queueHistory, isFullscreen]);
+  }, [queueHistory, isStageMode]);
 
   const youtubeAudioItemEarly = mediaItems.find(m => m.type === 'youtube-audio');
   const visibleMediaItems = mediaItems.filter(m => m.type !== 'youtube-audio');
@@ -1651,6 +1654,21 @@ export function TVDisplay({
     colorScheme: 'light',
     color: '#111827',
     ...getBackgroundStyle(headerBackgroundMode, headerBackgroundColor, headerBackgroundGradient, '#ffffff')
+  } : previewMode ? {
+    width: '1920px',
+    height: '1080px',
+    display: 'grid',
+    gridTemplateRows: '870px 210px',
+    gridTemplateColumns: '1420px 500px',
+    gap: 0,
+    padding: 0,
+    boxSizing: 'border-box' as const,
+    minWidth: 0,
+    minHeight: 0,
+    colorScheme: 'light',
+    color: '#111827',
+    overflow: 'hidden',
+    ...getBackgroundStyle(headerBackgroundMode, headerBackgroundColor, headerBackgroundGradient, '#ffffff')
   } : {
     gridTemplateRows: 'auto 1fr',
     gridTemplateColumns: '74% 26%',
@@ -1660,7 +1678,7 @@ export function TVDisplay({
     ...getBackgroundStyle(headerBackgroundMode, headerBackgroundColor, headerBackgroundGradient, '#ffffff')
   };
 
-  const wrapperClass = isFullscreen 
+  const wrapperClass = isStageMode
     ? `grid${isTVMode ? ' tv-mode' : ''}`
     : `h-screen grid${isTVMode ? ' tv-mode' : ''}`;
 
@@ -1668,8 +1686,8 @@ export function TVDisplay({
   const renderContent = () => (
     <>
       {/* Top Row - Advertisement Area with 16:9 ratio */}
-      <div className={`${isFullscreen ? 'm-0 p-0 w-full h-full' : 'p-4 w-full'}`}>
-        <div className="overflow-hidden flex items-center justify-center w-full h-full relative" style={{ aspectRatio: isFullscreen ? undefined : '16/9', backgroundColor: '#f3f4f6', colorScheme: 'light', color: '#111827' }}>
+      <div className={`${isStageMode ? 'm-0 p-0 w-full h-full' : 'p-4 w-full'}`}>
+        <div className="overflow-hidden flex items-center justify-center w-full h-full relative" style={{ aspectRatio: isStageMode ? undefined : '16/9', backgroundColor: '#f3f4f6', colorScheme: 'light', color: '#111827' }}>
           {currentMedia ? (
             <div 
               className="absolute inset-0 w-full h-full transition-opacity ease-in-out"
@@ -1738,17 +1756,17 @@ export function TVDisplay({
       </div>
 
       {/* Top Right - Patient Names Header and History */}
-      <div className={`${isFullscreen ? 'p-0 m-0 row-span-2' : 'p-4 row-span-2'} flex flex-col w-full h-full min-w-0 min-h-0 overflow-hidden`}
+      <div className={`${isStageMode ? 'p-0 m-0 row-span-2' : 'p-4 row-span-2'} flex flex-col w-full h-full min-w-0 min-h-0 overflow-hidden`}
            style={{
              color: '#ffffff',
              // Reserve space for the floating marquee so it never covers the call history
-             ...(isFullscreen && enableMarquee ? { paddingBottom: '70px' } : {}),
+              ...(isFullscreen && enableMarquee ? { paddingBottom: '70px' } : {}),
              ...getBackgroundStyle(headerBackgroundMode, headerBackgroundColor, headerBackgroundGradient, '#0f172a')
            }}>
         {/* Logo Display - Use uploaded logo if enabled */}
         {showClinicLogo && clinicLogo && (
           <div
-            className={`text-center w-full min-w-0 min-h-0 ${isFullscreen ? 'mb-3 pt-4 px-4' : 'mb-4'}`}
+            className={`text-center w-full min-w-0 min-h-0 ${isStageMode ? 'mb-3 pt-4 px-4' : 'mb-4'}`}
             style={{
               flex: '0 1 auto',
               overflow: 'hidden',
@@ -1774,7 +1792,7 @@ export function TVDisplay({
                   width: 'auto',
                   height: 'auto',
                   maxWidth: '100%',
-                  maxHeight: isFullscreen ? 'clamp(64px, 12vmin, 132px)' : 'clamp(56px, 18vw, 128px)',
+                  maxHeight: isStageMode ? 'clamp(64px, 12vmin, 132px)' : 'clamp(56px, 18vw, 128px)',
                   flexShrink: 1,
                 }}
                 data-testid="clinic-logo"
@@ -1784,14 +1802,14 @@ export function TVDisplay({
         )}
 
         {/* Unified Calling Box - CALLING + Name + Room in one box with glow border */}
-        <div className={`${isFullscreen ? 'mx-4 mb-3' : 'mb-4'} min-w-0 flex-shrink-0 text-center tv-highlight-pulse-border rounded-xl overflow-hidden`}
+        <div className={`${isStageMode ? 'mx-4 mb-3' : 'mb-4'} min-w-0 flex-shrink-0 text-center tv-highlight-pulse-border rounded-xl overflow-hidden`}
              style={{
                ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#16a34a'),
                border: `3px solid ${callBackgroundColor || '#16a34a'}`,
                boxShadow: `0 0 20px ${callBackgroundColor || '#16a34a'}66, 0 0 40px ${callBackgroundColor || '#16a34a'}33`
              }}>
           {/* CALLING label */}
-          <div className={`font-bold ${isFullscreen ? 'py-2 px-3' : 'py-2 px-3'} text-center`}
+          <div className={`font-bold ${isStageMode ? 'py-2 px-3' : 'py-2 px-3'} text-center`}
                style={{
                  fontSize: '28px',
                  ...getTextStyle(callNameTextMode, callNameTextColor, callNameTextGradient, '#ffffff'),
@@ -1803,7 +1821,7 @@ export function TVDisplay({
 
           {/* Patient Name + Room */}
           {currentPatient ? (
-            <div className={`${isFullscreen ? 'py-2 px-1' : 'py-3 px-1'} text-center`}>
+            <div className={`${isStageMode ? 'py-2 px-1' : 'py-3 px-1'} text-center`}>
               <div className={`font-bold ${isBlinking ? 'tv-blink-active' : ''}`}
                    style={{ 
                      fontSize: patientNameFontSize,
@@ -1830,16 +1848,16 @@ export function TVDisplay({
               </div>
             </div>
           ) : (
-            <div className={`${isFullscreen ? 'py-2 px-1' : 'py-3 px-1'} text-center`}>
+            <div className={`${isStageMode ? 'py-2 px-1' : 'py-3 px-1'} text-center`}>
               <div style={{ fontSize: '48px', color: '#ffffff' }}>N/A</div>
             </div>
           )}
         </div>
 
         {/* History Section - Recent Calling History */}
-        <div className={`flex-1 flex flex-col min-h-0 ${isFullscreen ? 'px-4 pb-4' : 'mt-4'}`}>
+        <div className={`flex-1 flex flex-col min-h-0 ${isStageMode ? 'px-4 pb-4' : 'mt-4'}`}>
           {/* Recent Calling History Items (rolling log of recent calls, max 4) */}
-          <div className={`grid grid-rows-4 overflow-hidden flex-1 min-h-0 ${isFullscreen ? 'gap-3' : 'gap-2'}`} data-testid="queue-list">
+          <div className={`grid grid-rows-4 overflow-hidden flex-1 min-h-0 ${isStageMode ? 'gap-3' : 'gap-2'}`} data-testid="queue-list">
             {Array.from({ length: 4 }).map((_, idx) => {
               const item = queueHistory[idx];
               if (!item) {
@@ -1856,8 +1874,8 @@ export function TVDisplay({
                     <FitText
                       text={getDisplayName(item.name)}
                       baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'bold', textAlign: 'center' }}
-                      maxFontSize={isFullscreen ? 64 : 48}
-                      minFontSize={isFullscreen ? 24 : 20}
+                      maxFontSize={isStageMode ? 64 : 48}
+                      minFontSize={isStageMode ? 24 : 20}
                       align="center"
                     />
                   </div>
@@ -1865,8 +1883,8 @@ export function TVDisplay({
                     <FitText
                       text={item.room}
                       baseStyle={{ ...getHistoryNameStyle(), fontWeight: 'normal', opacity: 0.9, textAlign: 'center' }}
-                      maxFontSize={isFullscreen ? 44 : 32}
-                      minFontSize={isFullscreen ? 18 : 16}
+                      maxFontSize={isStageMode ? 44 : 32}
+                      minFontSize={isStageMode ? 18 : 16}
                       align="center"
                     />
                   </div>
@@ -1879,11 +1897,11 @@ export function TVDisplay({
       </div>
 
       {/* Second Row Left - Date & Prayer Times / Weather */}
-      <div className={`${isFullscreen ? 'px-4 py-1 m-0' : 'px-4 py-2'} w-full h-full flex flex-col items-center justify-center overflow-hidden`}
+      <div className={`${isStageMode ? 'px-4 py-1 m-0' : 'px-4 py-2'} w-full h-full flex flex-col items-center justify-center overflow-hidden`}
            style={{
              color: '#ffffff',
              // Reserve space for the floating marquee so it never covers the clock/prayer bar
-             ...(isFullscreen && enableMarquee ? { paddingBottom: '60px' } : {}),
+              ...(isFullscreen && enableMarquee ? { paddingBottom: '60px' } : {}),
              ...getBackgroundStyle(showWeather ? weatherBackgroundMode : prayerTimesBackgroundMode, showWeather ? weatherBackgroundColor : prayerTimesBackgroundColor, showWeather ? weatherBackgroundGradient : prayerTimesBackgroundGradient, showWeather ? '#f97316' : '#1e40af')
            }}>
         {/* Clinic name: fixed-size box so a long name cannot change the
@@ -1891,7 +1909,7 @@ export function TVDisplay({
         <div
           className="w-full min-w-0 flex-shrink-0 overflow-hidden flex items-center justify-center rounded-lg"
           style={{
-            height: isFullscreen ? '56px' : 'clamp(40px, 5vw, 64px)',
+            height: isStageMode ? '56px' : 'clamp(40px, 5vw, 64px)',
             padding: '0 12px',
             boxSizing: 'border-box',
             border: '1px solid rgba(255,255,255,0.28)',
@@ -1911,14 +1929,14 @@ export function TVDisplay({
               textAlign: 'center',
               whiteSpace: 'nowrap',
             }}
-            maxFontSize={isFullscreen ? 32 : 32}
+            maxFontSize={isStageMode ? 32 : 32}
             minFontSize={10}
             testId="clinic-name"
           />
         </div>
 
         {/* Combined Date/Time + Prayer Times / Weather in ONE white box */}
-        <div className={`px-4 tv-white-bg w-full ${isFullscreen ? 'py-2 rounded-md' : 'py-3 rounded-lg'}`} style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)', color: '#111827' }}>
+        <div className={`px-4 tv-white-bg w-full ${isStageMode ? 'py-2 rounded-md' : 'py-3 rounded-lg'}`} style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)', color: '#111827' }}>
           <FitRow
             className="flex items-center justify-between gap-6 px-4 whitespace-nowrap"
             refitKey={`${prayerTimesLoading}-${displayPrayerTimes.length}-${showWeather}-${weatherLoading ? 1 : 0}`}
@@ -2263,6 +2281,7 @@ export function TVDisplay({
 
   return (
     <div className={wrapperClass}
+         ref={previewMode ? stageRef : undefined}
          style={stageStyle} 
          data-testid="tv-display">
       {renderContent()}
