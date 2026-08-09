@@ -1300,7 +1300,7 @@ export default function Settings() {
                       id="schedule-name"
                       value={scheduleForm.name}
                       onChange={(event) => setScheduleForm((previous) => ({ ...previous, name: event.target.value }))}
-                      placeholder="Contoh: Waktu Pagi"
+                      placeholder="Example: Morning Schedule"
                       maxLength={80}
                     />
                   </div>
