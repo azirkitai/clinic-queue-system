@@ -115,13 +115,13 @@ interface MediaScheduleForm {
 }
 
 const SCHEDULE_DAYS = [
-  { value: 1, label: "Isnin" },
-  { value: 2, label: "Selasa" },
-  { value: 3, label: "Rabu" },
-  { value: 4, label: "Khamis" },
-  { value: 5, label: "Jumaat" },
-  { value: 6, label: "Sabtu" },
-  { value: 0, label: "Ahad" },
+  { value: 1, label: "Monday" },
+  { value: 2, label: "Tuesday" },
+  { value: 3, label: "Wednesday" },
+  { value: 4, label: "Thursday" },
+  { value: 5, label: "Friday" },
+  { value: 6, label: "Saturday" },
+  { value: 0, label: "Sunday" },
 ];
 
 function TvLinkCard() {
@@ -929,10 +929,10 @@ export default function Settings() {
       queryClient.invalidateQueries({ queryKey: ['/api/media-schedules'] });
       queryClient.invalidateQueries({ queryKey: ['/api/display'] });
       resetScheduleForm();
-      toast({ title: "Jadual disimpan", description: "Media akan bertukar mengikut waktu yang ditetapkan." });
+      toast({ title: "Schedule saved", description: "Media will switch according to the configured schedule." });
     },
     onError: (error: any) => {
-      toast({ title: "Gagal simpan jadual", description: error.message || "Sila semak maklumat jadual.", variant: "destructive" });
+      toast({ title: "Failed to save schedule", description: error.message || "Please check the schedule details.", variant: "destructive" });
     },
   });
 
@@ -940,9 +940,9 @@ export default function Settings() {
     mutationFn: async (id: string) => apiRequest('DELETE', `/api/media-schedules/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/media-schedules'] });
-      toast({ title: "Jadual dipadam" });
+      toast({ title: "Schedule deleted" });
     },
-    onError: () => toast({ title: "Gagal padam jadual", variant: "destructive" }),
+    onError: () => toast({ title: "Failed to delete schedule", variant: "destructive" }),
   });
 
   const scheduleToggleMutation = useMutation({
@@ -950,9 +950,9 @@ export default function Settings() {
       apiRequest('PATCH', `/api/media-schedules/${schedule.id}`, { isActive: !schedule.isActive }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/media-schedules'] });
-      toast({ title: "Status jadual dikemas kini" });
+      toast({ title: "Schedule status updated" });
     },
-    onError: () => toast({ title: "Gagal kemas kini jadual", variant: "destructive" }),
+    onError: () => toast({ title: "Failed to update schedule", variant: "destructive" }),
   });
 
   const editSchedule = (schedule: MediaSchedule) => {
@@ -979,15 +979,15 @@ export default function Settings() {
 
   const submitSchedule = () => {
     if (!scheduleForm.name.trim() || scheduleForm.days.length === 0) {
-      toast({ title: "Maklumat belum lengkap", description: "Masukkan nama dan pilih sekurang-kurangnya satu hari.", variant: "destructive" });
+      toast({ title: "Incomplete information", description: "Enter a name and select at least one day.", variant: "destructive" });
       return;
     }
     if ((scheduleForm.mediaType === "youtube" || scheduleForm.mediaType === "combine") && !scheduleForm.youtubeUrl.trim()) {
-      toast({ title: "YouTube URL diperlukan", variant: "destructive" });
+      toast({ title: "YouTube URL is required", variant: "destructive" });
       return;
     }
     if ((scheduleForm.mediaType === "own" || scheduleForm.mediaType === "combine") && scheduleForm.mediaIds.length === 0) {
-      toast({ title: "Pilih media dahulu", description: "Pilih sekurang-kurangnya satu gambar untuk jadual ini.", variant: "destructive" });
+      toast({ title: "Select media first", description: "Select at least one image for this schedule.", variant: "destructive" });
       return;
     }
     scheduleMutation.mutate(scheduleForm);
@@ -1282,12 +1282,12 @@ export default function Settings() {
                 <div>
                   <Label className="text-base font-semibold">Media Schedule</Label>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Tetapkan media yang dimainkan mengikut waktu. Jadual menggunakan waktu Malaysia (Asia/Kuala_Lumpur).
+                    Set media to play at specific times. Schedules use Malaysia time (Asia/Kuala_Lumpur).
                   </p>
                 </div>
                 {scheduleForm.id && (
                   <Button type="button" variant="ghost" size="sm" onClick={resetScheduleForm}>
-                    Batal Edit
+                    Cancel Edit
                   </Button>
                 )}
               </div>
@@ -1295,7 +1295,7 @@ export default function Settings() {
               <div className="rounded-lg border bg-muted/20 p-4 space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="schedule-name">Nama jadual</Label>
+                    <Label htmlFor="schedule-name">Schedule name</Label>
                     <Input
                       id="schedule-name"
                       value={scheduleForm.name}
@@ -1323,7 +1323,7 @@ export default function Settings() {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="schedule-start">Mula</Label>
+                    <Label htmlFor="schedule-start">Start</Label>
                     <Input
                       id="schedule-start"
                       type="time"
@@ -1332,7 +1332,7 @@ export default function Settings() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="schedule-end">Tamat</Label>
+                    <Label htmlFor="schedule-end">End</Label>
                     <Input
                       id="schedule-end"
                       type="time"
@@ -1343,7 +1343,7 @@ export default function Settings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Hari aktif</Label>
+                  <Label>Active days</Label>
                   <div className="flex flex-wrap gap-2">
                     {SCHEDULE_DAYS.map((day) => {
                       const selected = scheduleForm.days.includes(day.value);
@@ -1380,7 +1380,7 @@ export default function Settings() {
 
                 {(scheduleForm.mediaType === "own" || scheduleForm.mediaType === "combine") && (
                   <div className="space-y-2">
-                    <Label>Gambar untuk slot ini</Label>
+                    <Label>Images for this slot</Label>
                     {mediaFiles.length > 0 ? (
                       <div className="grid gap-2 sm:grid-cols-2">
                         {mediaFiles.map((media) => {
@@ -1415,7 +1415,7 @@ export default function Settings() {
                         })}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">Upload gambar dahulu untuk digunakan dalam jadual.</p>
+                      <p className="text-sm text-muted-foreground">Upload images first to use them in a schedule.</p>
                     )}
                   </div>
                 )}
@@ -1423,7 +1423,7 @@ export default function Settings() {
                 <div className="flex justify-end gap-2">
                   {scheduleForm.id && (
                     <Button type="button" variant="outline" onClick={resetScheduleForm}>
-                      Batal
+                      Cancel
                     </Button>
                   )}
                   <Button
@@ -1431,18 +1431,18 @@ export default function Settings() {
                     onClick={submitSchedule}
                     disabled={scheduleMutation.isPending}
                   >
-                    {scheduleMutation.isPending ? "Menyimpan..." : scheduleForm.id ? "Kemaskini Jadual" : "Tambah Jadual"}
+                    {scheduleMutation.isPending ? "Saving..." : scheduleForm.id ? "Update Schedule" : "Add Schedule"}
                   </Button>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Jadual disimpan</Label>
+                <Label>Saved schedules</Label>
                 {schedulesLoading ? (
                   <div className="h-16 animate-pulse rounded-md bg-muted" />
                 ) : mediaSchedules.length === 0 ? (
                   <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-                    Tiada jadual lagi. Tetapan media biasa akan digunakan sehingga jadual ditambah.
+                    No schedules yet. Regular media settings will be used until a schedule is added.
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -1458,7 +1458,7 @@ export default function Settings() {
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="font-medium">{schedule.name}</span>
                               <span className={`rounded-full px-2 py-0.5 text-xs ${schedule.isActive ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
-                                {schedule.isActive ? "Aktif" : "Tidak aktif"}
+                                {schedule.isActive ? "Active" : "Inactive"}
                               </span>
                             </div>
                             <p className="text-sm text-muted-foreground">
@@ -1470,7 +1470,7 @@ export default function Settings() {
                           </div>
                           <div className="flex shrink-0 gap-2">
                             <Button type="button" variant="outline" size="sm" onClick={() => scheduleToggleMutation.mutate(schedule)}>
-                              {schedule.isActive ? "Nyahaktif" : "Aktifkan"}
+                              {schedule.isActive ? "Disable" : "Enable"}
                             </Button>
                             <Button type="button" variant="outline" size="sm" onClick={() => editSchedule(schedule)}>
                               Edit
@@ -1480,7 +1480,7 @@ export default function Settings() {
                               variant="destructive"
                               size="sm"
                               onClick={() => {
-                                if (confirm(`Padam jadual "${schedule.name}"?`)) {
+                                if (confirm(`Delete schedule "${schedule.name}"?`)) {
                                   scheduleDeleteMutation.mutate(schedule.id);
                                 }
                               }}

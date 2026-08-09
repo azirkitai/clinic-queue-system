@@ -676,7 +676,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
             data-testid="button-start-tv"
           >
             <Monitor className="w-5 h-5 mr-2" />
-            Mulakan Paparan TV
+            Start TV Display
           </Button>
         </div>
         {browserCompatibility.warnings.length > 0 && (
@@ -689,8 +689,8 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
           </div>
         )}
         <p style={{ color: '#9CA3AF', fontSize: 'clamp(9px, 1.0vmin, 14px)' }}>
-          Queue dikemas kini setiap 15 saat; media berjadual bertukar secara automatik dalam masa sehingga 1 minit.
-          <br />Tiada login diperlukan.
+           Queue updates every 15 seconds; scheduled media switches automatically within 1 minute.
+           <br />No login required.
         </p>
       </div>
     </div>
