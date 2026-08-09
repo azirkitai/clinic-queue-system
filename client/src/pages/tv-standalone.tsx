@@ -121,16 +121,18 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
       path: '/socket.io',
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionDelay: 2000,
-      reconnectionDelayMax: 30000,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
       randomizationFactor: 0.5,
       reconnectionAttempts: Infinity,
-      timeout: 20000,
+      timeout: 10000,
     });
     socketRef.current = socket;
 
     socket.on('connect', () => {
+      console.log('[TV WS] Connected:', socket.id);
       socket.emit('tv:join', { token });
+      queryClient.invalidateQueries({ queryKey: [`/api/tv/${token}/patients`] });
     });
 
     socket.on('tv:joined', (data) => {
@@ -176,12 +178,52 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
       queryClient.invalidateQueries({ queryKey: [`/api/tv/${token}/patients`] });
     });
 
-    socket.on('disconnect', () => {
-      // TV disconnected
+    socket.on('connect_error', (socketError) => {
+      console.warn('[TV WS] Connection error; retrying automatically:', socketError.message);
     });
+
+    const manager = socket.io;
+    manager.on('reconnect_attempt', (attemptNumber) => {
+      console.log('[TV WS] Reconnection attempt:', attemptNumber);
+    });
+    manager.on('reconnect', (attemptNumber) => {
+      console.log('[TV WS] Reconnected after attempt:', attemptNumber);
+      queryClient.invalidateQueries({ queryKey: [`/api/tv/${token}/patients`] });
+    });
+    manager.on('reconnect_error', (socketError) => {
+      console.warn('[TV WS] Reconnection error:', socketError.message);
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.warn('[TV WS] Disconnected:', reason);
+    });
+
+    const forceReconnectIfNeeded = (source: string) => {
+      if (!socket.connected) {
+        console.log(`[TV WS] Reconnect requested (${source})`);
+        socket.connect();
+      }
+    };
+    const handleOnline = () => forceReconnectIfNeeded('browser-online');
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        forceReconnectIfNeeded('screen-visible');
+      }
+    };
+    window.addEventListener('online', handleOnline);
+    document.addEventListener('visibilitychange', handleVisibility);
+    const reconnectWatchdog = window.setInterval(() => {
+      forceReconnectIfNeeded('watchdog');
+    }, 10000);
 
     return () => {
       if (debounceTimer) clearTimeout(debounceTimer);
+      window.removeEventListener('online', handleOnline);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.clearInterval(reconnectWatchdog);
+      manager.off('reconnect_attempt');
+      manager.off('reconnect');
+      manager.off('reconnect_error');
       socket.disconnect();
       socketRef.current = null;
     };
@@ -191,7 +233,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     queryKey: [`/api/tv/${token}/patients`],
     enabled: !!clinicInfo,
     staleTime: 30000,
-    refetchInterval: 30000,
+    refetchInterval: 15000,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
   });

@@ -36,8 +36,8 @@ export function useTvPatients(): UseTvPatientsResult {
   const { data: tvPatients = [], isLoading, error } = useQuery<TvQueueItem[]>({
     queryKey: ['/api/patients/tv'],
     staleTime: 120000,
-    refetchInterval: 120000,
-    refetchOnReconnect: false,
+    refetchInterval: 15000,
+    refetchOnReconnect: true,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });

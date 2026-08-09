@@ -108,11 +108,11 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       path: '/socket.io',
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionDelay: 2000, // Start at 2s (not 1s)
-      reconnectionDelayMax: 30000, // Max 30s between retries (not 5s)
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
       randomizationFactor: 0.5, // Add jitter to prevent thundering herd
       reconnectionAttempts: Infinity, // ✅ Never give up reconnecting!
-      timeout: 20000,
+      timeout: 10000,
     });
 
     socketRef.current = socket;
@@ -122,12 +122,15 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       console.log('[WS] Connected:', socket.id);
       setIsConnected(true);
       
-      // Refetch ONLY critical queries on reconnect (not heavy dashboard endpoints!)
-      // This prevents bandwidth spike from refetching dashboard/current-call + history
-      queryClient.refetchQueries({ queryKey: ['/api/patients'] });
-      queryClient.refetchQueries({ queryKey: ['/api/patients/active'] });
-      queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }); // ✅ Lightweight TV endpoint
-      queryClient.refetchQueries({ queryKey: ['/api/windows'] });
+      // Always resync persisted state after reconnect. A call may have
+      // happened while this socket was offline, so relying on the missed
+      // WebSocket event alone would leave the TV stale.
+      void Promise.all([
+        queryClient.refetchQueries({ queryKey: ['/api/patients'] }),
+        queryClient.refetchQueries({ queryKey: ['/api/patients/active'] }),
+        queryClient.refetchQueries({ queryKey: ['/api/patients/tv'] }),
+        queryClient.refetchQueries({ queryKey: ['/api/windows'] }),
+      ]);
       
       onConnectRef.current?.();
     });
@@ -137,14 +140,56 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       setIsConnected(false);
       onDisconnectRef.current?.();
     });
-    
-    socket.on('reconnect_attempt', (attemptNumber) => {
+
+    socket.on('connect_error', (error) => {
+      console.warn('[WS] Connection error; retrying automatically:', error.message);
+      setIsConnected(false);
+    });
+
+    // Socket.IO emits reconnect lifecycle events on the Manager, not the
+    // Socket. Listening on the manager makes intermittent proxy/network
+    // failures visible and lets us recover even when automatic reconnect
+    // stalls after a transport close.
+    const manager = socket.io;
+    manager.on('reconnect_attempt', (attemptNumber) => {
       console.log('[WS] Reconnection attempt:', attemptNumber);
     });
-    
-    socket.on('reconnect_error', (error) => {
+
+    manager.on('reconnect', (attemptNumber) => {
+      console.log('[WS] Reconnected after attempt:', attemptNumber);
+    });
+
+    manager.on('reconnect_error', (error) => {
       console.error('[WS] Reconnection error:', error.message);
     });
+
+    manager.on('reconnect_failed', () => {
+      console.error('[WS] Reconnection failed; watchdog will retry');
+    });
+
+    const forceReconnectIfNeeded = (source: string) => {
+      if (!socket.connected) {
+        console.log(`[WS] Reconnect requested (${source})`);
+        socket.connect();
+      }
+    };
+
+    const handleOnline = () => forceReconnectIfNeeded('browser-online');
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        forceReconnectIfNeeded('tab-visible');
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    // Some embedded/TV browsers do not reliably emit online or visibility
+    // events after a Wi-Fi/proxy interruption. Keep the connection recoverable
+    // without reloading the page.
+    const reconnectWatchdog = window.setInterval(() => {
+      forceReconnectIfNeeded('watchdog');
+    }, 10000);
 
     socket.on('clinic:joined', (data) => {
       console.log('[WS] Joined clinic room:', data);
@@ -379,8 +424,11 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     return () => {
       socket.off('connect');
       socket.off('disconnect');
-      socket.off('reconnect_attempt');
-      socket.off('reconnect_error');
+      socket.off('connect_error');
+      manager.off('reconnect_attempt');
+      manager.off('reconnect');
+      manager.off('reconnect_error');
+      manager.off('reconnect_failed');
       socket.off('clinic:joined');
       socket.off('patient:created');
       socket.off('patient:status-updated');
@@ -398,6 +446,9 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       socket.off('system:eod-warning');
       socket.off('system:eod-postponed');
       socket.off('system:eod-completed');
+      window.removeEventListener('online', handleOnline);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.clearInterval(reconnectWatchdog);
       socket.disconnect();
     };
   }, []); // ✅ Empty deps - only run once on mount

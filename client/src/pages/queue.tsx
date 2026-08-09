@@ -37,11 +37,15 @@ export default function Queue() {
   // Fetch active patients (excludes completed for lighter payloads)
   const { data: patients = [], isLoading: patientsLoading, refetch: refetchPatients } = useQuery<Patient[]>({
     queryKey: ['/api/patients/active'],
+    refetchInterval: 15000,
+    refetchOnReconnect: true,
   });
 
   // Fetch windows
   const { data: windows = [], isLoading: windowsLoading, refetch: refetchWindows } = useQuery<Window[]>({
     queryKey: ['/api/windows'],
+    refetchInterval: 15000,
+    refetchOnReconnect: true,
   });
 
   // ✅ Fetch audio settings from LIGHTWEIGHT endpoint (10KB vs 223KB = 95% reduction!)

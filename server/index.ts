@@ -134,9 +134,9 @@ app.use((req, res, next) => {
       origin: process.env.NODE_ENV === "production" ? false : "*",
       methods: ["GET", "POST"]
     },
-    // Heartbeat config to detect dead connections and force reconnect
-    pingInterval: 25000,  // Send ping every 25 seconds
-    pingTimeout: 10000,   // Wait 10 seconds for pong before considering dead
+    // Keep TV/browser connections alive while tolerating short network stalls.
+    pingInterval: 20000,
+    pingTimeout: 20000,
   });
   
   // Make Socket.IO server globally available for server-authoritative events

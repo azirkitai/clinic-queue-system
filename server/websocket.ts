@@ -69,7 +69,7 @@ export function setupWebSocket(io: Server) {
   });
 
   io.on("connection", (socket: AuthenticatedSocket) => {
-    // console.log removed (emoji)
+    console.log(`[WEBSOCKET] Connected socket ${socket.id}${socket.userId ? ` for clinic ${socket.userId}` : ''}`);
 
     if (socket.userId && socket.clinicRoom) {
       socket.join(socket.clinicRoom);
@@ -216,6 +216,7 @@ export function setupWebSocket(io: Server) {
     // These are now server-authoritative and emitted from API endpoints
 
     socket.on("disconnect", (reason) => {
+      console.warn(`[WEBSOCKET] Disconnected socket ${socket.id}: ${reason}`);
       if (socket.userId) {
         const sockets = onlineUsers.get(socket.userId);
         if (sockets) {

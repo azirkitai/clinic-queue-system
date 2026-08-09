@@ -7,7 +7,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CLINIC_LOGO } from "@/lib/clinic-logo";
 import { audioSystem } from "@/lib/audio-system";
 import type { AudioSettings } from "@/lib/audio-system";
-import { useWebSocket } from "@/hooks/useWebSocket";
 import { getDisplayName } from "@/lib/name-utils";
 
 const IsolatedClock = memo(function IsolatedClock() {
@@ -437,50 +436,6 @@ export function TVDisplay({
       setRoomNameFontSize('40px');
     }
   }, [isTVMode]);
-  
-  const wsResult = useWebSocket(!!tvToken);
-  const socket = tvToken ? null : wsResult.socket;
-  
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleSettingsUpdate = () => {
-      queryClient.invalidateQueries({ 
-        predicate: (query) => {
-          const key = String(query.queryKey[0]);
-          return key.includes('/api/settings') || key.includes('/api/tv/') && key.includes('/settings');
-        }
-      });
-    };
-
-    const handleThemesUpdate = () => {
-      queryClient.invalidateQueries({
-        predicate: (query) => {
-          const key = String(query.queryKey[0]);
-          return key.includes('/api/themes/active') || key.includes('/api/tv/') && key.includes('/themes/active');
-        }
-      });
-    };
-
-    const handleTextGroupsUpdate = () => {
-      queryClient.invalidateQueries({
-        predicate: (query) => {
-          const key = String(query.queryKey[0]);
-          return key.includes('/api/text-groups/active') || key.includes('/api/tv/') && key.includes('/text-groups/active');
-        }
-      });
-    };
-
-    socket.on('settings:updated', handleSettingsUpdate);
-    socket.on('themes:updated', handleThemesUpdate);
-    socket.on('text-groups:updated', handleTextGroupsUpdate);
-
-    return () => {
-      socket.off('settings:updated', handleSettingsUpdate);
-      socket.off('themes:updated', handleThemesUpdate);
-      socket.off('text-groups:updated', handleTextGroupsUpdate);
-    };
-  }, [socket, queryClient, tvToken]);
   
   // Fetch active theme - use token-based endpoint if tvToken provided
   const { data: theme } = useQuery({
