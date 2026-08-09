@@ -1738,7 +1738,7 @@ export function TVDisplay({
       </div>
 
       {/* Top Right - Patient Names Header and History */}
-      <div className={`${isFullscreen ? 'p-0 m-0 row-span-2' : 'p-4 row-span-2'} flex flex-col w-full h-full`}
+      <div className={`${isFullscreen ? 'p-0 m-0 row-span-2' : 'p-4 row-span-2'} flex flex-col w-full h-full min-w-0 min-h-0 overflow-hidden`}
            style={{
              color: '#ffffff',
              // Reserve space for the floating marquee so it never covers the call history
@@ -1747,13 +1747,36 @@ export function TVDisplay({
            }}>
         {/* Logo Display - Use uploaded logo if enabled */}
         {showClinicLogo && clinicLogo && (
-          <div className={`text-center ${isFullscreen ? 'mb-3 pt-4 px-4' : 'mb-4'}`}>
-            <div className="rounded-lg p-4 shadow-lg w-full flex items-center justify-center tv-white-bg" style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)' }}>
+          <div
+            className={`text-center w-full min-w-0 min-h-0 ${isFullscreen ? 'mb-3 pt-4 px-4' : 'mb-4'}`}
+            style={{
+              flex: '0 1 auto',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              className="rounded-lg shadow-lg w-full min-w-0 min-h-0 flex items-center justify-center tv-white-bg"
+              style={{
+                backgroundColor: '#ffffff',
+                backgroundImage: 'linear-gradient(#ffffff, #ffffff)',
+                // Let the box follow the logo's natural aspect ratio while
+                // keeping it inside the same responsive panel as the call box.
+                padding: 'clamp(8px, 1.2vmin, 16px)',
+                boxSizing: 'border-box',
+                overflow: 'hidden',
+              }}
+            >
               <img 
                 src={clinicLogo} 
                 alt="Clinic Logo" 
-                className="h-32 w-auto object-contain"
-                style={{ maxWidth: '350px' }}
+                className="block object-contain"
+                style={{
+                  width: 'auto',
+                  height: 'auto',
+                  maxWidth: '100%',
+                  maxHeight: isFullscreen ? 'clamp(64px, 12vmin, 132px)' : 'clamp(56px, 18vw, 128px)',
+                  flexShrink: 1,
+                }}
                 data-testid="clinic-logo"
               />
             </div>
@@ -1761,7 +1784,7 @@ export function TVDisplay({
         )}
 
         {/* Unified Calling Box - CALLING + Name + Room in one box with glow border */}
-        <div className={`${isFullscreen ? 'mx-4 mb-3' : 'mb-4'} text-center tv-highlight-pulse-border rounded-xl overflow-hidden`}
+        <div className={`${isFullscreen ? 'mx-4 mb-3' : 'mb-4'} min-w-0 flex-shrink-0 text-center tv-highlight-pulse-border rounded-xl overflow-hidden`}
              style={{
                ...getBackgroundStyle(callBackgroundMode, callBackgroundColor, callBackgroundGradient, '#16a34a'),
                border: `3px solid ${callBackgroundColor || '#16a34a'}`,
