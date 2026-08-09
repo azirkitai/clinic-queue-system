@@ -19,11 +19,11 @@ const TTS_CACHE_MAX = 200;
 
 function cleanTtsCache() {
   const now = Date.now();
-  for (const [key, val] of ttsCache) {
+  ttsCache.forEach((val, key) => {
     if (now - val.timestamp > TTS_CACHE_TTL) {
       ttsCache.delete(key);
     }
-  }
+  });
   if (ttsCache.size > TTS_CACHE_MAX) {
     const entries = Array.from(ttsCache.entries())
       .sort((a, b) => a[1].timestamp - b[1].timestamp);

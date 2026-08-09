@@ -833,7 +833,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.session.userId) {
         return res.status(401).json({ error: "Session inactive" });
       }
-      
       console.log("[PATIENT] POST /api/patients - Request body:", req.body);
       
       // Auto-assign next queue number if not provided
@@ -985,6 +984,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.session.userId) {
         return res.status(401).json({ error: "Session inactive" });
       }
+      const userId = req.session.userId;
       
       const { id } = req.params;
       const { status, windowId, requeueReason } = req.body;
@@ -1000,10 +1000,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (windowId && status === "called") {
         await storage.updateWindowPatient(windowId, req.session.userId, id);
       } else if (status === "completed" || status === "requeue" || status === "dispensary") {
-        const windows = await withReadRetry(() => storage.getWindows(req.session.userId));
+        const windows = await withReadRetry(() => storage.getWindows(userId));
         const currentWindow = windows.find(w => w.currentPatientId === id);
         if (currentWindow) {
-          await storage.updateWindowPatient(currentWindow.id!, req.session.userId!, undefined);
+          await storage.updateWindowPatient(currentWindow.id!, userId, undefined);
         }
       }
       
@@ -2847,7 +2847,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             mimeType: "audio/youtube",
             size: 0,
             isActive: true,
-            uploadedAt: new Date()
+            uploadedAt: new Date(),
+            userId: req.session.userId
           });
         }
         res.json(lightweightMedia);

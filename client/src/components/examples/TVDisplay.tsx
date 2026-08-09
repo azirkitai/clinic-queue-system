@@ -5,25 +5,24 @@ export default function TVDisplayExample() {
   const mockCurrentCall = {
     id: "1",
     name: "Ahmad bin Ali",
-    number: 15,
-    windowName: "Bilik 1 - Dr. Sarah",
-    status: "called"
+    number: "15",
+    room: "Bilik 1 - Dr. Sarah",
+    status: "calling" as const,
+    timestamp: new Date(),
   };
 
   const mockHistory = [
-    { id: "2", name: null, number: 14, windowName: "Bilik 2 - Dr. Ahmad", status: "completed" },
-    { id: "3", name: "Siti Nurhaliza", number: 13, windowName: "Bilik 1 - Dr. Sarah", status: "completed" },
-    { id: "4", name: null, number: 12, windowName: "Bilik 3 - Nurse Linda", status: "completed" },
+    { id: "2", name: "", number: "14", room: "Bilik 2 - Dr. Ahmad", status: "completed" as const, timestamp: new Date() },
+    { id: "3", name: "Siti Nurhaliza", number: "13", room: "Bilik 1 - Dr. Sarah", status: "completed" as const, timestamp: new Date() },
+    { id: "4", name: "", number: "12", room: "Bilik 3 - Nurse Linda", status: "completed" as const, timestamp: new Date() },
   ];
 
   return (
     <TVDisplay
-      currentCall={mockCurrentCall}
-      history={mockHistory}
+      currentPatient={mockCurrentCall}
+      queueHistory={mockHistory}
       showPrayerTimes={true}
       showWeather={false}
-      marqueeText="Selamat datang ke Klinik Kesihatan - Sila patuhi SOP yang ditetapkan"
-      marqueeColor="#ffffff"
     />
   );
 }

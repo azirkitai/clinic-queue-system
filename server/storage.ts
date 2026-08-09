@@ -404,10 +404,11 @@ export class MemStorage implements IStorage {
   async createPatient(insertPatient: InsertPatient): Promise<Patient> {
     const id = randomUUID();
     const now = new Date();
+    const number = insertPatient.number ?? await this.getNextPatientNumber(insertPatient.userId);
     const patient: Patient = {
       id,
       name: insertPatient.name || null,
-      number: insertPatient.number,
+      number,
       status: "waiting",
       isPriority: insertPatient.isPriority || false,
       priorityReason: insertPatient.priorityReason || null,
@@ -431,6 +432,10 @@ export class MemStorage implements IStorage {
     };
     this.patients.set(id, patient);
     return patient;
+  }
+
+  async getPatient(id: string): Promise<Patient | undefined> {
+    return this.patients.get(id);
   }
 
   async getPatients(userId: string): Promise<Patient[]> {
@@ -757,7 +762,7 @@ export class MemStorage implements IStorage {
       groupId,
       groupName,
       isGroupLeader: isFirst,
-      trackingHistory: [...(patient.trackingHistory || []), {
+      trackingHistory: [...(Array.isArray(patient.trackingHistory) ? patient.trackingHistory : []), {
         timestamp: new Date().toISOString(),
         action: 'linked-to-group',
         roomName: groupName
@@ -779,7 +784,7 @@ export class MemStorage implements IStorage {
     for (const patient of groupPatients) {
       if (patient.status !== "waiting" && patient.status !== "requeue") continue;
 
-      const newHistory = [...(patient.trackingHistory || []), {
+      const newHistory = [...(Array.isArray(patient.trackingHistory) ? patient.trackingHistory : []), {
         timestamp: now.toISOString(),
         action: 'called',
         roomName: windowName
@@ -2452,7 +2457,7 @@ export class DatabaseStorage implements IStorage {
     // Only pass valid columns to the database insert, strip any extra frontend fields
     const patientData = {
       name: insertPatient.name,
-      number: insertPatient.number,
+      number: insertPatient.number ?? await this.getNextPatientNumber(insertPatient.userId),
       isPriority: insertPatient.isPriority,
       priorityReason: insertPatient.priorityReason,
       chiefComplaint: insertPatient.chiefComplaint,
@@ -2670,7 +2675,7 @@ export class DatabaseStorage implements IStorage {
         groupId,
         groupName,
         isGroupLeader: isFirst,
-        trackingHistory: [...(patient.trackingHistory || []), {
+        trackingHistory: [...(Array.isArray(patient.trackingHistory) ? patient.trackingHistory : []), {
           timestamp: new Date().toISOString(),
           action: 'linked-to-group',
           roomName: groupName
@@ -2696,7 +2701,7 @@ export class DatabaseStorage implements IStorage {
     for (const patient of groupPatients) {
       if (patient.status !== "waiting" && patient.status !== "requeue") continue;
 
-      const newHistory = [...(patient.trackingHistory || []), {
+      const newHistory = [...(Array.isArray(patient.trackingHistory) ? patient.trackingHistory : []), {
         timestamp: now.toISOString(),
         action: 'called',
         roomName: windowName
@@ -2720,8 +2725,6 @@ export class DatabaseStorage implements IStorage {
           await db.update(schema.windows)
             .set({
               currentPatientId: patient.id,
-              currentPatientName: patient.name || undefined,
-              currentPatientNumber: patient.number
             })
             .where(and(eq(schema.windows.id, windowId), eq(schema.windows.userId, userId)));
         }
@@ -3211,7 +3214,7 @@ export class DatabaseStorage implements IStorage {
     const finalResult = result ? {
       ...result,
       windowName: result.room || undefined
-    } as Patient & { room?: string } : undefined;
+    } as unknown as Patient & { room?: string } : undefined;
     
     return finalResult;
   }
@@ -3277,7 +3280,7 @@ export class DatabaseStorage implements IStorage {
       return {
         ...patient,
         room: roomName
-      };
+      } as unknown as Patient & { room?: string };
     });
 
     // Exclude current call and limit to requested size

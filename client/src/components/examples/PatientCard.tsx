@@ -8,9 +8,10 @@ export default function PatientCardExample() {
     number: 15,
     status: "waiting" as const,
     windowName: "Bilik 1 - Dr. Sarah",
+    registeredAt: new Date("2025-01-01T09:15:00"),
     trackingHistory: [
-      "Registered at 9:15 AM",
-      "Moved to waiting queue at 9:16 AM"
+      { timestamp: "2025-01-01T09:15:00", action: "registered" as const },
+      { timestamp: "2025-01-01T09:16:00", action: "registered" as const }
     ]
   };
 
@@ -20,10 +21,11 @@ export default function PatientCardExample() {
     number: 12,
     status: "in-progress" as const,
     windowName: "Bilik 2 - Dr. Ahmad",
+    registeredAt: new Date("2025-01-01T08:45:00"),
     trackingHistory: [
-      "Registered at 8:45 AM",
-      "Called at 9:30 AM",
-      "In consultation since 9:35 AM"
+      { timestamp: "2025-01-01T08:45:00", action: "registered" as const },
+      { timestamp: "2025-01-01T09:30:00", action: "called" as const },
+      { timestamp: "2025-01-01T09:35:00", action: "in-progress" as const }
     ]
   };
 
@@ -48,6 +50,8 @@ export default function PatientCardExample() {
       <PatientCard
         patient={mockPatient}
         onCall={handleCall}
+        onCallAgain={handleCall}
+        onRecall={handleCall}
         onDelete={handleDelete}
         onComplete={handleComplete}
         onRequeue={handleRequeue}
@@ -55,6 +59,8 @@ export default function PatientCardExample() {
       <PatientCard
         patient={mockInProgressPatient}
         onCall={handleCall}
+        onCallAgain={handleCall}
+        onRecall={handleCall}
         onDelete={handleDelete}
         onComplete={handleComplete}
         onRequeue={handleRequeue}

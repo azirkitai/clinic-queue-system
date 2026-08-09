@@ -27,7 +27,7 @@ let current: EodState = { ...initialState };
 const listeners = new Set<(s: EodState) => void>();
 
 function emit() {
-  for (const l of listeners) l(current);
+  listeners.forEach((l) => l(current));
 }
 
 export function getEodState(): EodState {
