@@ -1290,7 +1290,7 @@ export default function Settings() {
                     Set media to play at specific times. Schedules use Malaysia time (Asia/Kuala_Lumpur).
                   </p>
                 </div>
-                {scheduleForm.id && (
+                {currentSettings.mediaScheduleMode === 'schedule' && scheduleForm.id && (
                   <Button type="button" variant="ghost" size="sm" onClick={resetScheduleForm}>
                     Cancel Edit
                   </Button>
@@ -1305,7 +1305,10 @@ export default function Settings() {
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <button
                     type="button"
-                    onClick={() => setCurrentSettings((previous) => ({ ...previous, mediaScheduleMode: 'current' }))}
+                    onClick={() => {
+                      resetScheduleForm();
+                      setCurrentSettings((previous) => ({ ...previous, mediaScheduleMode: 'current' }));
+                    }}
                     className={`rounded-lg border p-3 text-left transition-colors ${
                       currentSettings.mediaScheduleMode === 'current'
                         ? 'border-primary bg-primary/10'
@@ -1339,6 +1342,8 @@ export default function Settings() {
                 )}
               </div>
 
+              {currentSettings.mediaScheduleMode === 'schedule' ? (
+                <>
               <div className="rounded-lg border bg-muted/20 p-4 space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
@@ -1509,10 +1514,10 @@ export default function Settings() {
                               </span>
                             </div>
                             <p className="text-sm text-muted-foreground">
-                              {schedule.startTime} – {schedule.endTime} · {dayNames || "Tiada hari"}
+                              {schedule.startTime} – {schedule.endTime} · {dayNames || "No days"}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {schedule.mediaType === "youtube" ? "YouTube Video" : schedule.mediaType === "combine" ? `Combine · ${selectedCount} gambar` : `${selectedCount} gambar`}
+                              {schedule.mediaType === "youtube" ? "YouTube Video" : schedule.mediaType === "combine" ? `Combine · ${selectedCount} images` : `${selectedCount} images`}
                             </p>
                           </div>
                           <div className="flex shrink-0 gap-2">
@@ -1541,6 +1546,12 @@ export default function Settings() {
                   </div>
                 )}
               </div>
+                </>
+              ) : (
+                <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+                  Media schedules are disabled while “Use Current Media Settings” is selected.
+                </div>
+              )}
             </div>
 
             {/* Media Gallery Section - Show if "own" or "combine" media is selected */}
