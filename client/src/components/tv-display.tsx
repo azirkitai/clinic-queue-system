@@ -239,7 +239,16 @@ function FitText({
     <div
       ref={containerRef}
       className={className}
-      style={{ width: '100%', height: '100%', overflow: 'hidden', display: 'flex', alignItems: align === 'start' ? 'flex-start' : align === 'end' ? 'flex-end' : 'center', justifyContent: 'center' }}
+      style={{
+        width: '100%',
+        height: '100%',
+        minWidth: 0,
+        minHeight: 0,
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: align === 'start' ? 'flex-start' : align === 'end' ? 'flex-end' : 'center',
+        justifyContent: 'center',
+      }}
       data-testid={testId}
     >
       <span
@@ -248,11 +257,14 @@ function FitText({
           ...baseStyle,
           fontSize: `${fontSize}px`,
           whiteSpace: shouldWrap ? 'normal' : 'nowrap',
-          overflowWrap: shouldWrap ? 'break-word' : 'normal',
+          width: shouldWrap ? '100%' : 'auto',
+          maxWidth: shouldWrap ? '100%' : undefined,
+          overflowWrap: shouldWrap ? 'anywhere' : 'normal',
           wordBreak: shouldWrap ? 'break-word' : 'normal',
           lineHeight: shouldWrap ? 1.05 : 1.1,
           display: 'inline-block',
-          maxWidth: shouldWrap ? '100%' : undefined,
+          minWidth: 0,
+          boxSizing: 'border-box',
           transform: overflowScale < 1 ? `scale(${overflowScale})` : undefined,
           transformOrigin: 'center center',
         }}
@@ -2017,8 +2029,8 @@ export function TVDisplay({
       </div>
 
       {/* Main content */}
-      <div className="relative z-10 flex flex-col items-center justify-center text-center px-8"
-           style={{ maxWidth: '1200px', width: '90%', gap: '1.5rem' }}>
+       <div className="relative z-10 flex flex-col items-center justify-center text-center px-8"
+            style={{ maxWidth: '1200px', width: '90%', minWidth: 0, gap: '1.5rem' }}>
 
         {/* CALLING badge */}
         <div className="px-10 py-3 rounded-full tv-highlight-pulse-border"
@@ -2035,53 +2047,33 @@ export function TVDisplay({
         </div>
 
         {/* Patient Name — maximizes the box using wrapped font sizing */}
-        <div className="relative w-full flex items-center justify-center"
-             style={{ height: 'min(45vh, 420px)' }}>
-          <div className="px-6 py-6 rounded-2xl w-full h-full flex items-center justify-center"
+         <div className="relative w-full min-w-0 flex items-center justify-center"
+              style={{ height: 'min(45vh, 420px)', minHeight: 0 }}>
+           <div className="px-6 py-6 rounded-2xl w-full h-full min-w-0 min-h-0 flex items-center justify-center"
                style={{
                  background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
                  border: `1px solid rgba(255,255,255,0.1)`,
-                 backdropFilter: 'blur(8px)'
+                  backdropFilter: 'blur(8px)',
+                  boxSizing: 'border-box',
+                  overflow: 'hidden',
                }}>
-            <div className="flex items-center justify-center flex-col w-full h-full"
-                 style={{
-                   fontSize: currentPatient.groupMembers && currentPatient.groupMembers.length > 1
-                     ? calculateWrappedFontSize(
-                         currentPatient.groupMembers.map((m: any) => getDisplayName(m.name)).join(' \u00b7 '),
-                         880,
-                         360,
-                         80,
-                         28
-                       )
-                     : calculateWrappedFontSize(
-                         getDisplayName(currentPatient.name),
-                         880,
-                         360,
-                         140,
-                         28
-                       ),
-                   fontWeight: 900,
-                   color: modalTextColor,
-                   lineHeight: '1.15',
-                   wordBreak: 'normal',
-                   overflowWrap: 'normal',
-                   overflow: 'hidden',
-                   textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
-                   letterSpacing: '0.02em',
-                   textAlign: 'center'
-                 }} data-testid="highlight-patient-name">
-              {currentPatient.groupMembers && currentPatient.groupMembers.length > 1 ? (
-                <div className="flex flex-col items-center gap-2">
-                  {currentPatient.groupMembers.map((member: any, idx: number) => (
-                    <div key={idx}>
-                      {getDisplayName(member.name)}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                getDisplayName(currentPatient.name)
-              )}
-            </div>
+             <FitText
+               text={currentPatient.groupMembers && currentPatient.groupMembers.length > 1
+                 ? currentPatient.groupMembers.map((member: any) => getDisplayName(member.name)).join(' · ')
+                 : getDisplayName(currentPatient.name)}
+               className="w-full h-full min-w-0 min-h-0"
+               baseStyle={{
+                 fontWeight: 900,
+                 color: modalTextColor,
+                 textShadow: `0 0 40px ${modalBorderColor}44, 0 2px 10px rgba(0,0,0,0.5)`,
+                 letterSpacing: '0.02em',
+                 textAlign: 'center',
+               }}
+               maxFontSize={isFullscreen ? 140 : 120}
+               minFontSize={20}
+               wrap
+               testId="highlight-patient-name"
+             />
           </div>
         </div>
 
@@ -2093,26 +2085,37 @@ export function TVDisplay({
              }} />
 
         {/* Room info */}
-        <div className="flex items-center gap-4 flex-wrap justify-center">
+         <div className="flex items-center gap-4 flex-wrap justify-center w-full min-w-0"
+              style={{ maxHeight: '14vh', overflow: 'hidden' }}>
           <span style={{
-            fontSize: 'var(--tv-fs-lg)',
+             fontSize: 'clamp(20px, 3vmin, 42px)',
             color: modalTextColor,
             opacity: 0.7,
             fontWeight: 500,
             letterSpacing: '0.1em',
-            textTransform: 'uppercase'
+             textTransform: 'uppercase',
+             flexShrink: 0,
           }}>
             Please proceed to
           </span>
-          <span style={{
-            fontSize: 'var(--tv-fs-3xl)',
-            fontWeight: 800,
-            color: modalBorderColor,
-            textShadow: `0 0 30px ${modalBorderColor}55`,
-            letterSpacing: '0.05em'
-          }} data-testid="highlight-patient-room">
-            {currentPatient.room}
-          </span>
+           <div className="min-w-0 flex-1"
+                style={{ height: 'clamp(42px, 9vmin, 110px)', minWidth: '180px', overflow: 'hidden' }}>
+             <FitText
+               text={currentPatient.room}
+               className="w-full h-full min-w-0"
+               baseStyle={{
+                 fontWeight: 800,
+                 color: modalBorderColor,
+                 textShadow: `0 0 30px ${modalBorderColor}55`,
+                 letterSpacing: '0.05em',
+                 textAlign: 'center',
+               }}
+               maxFontSize={isFullscreen ? 120 : 90}
+               minFontSize={20}
+               wrap
+               testId="highlight-patient-room"
+             />
+           </div>
         </div>
 
       </div>
