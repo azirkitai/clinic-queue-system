@@ -9,35 +9,49 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 
-// Import pages
-import Dashboard from "@/pages/dashboard";
-import Management from "@/pages/management";
-import Register from "@/pages/register";
-import Queue from "@/pages/queue";
-import Dispensary from "@/pages/dispensary";
-import Settings from "@/pages/settings";
-import Account from "@/pages/account";
-import Administration from "@/pages/administration";
+// Keep the standalone TV route in the entry chunk so older TV browsers can
+// start it without waiting for the authenticated dashboard chunks.
+import TvStandalone from "@/pages/tv-standalone";
 import LoginPage from "@/pages/login";
 import QrAuthPage from "@/pages/qr-auth";
-import TvStandalone from "@/pages/tv-standalone";
-import NotFound from "@/pages/not-found";
+
+// Management pages are not needed by the TV route. Split them into on-demand
+// chunks so TV browsers download only the display code they actually use.
+const Dashboard = lazy(() => import("@/pages/dashboard"));
+const Management = lazy(() => import("@/pages/management"));
+const Register = lazy(() => import("@/pages/register"));
+const Queue = lazy(() => import("@/pages/queue"));
+const Dispensary = lazy(() => import("@/pages/dispensary"));
+const Settings = lazy(() => import("@/pages/settings"));
+const Account = lazy(() => import("@/pages/account"));
+const Administration = lazy(() => import("@/pages/administration"));
+const NotFound = lazy(() => import("@/pages/not-found"));
+
+function PageFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/management" component={Management} />
-      <Route path="/register" component={Register} />
-      <Route path="/queue" component={Queue} />
-      <Route path="/dispensary" component={Dispensary} />
-      <Route path="/settings" component={Settings} />
-      <Route path="/account" component={Account} />
-      <Route path="/administration" component={Administration} />
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<PageFallback />}>
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/management" component={Management} />
+        <Route path="/register" component={Register} />
+        <Route path="/queue" component={Queue} />
+        <Route path="/dispensary" component={Dispensary} />
+        <Route path="/settings" component={Settings} />
+        <Route path="/account" component={Account} />
+        <Route path="/administration" component={Administration} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 
