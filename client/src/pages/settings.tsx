@@ -12,7 +12,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { GradientPicker } from "@/components/ui/gradient-picker";
-import type { Setting, Media, Theme } from "@shared/schema";
+import type { Setting, Media, MediaSchedule, Theme } from "@shared/schema";
 import { audioSystem } from "@/lib/audio-system";
 import { TvLayoutPreview } from "@/components/tv-layout-preview";
 import { useAuth } from "@/hooks/use-auth";
@@ -100,6 +100,29 @@ interface SettingsState {
   marqueeBackgroundMode: 'solid' | 'gradient';
   marqueeBackgroundGradient: string;
 }
+
+type ScheduleMediaType = "own" | "youtube" | "combine";
+
+interface MediaScheduleForm {
+  id?: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  days: number[];
+  mediaType: ScheduleMediaType;
+  mediaIds: string[];
+  youtubeUrl: string;
+}
+
+const SCHEDULE_DAYS = [
+  { value: 1, label: "Isnin" },
+  { value: 2, label: "Selasa" },
+  { value: 3, label: "Rabu" },
+  { value: 4, label: "Khamis" },
+  { value: 5, label: "Jumaat" },
+  { value: 6, label: "Sabtu" },
+  { value: 0, label: "Ahad" },
+];
 
 function TvLinkCard() {
   const { toast } = useToast();
@@ -862,6 +885,114 @@ export default function Settings() {
     staleTime: 30000,
   });
 
+  const { data: mediaSchedules = [], isLoading: schedulesLoading } = useQuery<MediaSchedule[]>({
+    queryKey: ['/api/media-schedules'],
+    staleTime: 30000,
+  });
+
+  const [scheduleForm, setScheduleForm] = useState<MediaScheduleForm>({
+    name: "",
+    startTime: "08:00",
+    endTime: "12:00",
+    days: [1, 2, 3, 4, 5],
+    mediaType: "own",
+    mediaIds: [],
+    youtubeUrl: "",
+  });
+
+  const resetScheduleForm = () => {
+    setScheduleForm({
+      name: "",
+      startTime: "08:00",
+      endTime: "12:00",
+      days: [1, 2, 3, 4, 5],
+      mediaType: "own",
+      mediaIds: [],
+      youtubeUrl: "",
+    });
+  };
+
+  const scheduleMutation = useMutation({
+    mutationFn: async (form: MediaScheduleForm) => {
+      const payload = {
+        name: form.name.trim(),
+        startTime: form.startTime,
+        endTime: form.endTime,
+        days: form.days,
+        mediaType: form.mediaType,
+        mediaIds: form.mediaIds,
+        youtubeUrl: form.youtubeUrl.trim() || null,
+      };
+      return apiRequest(form.id ? 'PATCH' : 'POST', form.id ? `/api/media-schedules/${form.id}` : '/api/media-schedules', payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/media-schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/display'] });
+      resetScheduleForm();
+      toast({ title: "Jadual disimpan", description: "Media akan bertukar mengikut waktu yang ditetapkan." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Gagal simpan jadual", description: error.message || "Sila semak maklumat jadual.", variant: "destructive" });
+    },
+  });
+
+  const scheduleDeleteMutation = useMutation({
+    mutationFn: async (id: string) => apiRequest('DELETE', `/api/media-schedules/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/media-schedules'] });
+      toast({ title: "Jadual dipadam" });
+    },
+    onError: () => toast({ title: "Gagal padam jadual", variant: "destructive" }),
+  });
+
+  const scheduleToggleMutation = useMutation({
+    mutationFn: async (schedule: MediaSchedule) =>
+      apiRequest('PATCH', `/api/media-schedules/${schedule.id}`, { isActive: !schedule.isActive }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/media-schedules'] });
+      toast({ title: "Status jadual dikemas kini" });
+    },
+    onError: () => toast({ title: "Gagal kemas kini jadual", variant: "destructive" }),
+  });
+
+  const editSchedule = (schedule: MediaSchedule) => {
+    setScheduleForm({
+      id: schedule.id,
+      name: schedule.name,
+      startTime: schedule.startTime,
+      endTime: schedule.endTime,
+      days: Array.isArray(schedule.days) ? schedule.days.map(Number) : [],
+      mediaType: schedule.mediaType as ScheduleMediaType,
+      mediaIds: Array.isArray(schedule.mediaIds) ? schedule.mediaIds.map(String) : [],
+      youtubeUrl: schedule.youtubeUrl || "",
+    });
+  };
+
+  const toggleScheduleDay = (day: number) => {
+    setScheduleForm((previous) => ({
+      ...previous,
+      days: previous.days.includes(day)
+        ? previous.days.filter((value) => value !== day)
+        : [...previous.days, day],
+    }));
+  };
+
+  const submitSchedule = () => {
+    if (!scheduleForm.name.trim() || scheduleForm.days.length === 0) {
+      toast({ title: "Maklumat belum lengkap", description: "Masukkan nama dan pilih sekurang-kurangnya satu hari.", variant: "destructive" });
+      return;
+    }
+    if ((scheduleForm.mediaType === "youtube" || scheduleForm.mediaType === "combine") && !scheduleForm.youtubeUrl.trim()) {
+      toast({ title: "YouTube URL diperlukan", variant: "destructive" });
+      return;
+    }
+    if ((scheduleForm.mediaType === "own" || scheduleForm.mediaType === "combine") && scheduleForm.mediaIds.length === 0) {
+      toast({ title: "Pilih media dahulu", description: "Pilih sekurang-kurangnya satu gambar untuk jadual ini.", variant: "destructive" });
+      return;
+    }
+    scheduleMutation.mutate(scheduleForm);
+  };
+
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const totalPages = Math.max(1, Math.ceil(mediaFiles.length / 3));
   
@@ -1143,6 +1274,226 @@ export default function Settings() {
                   )}
                 </div>
               )}
+            </div>
+
+            {/* Media Schedule Section */}
+            <div className="space-y-4 border-t pt-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <Label className="text-base font-semibold">Media Schedule</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Tetapkan media yang dimainkan mengikut waktu. Jadual menggunakan waktu Malaysia (Asia/Kuala_Lumpur).
+                  </p>
+                </div>
+                {scheduleForm.id && (
+                  <Button type="button" variant="ghost" size="sm" onClick={resetScheduleForm}>
+                    Batal Edit
+                  </Button>
+                )}
+              </div>
+
+              <div className="rounded-lg border bg-muted/20 p-4 space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="schedule-name">Nama jadual</Label>
+                    <Input
+                      id="schedule-name"
+                      value={scheduleForm.name}
+                      onChange={(event) => setScheduleForm((previous) => ({ ...previous, name: event.target.value }))}
+                      placeholder="Contoh: Waktu Pagi"
+                      maxLength={80}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Jenis media</Label>
+                    <select
+                      value={scheduleForm.mediaType}
+                      onChange={(event) => setScheduleForm((previous) => ({
+                        ...previous,
+                        mediaType: event.target.value as ScheduleMediaType,
+                      }))}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="own">Upload Images</option>
+                      <option value="youtube">YouTube Video</option>
+                      <option value="combine">Combine (Image + YouTube Audio)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="schedule-start">Mula</Label>
+                    <Input
+                      id="schedule-start"
+                      type="time"
+                      value={scheduleForm.startTime}
+                      onChange={(event) => setScheduleForm((previous) => ({ ...previous, startTime: event.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="schedule-end">Tamat</Label>
+                    <Input
+                      id="schedule-end"
+                      type="time"
+                      value={scheduleForm.endTime}
+                      onChange={(event) => setScheduleForm((previous) => ({ ...previous, endTime: event.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Hari aktif</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {SCHEDULE_DAYS.map((day) => {
+                      const selected = scheduleForm.days.includes(day.value);
+                      return (
+                        <Button
+                          key={day.value}
+                          type="button"
+                          size="sm"
+                          variant={selected ? "default" : "outline"}
+                          onClick={() => toggleScheduleDay(day.value)}
+                          className="min-w-[74px]"
+                        >
+                          {day.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {(scheduleForm.mediaType === "youtube" || scheduleForm.mediaType === "combine") && (
+                  <div className="space-y-2">
+                    <Label htmlFor="schedule-youtube-url">
+                      YouTube URL {scheduleForm.mediaType === "combine" ? "(Audio Only)" : ""}
+                    </Label>
+                    <Input
+                      id="schedule-youtube-url"
+                      type="url"
+                      value={scheduleForm.youtubeUrl}
+                      onChange={(event) => setScheduleForm((previous) => ({ ...previous, youtubeUrl: event.target.value }))}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                    />
+                  </div>
+                )}
+
+                {(scheduleForm.mediaType === "own" || scheduleForm.mediaType === "combine") && (
+                  <div className="space-y-2">
+                    <Label>Gambar untuk slot ini</Label>
+                    {mediaFiles.length > 0 ? (
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {mediaFiles.map((media) => {
+                          const selected = scheduleForm.mediaIds.includes(media.id);
+                          return (
+                            <button
+                              key={media.id}
+                              type="button"
+                              onClick={() => setScheduleForm((previous) => ({
+                                ...previous,
+                                mediaIds: selected
+                                  ? previous.mediaIds.filter((id) => id !== media.id)
+                                  : [...previous.mediaIds, media.id],
+                              }))}
+                              className={`flex items-center gap-3 rounded-md border p-2 text-left transition-colors ${
+                                selected ? "border-primary bg-primary/10" : "hover:bg-muted"
+                              }`}
+                            >
+                              <div className="h-12 w-16 shrink-0 overflow-hidden rounded bg-muted">
+                                {media.type === "image" && (
+                                  <img
+                                    src={media.url || `/api/media/${media.id}/file`}
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                  />
+                                )}
+                              </div>
+                              <span className="min-w-0 truncate text-sm">{media.name || media.filename}</span>
+                              {selected && <Check className="ml-auto h-4 w-4 shrink-0 text-primary" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Upload gambar dahulu untuk digunakan dalam jadual.</p>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2">
+                  {scheduleForm.id && (
+                    <Button type="button" variant="outline" onClick={resetScheduleForm}>
+                      Batal
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    onClick={submitSchedule}
+                    disabled={scheduleMutation.isPending}
+                  >
+                    {scheduleMutation.isPending ? "Menyimpan..." : scheduleForm.id ? "Kemaskini Jadual" : "Tambah Jadual"}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Jadual disimpan</Label>
+                {schedulesLoading ? (
+                  <div className="h-16 animate-pulse rounded-md bg-muted" />
+                ) : mediaSchedules.length === 0 ? (
+                  <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                    Tiada jadual lagi. Tetapan media biasa akan digunakan sehingga jadual ditambah.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {mediaSchedules.map((schedule) => {
+                      const dayNames = SCHEDULE_DAYS
+                        .filter((day) => Array.isArray(schedule.days) && schedule.days.map(Number).includes(day.value))
+                        .map((day) => day.label)
+                        .join(", ");
+                      const selectedCount = Array.isArray(schedule.mediaIds) ? schedule.mediaIds.length : 0;
+                      return (
+                        <div key={schedule.id} className="flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-medium">{schedule.name}</span>
+                              <span className={`rounded-full px-2 py-0.5 text-xs ${schedule.isActive ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
+                                {schedule.isActive ? "Aktif" : "Tidak aktif"}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {schedule.startTime} – {schedule.endTime} · {dayNames || "Tiada hari"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {schedule.mediaType === "youtube" ? "YouTube Video" : schedule.mediaType === "combine" ? `Combine · ${selectedCount} gambar` : `${selectedCount} gambar`}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 gap-2">
+                            <Button type="button" variant="outline" size="sm" onClick={() => scheduleToggleMutation.mutate(schedule)}>
+                              {schedule.isActive ? "Nyahaktif" : "Aktifkan"}
+                            </Button>
+                            <Button type="button" variant="outline" size="sm" onClick={() => editSchedule(schedule)}>
+                              Edit
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                if (confirm(`Padam jadual "${schedule.name}"?`)) {
+                                  scheduleDeleteMutation.mutate(schedule.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Media Gallery Section - Show if "own" or "combine" media is selected */}

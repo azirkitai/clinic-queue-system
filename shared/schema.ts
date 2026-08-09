@@ -97,6 +97,23 @@ export const media = pgTable("media", {
   userId: varchar("user_id").notNull(),
 });
 
+// Recurring media schedules. Times are interpreted in Malaysia time
+// (Asia/Kuala_Lumpur) by the TV media endpoint.
+export const mediaSchedules = pgTable("media_schedules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  startTime: text("start_time").notNull(), // HH:mm
+  endTime: text("end_time").notNull(), // HH:mm
+  days: json("days").notNull().default(sql`'[]'::json`), // Sunday=0 ... Saturday=6
+  mediaType: text("media_type").notNull(), // 'own', 'youtube', or 'combine'
+  mediaIds: json("media_ids").notNull().default(sql`'[]'::json`),
+  youtubeUrl: text("youtube_url"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+  userId: varchar("user_id").notNull(),
+});
+
 
 // Text Groups table for organizing text elements
 export const textGroups = pgTable("text_groups", {
@@ -213,6 +230,25 @@ export const insertMediaSchema = createInsertSchema(media).pick({
   userId: true,
 });
 
+export const insertMediaScheduleSchema = createInsertSchema(mediaSchedules).pick({
+  name: true,
+  startTime: true,
+  endTime: true,
+  days: true,
+  mediaType: true,
+  mediaIds: true,
+  youtubeUrl: true,
+  userId: true,
+}).extend({
+  name: z.string().trim().min(1).max(80),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/),
+  days: z.array(z.number().int().min(0).max(6)).min(1).max(7),
+  mediaType: z.enum(["own", "youtube", "combine"]),
+  mediaIds: z.array(z.string()).max(100),
+  youtubeUrl: z.string().url().optional().nullable(),
+});
+
 export const insertTextGroupSchema = createInsertSchema(textGroups).pick({
   groupName: true,
   displayName: true,
@@ -293,6 +329,7 @@ export type InsertWindow = z.infer<typeof insertWindowSchema>;
 export type InsertPatient = z.infer<typeof insertPatientSchema>;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 export type InsertMedia = z.infer<typeof insertMediaSchema>;
+export type InsertMediaSchedule = z.infer<typeof insertMediaScheduleSchema>;
 export type InsertTextGroup = z.infer<typeof insertTextGroupSchema>;
 export type InsertTheme = z.infer<typeof insertThemeSchema>;
 export type InsertQrSession = z.infer<typeof insertQrSessionSchema>;
@@ -305,6 +342,7 @@ export type Patient = typeof patients.$inferSelect & {
 };
 export type Setting = typeof settings.$inferSelect;
 export type Media = typeof media.$inferSelect;
+export type MediaSchedule = typeof mediaSchedules.$inferSelect;
 export type TextGroup = typeof textGroups.$inferSelect;
 export type Theme = typeof themes.$inferSelect;
 export type QrSession = typeof qrSessions.$inferSelect;

@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Patient, type InsertPatient, type Setting, type InsertSetting, type Media, type InsertMedia, type TextGroup, type InsertTextGroup, type Theme, type InsertTheme, type QrSession, type InsertQrSession, users, settings, themes, textGroups, qrSessions } from "@shared/schema";
+import { type User, type InsertUser, type Patient, type InsertPatient, type Setting, type InsertSetting, type Media, type InsertMedia, type MediaSchedule, type InsertMediaSchedule, type TextGroup, type InsertTextGroup, type Theme, type InsertTheme, type QrSession, type InsertQrSession, users, settings, themes, textGroups, qrSessions } from "@shared/schema";
 import * as schema from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, gte, inArray } from "drizzle-orm";
@@ -134,6 +134,11 @@ export interface IStorage {
   updateMedia(id: string, updates: Partial<Media>, userId: string): Promise<Media | undefined>;
   deleteMedia(id: string, userId: string): Promise<boolean>;
   getActiveMedia(userId: string): Promise<Media[]>;
+  getMediaSchedules(userId: string): Promise<MediaSchedule[]>;
+  getActiveMediaSchedule(userId: string, now?: Date): Promise<MediaSchedule | undefined>;
+  createMediaSchedule(schedule: InsertMediaSchedule): Promise<MediaSchedule>;
+  updateMediaSchedule(id: string, updates: Partial<MediaSchedule>, userId: string): Promise<MediaSchedule | undefined>;
+  deleteMediaSchedule(id: string, userId: string): Promise<boolean>;
   
   // Theme methods
   getThemes(userId: string): Promise<Theme[]>;
@@ -168,6 +173,7 @@ export class MemStorage implements IStorage {
   private windows: Map<string, Window>;
   private settings: Map<string, Setting>; // Will be keyed by ${userId}:${key}
   private media: Map<string, Media>;
+  private mediaSchedules: Map<string, MediaSchedule>;
   private themes: Map<string, Theme>;
   private textGroups: Map<string, TextGroup>;
   private qrSessions: Map<string, QrSession>;
@@ -178,6 +184,7 @@ export class MemStorage implements IStorage {
     this.windows = new Map();
     this.settings = new Map();
     this.media = new Map();
+    this.mediaSchedules = new Map();
     this.themes = new Map();
     this.textGroups = new Map();
     this.qrSessions = new Map();
@@ -1318,6 +1325,46 @@ export class MemStorage implements IStorage {
 
   async getActiveMedia(userId: string): Promise<Media[]> {
     return Array.from(this.media.values()).filter(media => media.userId === userId && media.isActive);
+  }
+
+  async getMediaSchedules(userId: string): Promise<MediaSchedule[]> {
+    return Array.from(this.mediaSchedules.values())
+      .filter(schedule => schedule.userId === userId)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  }
+
+  async getActiveMediaSchedule(userId: string, now: Date = new Date()): Promise<MediaSchedule | undefined> {
+    const { isScheduleActive } = await import("./media-schedule");
+    return (await this.getMediaSchedules(userId)).find(schedule => isScheduleActive(schedule, now));
+  }
+
+  async createMediaSchedule(insertSchedule: InsertMediaSchedule): Promise<MediaSchedule> {
+    const id = randomUUID();
+    const now = new Date();
+    const schedule: MediaSchedule = {
+      ...insertSchedule,
+      id,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+      youtubeUrl: insertSchedule.youtubeUrl ?? null,
+    };
+    this.mediaSchedules.set(id, schedule);
+    return schedule;
+  }
+
+  async updateMediaSchedule(id: string, updates: Partial<MediaSchedule>, userId: string): Promise<MediaSchedule | undefined> {
+    const schedule = this.mediaSchedules.get(id);
+    if (!schedule || schedule.userId !== userId) return undefined;
+    const updated = { ...schedule, ...updates, updatedAt: new Date() };
+    this.mediaSchedules.set(id, updated);
+    return updated;
+  }
+
+  async deleteMediaSchedule(id: string, userId: string): Promise<boolean> {
+    const schedule = this.mediaSchedules.get(id);
+    if (!schedule || schedule.userId !== userId) return false;
+    return this.mediaSchedules.delete(id);
   }
   
   // Theme methods implementation
@@ -3063,6 +3110,37 @@ export class DatabaseStorage implements IStorage {
       data: sql<string | null>`NULL`.as('data'), // Exclude actual data, return NULL placeholder
     }).from(schema.media)
       .where(and(eq(schema.media.isActive, true), eq(schema.media.userId, userId)));
+  }
+
+  async getMediaSchedules(userId: string): Promise<MediaSchedule[]> {
+    return await db.select().from(schema.mediaSchedules)
+      .where(eq(schema.mediaSchedules.userId, userId))
+      .orderBy(schema.mediaSchedules.startTime);
+  }
+
+  async getActiveMediaSchedule(userId: string, now: Date = new Date()): Promise<MediaSchedule | undefined> {
+    const { isScheduleActive } = await import("./media-schedule");
+    const schedules = await this.getMediaSchedules(userId);
+    return schedules.find(schedule => isScheduleActive(schedule, now));
+  }
+
+  async createMediaSchedule(insertSchedule: InsertMediaSchedule): Promise<MediaSchedule> {
+    const [schedule] = await db.insert(schema.mediaSchedules).values(insertSchedule).returning();
+    return schedule;
+  }
+
+  async updateMediaSchedule(id: string, updates: Partial<MediaSchedule>, userId: string): Promise<MediaSchedule | undefined> {
+    const [schedule] = await db.update(schema.mediaSchedules)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(schema.mediaSchedules.id, id), eq(schema.mediaSchedules.userId, userId)))
+      .returning();
+    return schedule;
+  }
+
+  async deleteMediaSchedule(id: string, userId: string): Promise<boolean> {
+    const result = await db.delete(schema.mediaSchedules)
+      .where(and(eq(schema.mediaSchedules.id, id), eq(schema.mediaSchedules.userId, userId)));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   // Theme methods

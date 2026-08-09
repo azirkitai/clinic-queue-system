@@ -310,8 +310,11 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
   const { data: activeMedia = [] } = useQuery<any[]>({
     queryKey: [`/api/tv/${token}/media/active`],
     enabled: !!clinicInfo,
-    staleTime: 180000,
-    refetchInterval: 180000,
+    // Schedules can change at the minute boundary; refresh often enough to
+    // switch slots without requiring a page reload. WebSocket invalidation
+    // still makes manual edits appear immediately.
+    staleTime: 60000,
+    refetchInterval: 60000,
     refetchOnWindowFocus: false,
   });
 
@@ -686,7 +689,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
           </div>
         )}
         <p style={{ color: '#9CA3AF', fontSize: 'clamp(9px, 1.0vmin, 14px)' }}>
-          Paparan ini akan dikemas kini secara automatik setiap 15 saat.
+          Queue dikemas kini setiap 15 saat; media berjadual bertukar secara automatik dalam masa sehingga 1 minit.
           <br />Tiada login diperlukan.
         </p>
       </div>

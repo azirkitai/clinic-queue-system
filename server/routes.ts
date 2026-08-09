@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
-import { insertPatientSchema, insertUserSchema, insertTextGroupSchema, insertThemeSchema, insertQrSessionSchema, linkPatientGroupSchema, callPatientGroupSchema } from "@shared/schema";
+import { insertPatientSchema, insertUserSchema, insertTextGroupSchema, insertThemeSchema, insertQrSessionSchema, insertMediaScheduleSchema, linkPatientGroupSchema, callPatientGroupSchema } from "@shared/schema";
 import { createHash, randomBytes } from "crypto";
 import { z } from "zod";
 import { getOnlineUserIds } from "./websocket";
@@ -93,6 +93,58 @@ function setCache(key: string, userId: string, data: any): void {
     timestamp: Date.now(),
     userId
   });
+}
+
+async function getDisplayMediaForUser(userId: string, now: Date = new Date()) {
+  const [mediaTypeSetting, youtubeUrlSetting, schedule] = await Promise.all([
+    storage.getSetting("dashboardMediaType", userId),
+    storage.getSetting("youtubeUrl", userId),
+    storage.getActiveMediaSchedule(userId, now),
+  ]);
+
+  const dashboardMediaType = schedule?.mediaType || mediaTypeSetting?.value || "own";
+  const youtubeUrl = schedule?.youtubeUrl || youtubeUrlSetting?.value || "";
+  const allMedia = schedule
+    ? (await storage.getActiveMedia(userId)).filter((media) =>
+        media.isActive &&
+        Array.isArray(schedule.mediaIds) &&
+        schedule.mediaIds.map(String).includes(media.id),
+      )
+    : await storage.getActiveMedia(userId);
+
+  if (dashboardMediaType === "youtube" && youtubeUrl) {
+    return [{
+      id: "youtube-video",
+      name: schedule?.name || "YouTube Video",
+      filename: "youtube-video",
+      url: youtubeUrl,
+      type: "youtube" as const,
+      mimeType: "video/youtube",
+      size: 0,
+      isActive: true,
+      uploadedAt: new Date(),
+    }];
+  }
+
+  const lightweightMedia = allMedia.map(({ data, ...rest }) => rest);
+  const includeYoutubeAudio = schedule
+    ? dashboardMediaType === "combine"
+    : dashboardMediaType === "combine" || dashboardMediaType === "own";
+  if (includeYoutubeAudio && youtubeUrl) {
+    lightweightMedia.push({
+      id: "youtube-audio",
+      name: schedule?.name || "YouTube Audio",
+      filename: "youtube-audio",
+      url: youtubeUrl,
+      type: "youtube-audio" as any,
+      mimeType: "audio/youtube",
+      size: 0,
+      isActive: true,
+      uploadedAt: new Date(),
+      userId,
+    });
+  }
+  return lightweightMedia;
 }
 
 // Debounce timers for cache invalidation (batch rapid mutations)
@@ -2391,6 +2443,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Media management routes
+
+  // Media schedules
+  app.get("/api/media-schedules", requireAuth, async (req, res) => {
+    try {
+      const schedules = await storage.getMediaSchedules(req.session.userId as string);
+      res.json(schedules);
+    } catch (error) {
+      console.error("Error fetching media schedules:", error);
+      res.status(500).json({ error: "Failed to fetch media schedules" });
+    }
+  });
+
+  app.post("/api/media-schedules", requireAuth, async (req, res) => {
+    try {
+      const parsed = insertMediaScheduleSchema.omit({ userId: true }).safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid schedule" });
+      }
+
+      const payload = parsed.data;
+      if ((payload.mediaType === "youtube" || payload.mediaType === "combine") && !payload.youtubeUrl) {
+        return res.status(400).json({ error: "YouTube URL is required for this media type" });
+      }
+      if ((payload.mediaType === "own" || payload.mediaType === "combine") && payload.mediaIds.length === 0) {
+        return res.status(400).json({ error: "Select at least one uploaded image" });
+      }
+
+      const ownedMedia = await storage.getMedia(req.session.userId as string);
+      const ownedIds = new Set(ownedMedia.map(media => media.id));
+      if (payload.mediaIds.some(id => !ownedIds.has(id))) {
+        return res.status(400).json({ error: "One or more selected media files are invalid" });
+      }
+
+      const schedule = await storage.createMediaSchedule({
+        ...payload,
+        userId: req.session.userId as string,
+      });
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit("media:updated", { timestamp: Date.now() });
+      }
+      res.status(201).json(schedule);
+    } catch (error) {
+      console.error("Error creating media schedule:", error);
+      res.status(500).json({ error: "Failed to create media schedule" });
+    }
+  });
+
+  app.patch("/api/media-schedules/:id", requireAuth, async (req, res) => {
+    try {
+      const parsed = insertMediaScheduleSchema
+        .omit({ userId: true })
+        .extend({ isActive: z.boolean().optional() })
+        .partial()
+        .safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid schedule" });
+      }
+      if (parsed.data.mediaType && (parsed.data.mediaType === "youtube" || parsed.data.mediaType === "combine") && !parsed.data.youtubeUrl) {
+        return res.status(400).json({ error: "YouTube URL is required for this media type" });
+      }
+      if (parsed.data.mediaIds) {
+        const ownedMedia = await storage.getMedia(req.session.userId as string);
+        const ownedIds = new Set(ownedMedia.map(media => media.id));
+        if (parsed.data.mediaIds.some(id => !ownedIds.has(id))) {
+          return res.status(400).json({ error: "One or more selected media files are invalid" });
+        }
+      }
+      const schedule = await storage.updateMediaSchedule(
+        req.params.id,
+        parsed.data,
+        req.session.userId as string,
+      );
+      if (!schedule) return res.status(404).json({ error: "Schedule not found" });
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit("media:updated", { timestamp: Date.now() });
+      }
+      res.json(schedule);
+    } catch (error) {
+      console.error("Error updating media schedule:", error);
+      res.status(500).json({ error: "Failed to update media schedule" });
+    }
+  });
+
+  app.delete("/api/media-schedules/:id", requireAuth, async (req, res) => {
+    try {
+      const deleted = await storage.deleteMediaSchedule(req.params.id, req.session.userId as string);
+      if (!deleted) return res.status(404).json({ error: "Schedule not found" });
+      if (globalIo) {
+        globalIo.to(`clinic:${req.session.userId}`).emit("media:updated", { timestamp: Date.now() });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting media schedule:", error);
+      res.status(500).json({ error: "Failed to delete media schedule" });
+    }
+  });
   
   // Get all media files
   app.get("/api/media", async (req, res) => {
@@ -2822,49 +2970,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Session inactive" });
       }
       
-      // ✅ OPTIMIZED: Fetch only the 2 specific settings needed instead of ALL settings (~220KB)
-      // This reduces Neon data transfer by ~95% per request
-      const [mediaTypeSetting, youtubeUrlSetting] = await Promise.all([
-        storage.getSetting('dashboardMediaType', req.session.userId),
-        storage.getSetting('youtubeUrl', req.session.userId)
-      ]);
-
-      const dashboardMediaType = mediaTypeSetting?.value || "own";
-      const youtubeUrl = youtubeUrlSetting?.value || "";
-
-      if (dashboardMediaType === "youtube" && youtubeUrl) {
-        const youtubeMedia = [{
-          id: "youtube-video",
-          name: "YouTube Video",
-          filename: "youtube-video",
-          url: youtubeUrl,
-          type: "youtube" as const,
-          mimeType: "video/youtube",
-          size: 0,
-          isActive: true,
-          uploadedAt: new Date()
-        }];
-        res.json(youtubeMedia);
-      } else {
-        // "combine" or "own" — both can include audio if URL is provided
-        const activeMedia = await storage.getActiveMedia(req.session.userId);
-        const lightweightMedia = activeMedia.map(({ data, ...rest }) => rest);
-        if (youtubeUrl) {
-          lightweightMedia.push({
-            id: "youtube-audio",
-            name: "YouTube Audio",
-            filename: "youtube-audio",
-            url: youtubeUrl,
-            type: "youtube-audio" as any,
-            mimeType: "audio/youtube",
-            size: 0,
-            isActive: true,
-            uploadedAt: new Date(),
-            userId: req.session.userId
-          });
-        }
-        res.json(lightweightMedia);
-      }
+      res.json(await getDisplayMediaForUser(req.session.userId));
     } catch (error) {
       console.error("Error fetching display media:", error);
       res.status(500).json({ error: "Failed to fetch display media" });
@@ -3683,46 +3789,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Invalid TV token" });
       }
       
-      const [mediaTypeSetting, youtubeUrlSetting] = await Promise.all([
-        storage.getSetting('dashboardMediaType', user.id),
-        storage.getSetting('youtubeUrl', user.id)
-      ]);
-
-      const dashboardMediaType = mediaTypeSetting?.value || "own";
-      const youtubeUrl = youtubeUrlSetting?.value || "";
-
-      if (dashboardMediaType === "youtube" && youtubeUrl) {
-        const youtubeMedia = [{
-          id: "youtube-video",
-          name: "YouTube Video",
-          filename: "youtube-video",
-          url: youtubeUrl,
-          type: "youtube" as const,
-          mimeType: "video/youtube",
-          size: 0,
-          isActive: true,
-          uploadedAt: new Date()
-        }];
-        res.json(youtubeMedia);
-      } else {
-        // "combine" or "own" — both can include audio if URL is provided
-        const activeMedia = await storage.getActiveMedia(user.id);
-        const lightweightMedia = activeMedia.map(({ data, ...rest }: any) => rest);
-        if (youtubeUrl) {
-          lightweightMedia.push({
-            id: "youtube-audio",
-            name: "YouTube Audio",
-            filename: "youtube-audio",
-            url: youtubeUrl,
-            type: "youtube-audio",
-            mimeType: "audio/youtube",
-            size: 0,
-            isActive: true,
-            uploadedAt: new Date()
-          });
-        }
-        res.json(lightweightMedia);
-      }
+      res.json(await getDisplayMediaForUser(user.id));
     } catch (error) {
       console.error("Error fetching TV active media:", error);
       res.status(500).json({ error: "Failed to get active TV media" });
