@@ -22,6 +22,7 @@ import type { PresetSoundKeyType } from "@shared/schema";
 interface SettingsState {
   mediaType: string;
   dashboardMediaType: string; // "own", "youtube", or "combine"
+  mediaScheduleMode: 'current' | 'schedule';
   youtubeUrl: string; // YouTube video URL
   youtubeAudioVolume: number; // 0-100 volume for YouTube audio in combine mode
   theme: string;
@@ -322,6 +323,7 @@ export default function Settings() {
   const [currentSettings, setCurrentSettings] = useState<SettingsState>({
     mediaType: 'image',
     dashboardMediaType: 'own',
+    mediaScheduleMode: 'current',
     youtubeUrl: '',
     youtubeAudioVolume: 50,
     theme: 'blue',
@@ -404,9 +406,10 @@ export default function Settings() {
   // Update settings state when data is loaded
   useEffect(() => {
     if (settings.length > 0) {
-      const newSettings = {
+      const newSettings: Partial<SettingsState> = {
         mediaType: settingsObj.mediaType || 'image',
         dashboardMediaType: settingsObj.dashboardMediaType || 'own',
+        mediaScheduleMode: settingsObj.mediaScheduleMode === 'schedule' ? 'schedule' : 'current',
         youtubeUrl: settingsObj.youtubeUrl || '',
         youtubeAudioVolume: Number(settingsObj.youtubeAudioVolume) || 50,
         theme: settingsObj.theme || 'blue',
@@ -496,7 +499,7 @@ export default function Settings() {
     }
   }, [settings.length, 
     // Basic settings
-    settingsObj.mediaType, settingsObj.dashboardMediaType, settingsObj.youtubeUrl, settingsObj.theme, 
+     settingsObj.mediaType, settingsObj.dashboardMediaType, settingsObj.mediaScheduleMode, settingsObj.youtubeUrl, settingsObj.theme,
     settingsObj.showPrayerTimes, settingsObj.showWeather, settingsObj.enableMarquee, settingsObj.marqueeText, settingsObj.marqueeColor,
     // Logo dependencies
     settingsObj.clinicLogo, settingsObj.showClinicLogo, 
@@ -654,6 +657,7 @@ export default function Settings() {
       { key: 'marqueeBackgroundColor', value: currentSettings.marqueeBackgroundColor, category: 'display' },
       { key: 'clinicName', value: currentSettings.clinicName, category: 'display' },
       { key: 'dashboardMediaType', value: currentSettings.dashboardMediaType, category: 'display' },
+      { key: 'mediaScheduleMode', value: currentSettings.mediaScheduleMode, category: 'display' },
       { key: 'youtubeUrl', value: currentSettings.youtubeUrl, category: 'display' },
       { key: 'youtubeAudioVolume', value: String(currentSettings.youtubeAudioVolume), category: 'display' },
       // Individual section colors with gradient support
@@ -747,6 +751,7 @@ export default function Settings() {
       { key: 'marqueeBackgroundColor', value: currentSettings.marqueeBackgroundColor, category: 'display' },
       { key: 'clinicName', value: currentSettings.clinicName, category: 'display' },
       { key: 'dashboardMediaType', value: currentSettings.dashboardMediaType, category: 'display' },
+      { key: 'mediaScheduleMode', value: currentSettings.mediaScheduleMode, category: 'display' },
       { key: 'youtubeUrl', value: currentSettings.youtubeUrl, category: 'display' },
       { key: 'youtubeAudioVolume', value: String(currentSettings.youtubeAudioVolume), category: 'display' },
       { key: 'headerTextColor', value: currentSettings.headerTextColor, category: 'display' },
@@ -1289,6 +1294,48 @@ export default function Settings() {
                   <Button type="button" variant="ghost" size="sm" onClick={resetScheduleForm}>
                     Cancel Edit
                   </Button>
+                )}
+              </div>
+
+              <div className="rounded-lg border bg-muted/20 p-4">
+                <Label className="text-sm font-medium">Media playback mode</Label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Choose whether the display should follow your current media settings or use the schedules below.
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentSettings((previous) => ({ ...previous, mediaScheduleMode: 'current' }))}
+                    className={`rounded-lg border p-3 text-left transition-colors ${
+                      currentSettings.mediaScheduleMode === 'current'
+                        ? 'border-primary bg-primary/10'
+                        : 'hover:bg-muted'
+                    }`}
+                  >
+                    <div className="font-medium">Use Current Media Settings</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Always use the regular media settings above and ignore schedules.
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentSettings((previous) => ({ ...previous, mediaScheduleMode: 'schedule' }))}
+                    className={`rounded-lg border p-3 text-left transition-colors ${
+                      currentSettings.mediaScheduleMode === 'schedule'
+                        ? 'border-primary bg-primary/10'
+                        : 'hover:bg-muted'
+                    }`}
+                  >
+                    <div className="font-medium">Use Media Schedule</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Use an active schedule; regular media settings are used when no slot is active.
+                    </div>
+                  </button>
+                </div>
+                {currentSettings.mediaScheduleMode === 'schedule' && (
+                  <p className="mt-3 text-xs text-primary">
+                    Schedule mode is enabled. Add and enable at least one schedule below to override the regular media settings.
+                  </p>
                 )}
               </div>
 

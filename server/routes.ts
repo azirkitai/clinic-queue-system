@@ -96,11 +96,14 @@ function setCache(key: string, userId: string, data: any): void {
 }
 
 async function getDisplayMediaForUser(userId: string, now: Date = new Date()) {
-  const [mediaTypeSetting, youtubeUrlSetting, schedule] = await Promise.all([
+  const [mediaTypeSetting, scheduleModeSetting, youtubeUrlSetting] = await Promise.all([
     storage.getSetting("dashboardMediaType", userId),
+    storage.getSetting("mediaScheduleMode", userId),
     storage.getSetting("youtubeUrl", userId),
-    storage.getActiveMediaSchedule(userId, now),
   ]);
+  const schedule = scheduleModeSetting?.value === "schedule"
+    ? await storage.getActiveMediaSchedule(userId, now)
+    : undefined;
 
   const dashboardMediaType = schedule?.mediaType || mediaTypeSetting?.value || "own";
   const youtubeUrl = schedule?.youtubeUrl || youtubeUrlSetting?.value || "";
@@ -2151,6 +2154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     'historyNameColor', 'historyNameMode', 'historyNameGradient',
     // Sound
     'enableSound', 'volume', 'presetKey', 'youtubeAudioVolume',
+    'mediaScheduleMode',
     // TTS Voice Announcement
     'ttsEnabled', 'ttsLanguage', 'ttsRate', 'ttsVoiceGender', 'ttsPronunciations',
   ]);
