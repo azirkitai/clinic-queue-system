@@ -1160,6 +1160,54 @@ export default function Settings() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Media playback mode */}
+            <div className="rounded-lg border bg-muted/20 p-4">
+              <Label className="text-sm font-medium">Media playback mode</Label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Choose whether the display should follow your current media settings or use the schedules below.
+              </p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetScheduleForm();
+                    setCurrentSettings((previous) => ({ ...previous, mediaScheduleMode: 'current' }));
+                  }}
+                  className={`rounded-lg border p-3 text-left transition-colors ${
+                    currentSettings.mediaScheduleMode === 'current'
+                      ? 'border-primary bg-primary/10'
+                      : 'hover:bg-muted'
+                  }`}
+                >
+                  <div className="font-medium">Use Current Media Settings</div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    Always use the regular media settings and ignore schedules.
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentSettings((previous) => ({ ...previous, mediaScheduleMode: 'schedule' }))}
+                  className={`rounded-lg border p-3 text-left transition-colors ${
+                    currentSettings.mediaScheduleMode === 'schedule'
+                      ? 'border-primary bg-primary/10'
+                      : 'hover:bg-muted'
+                  }`}
+                >
+                  <div className="font-medium">Use Media Schedule</div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    Use an active schedule; regular media settings are used when no slot is active.
+                  </div>
+                </button>
+              </div>
+              {currentSettings.mediaScheduleMode === 'schedule' && (
+                <p className="mt-3 text-xs text-primary">
+                  Schedule mode is enabled. Add and enable at least one schedule below to override the regular media settings.
+                </p>
+              )}
+            </div>
+
+            {currentSettings.mediaScheduleMode === 'current' && (
+              <>
             {/* Show in Dashboard Section */}
             <div className="space-y-4">
               <Label className="text-base font-semibold">Media Options for Dashboard:</Label>
@@ -1280,8 +1328,11 @@ export default function Settings() {
                 </div>
               )}
             </div>
+              </>
+            )}
 
             {/* Media Schedule Section */}
+            {currentSettings.mediaScheduleMode === 'schedule' && (
             <div className="space-y-4 border-t pt-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -1297,53 +1348,6 @@ export default function Settings() {
                 )}
               </div>
 
-              <div className="rounded-lg border bg-muted/20 p-4">
-                <Label className="text-sm font-medium">Media playback mode</Label>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Choose whether the display should follow your current media settings or use the schedules below.
-                </p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetScheduleForm();
-                      setCurrentSettings((previous) => ({ ...previous, mediaScheduleMode: 'current' }));
-                    }}
-                    className={`rounded-lg border p-3 text-left transition-colors ${
-                      currentSettings.mediaScheduleMode === 'current'
-                        ? 'border-primary bg-primary/10'
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    <div className="font-medium">Use Current Media Settings</div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      Always use the regular media settings above and ignore schedules.
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentSettings((previous) => ({ ...previous, mediaScheduleMode: 'schedule' }))}
-                    className={`rounded-lg border p-3 text-left transition-colors ${
-                      currentSettings.mediaScheduleMode === 'schedule'
-                        ? 'border-primary bg-primary/10'
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    <div className="font-medium">Use Media Schedule</div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      Use an active schedule; regular media settings are used when no slot is active.
-                    </div>
-                  </button>
-                </div>
-                {currentSettings.mediaScheduleMode === 'schedule' && (
-                  <p className="mt-3 text-xs text-primary">
-                    Schedule mode is enabled. Add and enable at least one schedule below to override the regular media settings.
-                  </p>
-                )}
-              </div>
-
-              {currentSettings.mediaScheduleMode === 'schedule' ? (
-                <>
               <div className="rounded-lg border bg-muted/20 p-4 space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
@@ -1546,16 +1550,12 @@ export default function Settings() {
                   </div>
                 )}
               </div>
-                </>
-              ) : (
-                <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-                  Media schedules are disabled while “Use Current Media Settings” is selected.
-                </div>
-              )}
             </div>
+            )}
 
             {/* Media Gallery Section - Show if "own" or "combine" media is selected */}
-            {(currentSettings.dashboardMediaType === "own" || currentSettings.dashboardMediaType === "combine") && (
+            {currentSettings.mediaScheduleMode === 'current' &&
+              (currentSettings.dashboardMediaType === "own" || currentSettings.dashboardMediaType === "combine") && (
               <div className="space-y-4">
                 <Label className="text-base font-semibold">Media Gallery:</Label>
                 
