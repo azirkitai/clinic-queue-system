@@ -1357,7 +1357,7 @@ export default function Settings() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Jenis media</Label>
+                    <Label>Media type</Label>
                     <select
                       value={scheduleForm.mediaType}
                       onChange={(event) => setScheduleForm((previous) => ({
