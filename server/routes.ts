@@ -2260,9 +2260,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         invalidateAllUsersCache('settings');
       }
       
-      // Notify all connected clients about settings update
+      // Notify only this clinic unless the pronunciation rules are shared
+      // globally by the admin account.
       if (globalIo) {
-        globalIo.emit('settings:updated', { key, timestamp: Date.now() });
+        const payload = { key, timestamp: Date.now() };
+        if (key === 'ttsPronunciations') {
+          globalIo.emit('settings:updated', payload);
+        } else {
+          globalIo.to(`clinic:${req.session.userId}`).emit('settings:updated', payload);
+        }
       }
 
       res.json(setting);
@@ -2325,12 +2331,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         invalidateAllUsersCache('settings');
       }
       
-      // Notify all connected clients about settings update
+      // Notify only this clinic unless this batch changed the shared
+      // pronunciation rules, which every clinic must refresh.
       if (globalIo) {
-        globalIo.emit('settings:updated', { 
+        const payload = {
           keys: updatedSettings.map(s => s.key),
           timestamp: Date.now() 
-        });
+        };
+        if (touchedSharedKey) {
+          globalIo.emit('settings:updated', payload);
+        } else {
+          globalIo.to(`clinic:${req.session.userId}`).emit('settings:updated', payload);
+        }
       }
 
       res.json(updatedSettings);
@@ -3643,7 +3655,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Invalid TV token" });
       }
       
-      const cached = getCached('tv-patients', user.id);
+      // Keep the server cache no longer than the standalone TV polling
+      // interval so polling remains a real fallback when a socket event is
+      // missed or the TV browser cannot maintain WebSocket.
+      const cached = getCached('tv-patients', user.id, 15000);
       if (cached !== null) {
         return res.json(cached);
       }

@@ -10,6 +10,7 @@ import { useWebSocket } from "@/hooks/use-websocket";
 import { useTvPatients } from "@/hooks/useTvPatients";
 import { useTheme } from "@/components/theme-provider";
 import { EodResetBanner } from "@/components/eod-reset-banner";
+import { audioSystem } from "@/lib/audio-system";
 
 interface QueueItem {
   id: string;
@@ -180,7 +181,6 @@ export default function Dashboard() {
 
   const handleEnterFullscreen = async () => {
     try {
-      const { audioSystem } = await import("@/lib/audio-system");
       await audioSystem.unlock();
       await requestFs(document.documentElement);
       setShowFullscreenPrompt(false);
@@ -258,7 +258,6 @@ export default function Dashboard() {
     if (!fullscreen) {
       try {
         // Unlock audio BEFORE entering fullscreen (user gesture required)
-        const { audioSystem } = await import("@/lib/audio-system");
         await audioSystem.unlock();
         
         await requestFs(document.documentElement);

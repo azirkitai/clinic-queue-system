@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { io, Socket } from "socket.io-client";
 import { TVDisplay } from "@/components/tv-display";
+import { audioSystem } from "@/lib/audio-system";
 import { Button } from "@/components/ui/button";
 import { Monitor, Copy, Check } from "lucide-react";
 import { type TvQueueItem } from "@shared/schema";
@@ -120,18 +121,25 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     document.documentElement.classList.remove('dark');
     document.documentElement.classList.add('light');
 
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.attributeName === 'class') {
-          const root = document.documentElement;
-          if (root.classList.contains('dark')) {
-            root.classList.remove('dark');
-            root.classList.add('light');
+    const MutationObserverCtor = (window as any).MutationObserver;
+    const observer = typeof MutationObserverCtor === 'function'
+      ? new MutationObserverCtor((mutations: MutationRecord[]) => {
+          for (const mutation of mutations) {
+            if (mutation.attributeName === 'class') {
+              const root = document.documentElement;
+              if (root.classList.contains('dark')) {
+                root.classList.remove('dark');
+                root.classList.add('light');
+              }
+            }
           }
-        }
-      }
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        })
+      : null;
+    if (observer) {
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    } else {
+      console.warn('[TV] MutationObserver tiada — dark-mode guard disabled');
+    }
 
     const forceLightStyle = document.createElement('style');
     forceLightStyle.id = 'tv-force-light';
@@ -156,7 +164,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     document.head.appendChild(forceLightStyle);
 
     return () => {
-      observer.disconnect();
+      observer?.disconnect();
       document.head.removeChild(meta);
       document.head.removeChild(metaDark);
       document.head.removeChild(forceLightStyle);
@@ -201,7 +209,9 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     const patientEvents = [
       'patient:called', 'patient:updated', 'patient:created',
       'patient:status-updated', 'patient:deleted', 'patient:priority-updated',
-      'queue:updated', 'queue:reset', 'window:updated', 'window:patient-assigned'
+      'patient:group-called', 'patient:group-linked',
+      'queue:updated', 'queue:reset', 'window:created', 'window:updated',
+      'window:patient-updated'
     ];
     patientEvents.forEach(evt => socket.on(evt, debouncedRefetchPatients));
 
@@ -474,7 +484,10 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     if (!fullscreen) return;
     const setTVHeight = () => {
       const container = document.getElementById('tv-container');
-      if (container && (typeof CSS === 'undefined' || !CSS.supports('height', '100dvh'))) {
+      const supportsDvh = typeof CSS !== 'undefined'
+        && typeof CSS.supports === 'function'
+        && CSS.supports('height', '100dvh');
+      if (container && !supportsDvh) {
         const vh = window.innerHeight;
         container.style.height = `${vh}px`;
         container.style.minHeight = `${vh}px`;
@@ -502,7 +515,6 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
 
   const enterFullscreen = async () => {
     try {
-      const { audioSystem } = await import("@/lib/audio-system");
       await audioSystem.unlock();
       const el = document.documentElement as any;
       if (el.requestFullscreen) {
@@ -525,7 +537,10 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
   const exitFullscreen = () => {
     const doc = document as any;
     if (doc.exitFullscreen) {
-      doc.exitFullscreen().catch(console.error);
+      const result = doc.exitFullscreen();
+      if (result && typeof result.catch === 'function') {
+        result.catch(console.error);
+      }
     } else if (doc.webkitExitFullscreen) {
       doc.webkitExitFullscreen();
     } else if (doc.mozCancelFullScreen) {
@@ -671,7 +686,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
           </div>
         )}
         <p style={{ color: '#9CA3AF', fontSize: 'clamp(9px, 1.0vmin, 14px)' }}>
-          Paparan ini akan dikemas kini secara automatik setiap 30 saat.
+          Paparan ini akan dikemas kini secara automatik setiap 15 saat.
           <br />Tiada login diperlukan.
         </p>
       </div>

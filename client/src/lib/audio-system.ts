@@ -626,6 +626,24 @@ export class AudioSystem {
       this.forceHTMLAudio = true;
       console.log('🔊 TV Mode: Enabled HTMLAudio for stable playback');
 
+      // Prime the HTMLAudio playback path during the button gesture. Some TV
+      // browsers allow later playback only after an audio element has started
+      // once, even when Web Audio is available.
+      try {
+        const warmupAudio = new Audio(notificationSound);
+        warmupAudio.muted = true;
+        warmupAudio.volume = 0;
+        warmupAudio.preload = 'auto';
+        const warmupResult = warmupAudio.play();
+        if (warmupResult && typeof warmupResult.then === 'function') {
+          await warmupResult;
+        }
+        warmupAudio.pause();
+        warmupAudio.currentTime = 0;
+      } catch (warmupError) {
+        console.warn('[Audio] HTMLAudio warmup was blocked; calls may require browser audio permission', warmupError);
+      }
+
       const audioContext = this.getAudioContext();
 
       // Web Audio is optional on TV. HTMLAudio is enabled above and is the
