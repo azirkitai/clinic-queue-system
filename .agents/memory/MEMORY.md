@@ -1,0 +1,1 @@
+- [TV display layout](tv-display-layout.md) — TV panels keep fixed internal proportions; long text must fit inside bounded boxes instead of changing row geometry.

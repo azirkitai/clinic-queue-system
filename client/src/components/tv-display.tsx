@@ -1886,21 +1886,36 @@ export function TVDisplay({
              ...(isFullscreen && enableMarquee ? { paddingBottom: '60px' } : {}),
              ...getBackgroundStyle(showWeather ? weatherBackgroundMode : prayerTimesBackgroundMode, showWeather ? weatherBackgroundColor : prayerTimesBackgroundColor, showWeather ? weatherBackgroundGradient : prayerTimesBackgroundGradient, showWeather ? '#f97316' : '#1e40af')
            }}>
-        {/* Clinic Name - below media area */}
-        <h1 className="font-bold text-center leading-none mb-2 w-full"
-            style={{
-              ...getTextGroupStyles('clinic_name', true), // Exclude color overrides so Settings can override
+        {/* Clinic name: fixed-size box so a long name cannot change the
+            bottom row's layout when the TV aspect ratio changes. */}
+        <div
+          className="w-full min-w-0 flex-shrink-0 overflow-hidden flex items-center justify-center rounded-lg"
+          style={{
+            height: isFullscreen ? '56px' : 'clamp(40px, 5vw, 64px)',
+            padding: '0 12px',
+            boxSizing: 'border-box',
+            border: '1px solid rgba(255,255,255,0.28)',
+            background: 'rgba(15, 23, 42, 0.42)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+          }}
+          data-testid="clinic-name-box"
+        >
+          <FitText
+            text={clinicName}
+            className="w-full h-full min-w-0 min-h-0"
+            baseStyle={{
+              ...getTextGroupStyles('clinic_name', true),
               ...getTextStyle(clinicNameTextMode, clinicNameTextColor, clinicNameTextGradient, '#ffffff'),
-              fontSize: '32px',
+              fontWeight: 700,
+              lineHeight: 1,
+              textAlign: 'center',
               whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              flexShrink: 0, // Never collapse when vertical space is tight (e.g. marquee enabled in fullscreen)
-              paddingTop: '2px', // Prevent glyph tops from being clipped with leading-none
             }}
-            data-testid="clinic-name">
-          {clinicName}
-        </h1>
+            maxFontSize={isFullscreen ? 32 : 32}
+            minFontSize={10}
+            testId="clinic-name"
+          />
+        </div>
 
         {/* Combined Date/Time + Prayer Times / Weather in ONE white box */}
         <div className={`px-4 tv-white-bg w-full ${isFullscreen ? 'py-2 rounded-md' : 'py-3 rounded-lg'}`} style={{ backgroundColor: '#ffffff', backgroundImage: 'linear-gradient(#ffffff, #ffffff)', color: '#111827' }}>
