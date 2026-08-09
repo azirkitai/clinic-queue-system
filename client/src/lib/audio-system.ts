@@ -110,11 +110,22 @@ export class AudioSystem {
     return AudioSystem.instance;
   }
 
-  private getAudioContext(): AudioContext {
-    if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  private getAudioContext(): AudioContext | null {
+    if (this.audioContext) return this.audioContext;
+
+    const AudioContextCtor = (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (typeof AudioContextCtor !== 'function') {
+      console.warn('[Audio] Web Audio API is not available; using HTMLAudio fallback');
+      return null;
     }
-    return this.audioContext;
+
+    try {
+      this.audioContext = new AudioContextCtor();
+      return this.audioContext;
+    } catch (error) {
+      console.warn('[Audio] Failed to create Web Audio context; using HTMLAudio fallback', error);
+      return null;
+    }
   }
 
   /**
@@ -124,6 +135,11 @@ export class AudioSystem {
   public async playAlertChime(volume: number = 60): Promise<void> {
     try {
       const audioContext = this.getAudioContext();
+      if (!audioContext) {
+        // Older Smart TV browsers may not expose AudioContext at all.
+        // Use a known MP3 preset instead of failing the queue notification.
+        return await this.playAudioWithHTMLAudio(notificationSound, volume);
+      }
 
       // Resume AudioContext if suspended (autoplay policy)
       if (audioContext.state === 'suspended') {
@@ -182,6 +198,9 @@ export class AudioSystem {
 
       const arrayBuffer = await response.arrayBuffer();
       const audioContext = this.getAudioContext();
+      if (!audioContext) {
+        throw new Error('Web Audio API is not available');
+      }
       const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
       
       // Cache the buffer for future use
@@ -249,6 +268,9 @@ export class AudioSystem {
 
     try {
       const audioContext = this.getAudioContext();
+      if (!audioContext) {
+        return await this.playAudioWithHTMLAudio(url, volume);
+      }
       
       // Check if AudioContext is suspended (autoplay blocked)
       if (audioContext.state === 'suspended') {
@@ -474,6 +496,9 @@ export class AudioSystem {
       }
 
       const audioContext = this.getAudioContext();
+      if (!audioContext) {
+        return await this.playAudioWithHTMLAudio(audioUrl, volume);
+      }
       if (audioContext.state === 'suspended') {
         return await this.playAudioWithHTMLAudio(audioUrl, volume);
       }
@@ -602,11 +627,17 @@ export class AudioSystem {
       console.log('🔊 TV Mode: Enabled HTMLAudio for stable playback');
 
       const audioContext = this.getAudioContext();
-      
-      // Resume AudioContext if suspended (autoplay policy) - SYNC ONLY
-      if (audioContext.state === 'suspended') {
-        await audioContext.resume();
-        console.log('✅ AudioContext resumed successfully');
+
+      // Web Audio is optional on TV. HTMLAudio is enabled above and is the
+      // primary path for calling sounds, so an older browser can still start.
+      if (audioContext) {
+        // Resume AudioContext if suspended (autoplay policy) - SYNC ONLY
+        if (audioContext.state === 'suspended' && typeof audioContext.resume === 'function') {
+          await audioContext.resume();
+          console.log('✅ AudioContext resumed successfully');
+        }
+      } else {
+        console.warn('[Audio] Web Audio unavailable; HTMLAudio-only TV mode enabled');
       }
       
       // Skip bulk preloading on TV - audio loads on-demand and caches after first use

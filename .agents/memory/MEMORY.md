@@ -1,2 +1,3 @@
 - [TV display layout](tv-display-layout.md) — TV panels keep fixed internal proportions; long text must fit inside bounded boxes instead of changing row geometry.
 - [WebSocket reconnect reliability](websocket-reconnect.md) — use one shared clinic socket, manager-level reconnect events, guarded watchdog recovery, and state refetch after reconnect.
+- [TV browser compatibility](tv-browser-compatibility.md) — separate bundle parsing, audio, fullscreen, WebSocket, and responsive API compatibility instead of treating them as one failure.

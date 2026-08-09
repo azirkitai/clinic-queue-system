@@ -26,12 +26,63 @@ interface TvStandaloneProps {
   token: string;
 }
 
+interface TvBrowserCompatibility {
+  userAgent: string;
+  blockingIssues: string[];
+  warnings: string[];
+  audio: string;
+}
+
+function inspectTvBrowser(): TvBrowserCompatibility {
+  const blockingIssues: string[] = [];
+  const warnings: string[] = [];
+  const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown';
+
+  if (typeof window.fetch !== 'function') {
+    blockingIssues.push('Fetch API tiada');
+  }
+  if (typeof window.Promise !== 'function') {
+    blockingIssues.push('Promise tiada');
+  }
+  if (typeof window.WebSocket !== 'function') {
+    warnings.push('WebSocket tiada — sistem akan guna polling HTTP');
+  }
+
+  const audio = typeof document !== 'undefined' ? document.createElement('audio') : null;
+  const mp3Supported = !!audio?.canPlayType?.('audio/mpeg');
+  const wavSupported = !!audio?.canPlayType?.('audio/wav');
+  const webAudioSupported = !!((window as any).AudioContext || (window as any).webkitAudioContext);
+  // Audio capability affects announcements, but must not prevent the visual
+  // queue from loading. Report it as a warning so the TV can still display.
+  if (!mp3Supported) warnings.push('Audio MP3 tiada — paparan akan berjalan tanpa bunyi');
+  if (!wavSupported) {
+    warnings.push('Audio WAV tiada — bunyi MP3 fallback akan digunakan');
+  }
+  if (!webAudioSupported) {
+    warnings.push('Web Audio tiada — HTML Audio fallback akan digunakan');
+  }
+  if (!(document.documentElement as any).requestFullscreen && !(document.documentElement as any).webkitRequestFullscreen) {
+    warnings.push('Fullscreen API tiada — paparan akan guna mod penuh tanpa API fullscreen');
+  }
+  if (typeof (window as any).ResizeObserver !== 'function') {
+    warnings.push('ResizeObserver tiada — saiz akan guna fallback resize');
+  }
+
+  return {
+    userAgent,
+    blockingIssues,
+    warnings,
+    audio: `${mp3Supported ? 'MP3 OK' : 'MP3 TIADA'} / ${wavSupported ? 'WAV OK' : 'WAV TIADA'} / ${webAudioSupported ? 'WebAudio OK' : 'WebAudio TIADA'}`,
+  };
+}
+
 export default function TvStandalone({ token }: TvStandaloneProps) {
   const [fullscreen, setFullscreen] = useState(false);
   const [showExitButton, setShowExitButton] = useState(false);
   const [validating, setValidating] = useState(true);
   const [clinicInfo, setClinicInfo] = useState<{ clinicName: string; isActive: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [browserCompatibility] = useState<TvBrowserCompatibility>(() => inspectTvBrowser());
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -510,6 +561,31 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     );
   }
 
+  if (browserCompatibility.blockingIssues.length > 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#ffffff', colorScheme: 'light' }} data-testid="tv-browser-error">
+        <div className="text-center space-y-4 max-w-2xl mx-4">
+          <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center" style={{ backgroundColor: '#fee2e2' }}>
+            <Monitor className="w-8 h-8" style={{ color: '#ef4444' }} />
+          </div>
+          <h1 className="font-bold" style={{ color: '#111827', fontSize: 'clamp(20px, 2.5vmin, 36px)' }}>Browser TV Tidak Disokong</h1>
+          <p style={{ color: '#4B5563', fontSize: 'clamp(12px, 1.3vmin, 20px)' }}>
+            Browser ini tidak mempunyai fungsi asas yang diperlukan untuk paparan TV.
+          </p>
+          <div className="rounded-lg p-4 text-left" style={{ backgroundColor: '#fff1f2', color: '#9f1239' }}>
+            <strong>Masalah dikesan:</strong>
+            <ul className="list-disc ml-5 mt-2">
+              {browserCompatibility.blockingIssues.map(issue => <li key={issue}>{issue}</li>)}
+            </ul>
+          </div>
+          <p style={{ color: '#6B7280', fontSize: '12px', wordBreak: 'break-word' }}>
+            {browserCompatibility.userAgent}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (fullscreen) {
     return (
       <div
@@ -585,6 +661,15 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
             Mulakan Paparan TV
           </Button>
         </div>
+        {browserCompatibility.warnings.length > 0 && (
+          <div className="rounded-lg p-3 text-left" style={{ backgroundColor: '#fffbeb', color: '#92400e', fontSize: '12px' }}>
+            <strong>Keserasian browser:</strong>
+            <ul className="list-disc ml-5 mt-1">
+              {browserCompatibility.warnings.map(warning => <li key={warning}>{warning}</li>)}
+            </ul>
+            <div className="mt-1" style={{ color: '#a16207' }}>{browserCompatibility.audio}</div>
+          </div>
+        )}
         <p style={{ color: '#9CA3AF', fontSize: 'clamp(9px, 1.0vmin, 14px)' }}>
           Paparan ini akan dikemas kini secara automatik setiap 30 saat.
           <br />Tiada login diperlukan.
