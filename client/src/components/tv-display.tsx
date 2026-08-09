@@ -2033,46 +2033,67 @@ export function TVDisplay({
            background: 'radial-gradient(ellipse at center, rgba(15,23,42,0.95) 0%, rgba(0,0,0,0.98) 70%)'
          }}
          data-testid="highlight-overlay">
-      {/* Animated glow ring behind content */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="rounded-3xl tv-highlight-glow"
-             style={{
-               width: 'min(85vw, 1400px)',
-               height: 'min(75vh, 800px)',
-               border: `3px solid ${modalBorderColor}`,
-               background: `linear-gradient(135deg, ${modalBackgroundColor}ee 0%, ${modalBackgroundColor}99 100%)`
-             }} />
-      </div>
-
       {/* Shimmer overlay */}
       <div className="absolute inset-0 pointer-events-none tv-highlight-fade-in"
            style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
-        <div className="tv-highlight-shimmer absolute inset-0 opacity-30 rounded-3xl"
-             style={{ width: 'min(85vw, 1400px)', height: 'min(75vh, 800px)', margin: 'auto' }} />
+        <div className="tv-highlight-shimmer absolute inset-0 opacity-30" />
       </div>
 
-      {/* Main content */}
-       <div className="relative z-10 flex flex-col items-center justify-center text-center px-8"
-            style={{ maxWidth: '1200px', width: '90%', minWidth: 0, gap: '1.5rem' }}>
-
+      {/* Main content: one fixed-aspect responsive panel so the layout stays
+          identical to the reference at every screen ratio. */}
+       <div
+         className="relative z-10 grid min-w-0 min-h-0 overflow-hidden rounded-3xl text-center tv-highlight-glow tv-highlight-pulse-border"
+         style={{
+           width: 'min(88vw, 1400px, calc((100vh - 56px) * 1.7778))',
+           aspectRatio: '16 / 9',
+           maxHeight: 'calc(100vh - 56px)',
+           padding: 'clamp(12px, 2.2vmin, 38px)',
+           boxSizing: 'border-box',
+           gridTemplateRows: 'minmax(0, 18fr) minmax(0, 57fr) minmax(0, 25fr)',
+           gap: 'clamp(8px, 1.5vmin, 24px)',
+           border: `3px solid ${modalBorderColor}`,
+           background: `linear-gradient(135deg, ${modalBackgroundColor}ee 0%, ${modalBackgroundColor}99 100%)`,
+           boxShadow: `0 0 24px ${modalBorderColor}99, 0 0 70px ${modalBorderColor}44`,
+         }}
+       >
         {/* CALLING badge */}
-        <div className="px-10 py-3 rounded-full tv-highlight-pulse-border"
+        <div className="w-full min-w-0 min-h-0 flex items-center justify-center overflow-hidden"
              style={{
-               border: `2px solid ${modalBorderColor}`,
-               background: `linear-gradient(135deg, ${modalBorderColor}33, ${modalBorderColor}11)`,
-               color: modalBorderColor,
-               fontSize: 'var(--tv-fs-2xl)',
-               fontWeight: 700,
-               letterSpacing: '0.15em',
-               textTransform: 'uppercase'
+               padding: '0 clamp(10px, 2.5vmin, 44px)',
              }}>
-          Now Calling
+          <div
+            className="h-full min-w-0 min-h-0 flex items-center justify-center rounded-full tv-highlight-pulse-border"
+            style={{
+              width: 'min(58%, 560px)',
+              minWidth: '180px',
+              padding: '0 clamp(12px, 2.2vmin, 36px)',
+              boxSizing: 'border-box',
+              border: `2px solid ${modalBorderColor}`,
+              background: `linear-gradient(135deg, ${modalBorderColor}33, ${modalBorderColor}11)`,
+              color: modalBorderColor,
+              overflow: 'hidden',
+            }}
+          >
+            <FitText
+              text="NOW CALLING"
+              className="w-full h-full min-w-0 min-h-0"
+              baseStyle={{
+                fontWeight: 700,
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                color: modalBorderColor,
+                textAlign: 'center',
+              }}
+              maxFontSize={isFullscreen ? 64 : 52}
+              minFontSize={14}
+              testId="highlight-calling-label"
+            />
+          </div>
         </div>
 
         {/* Patient Name — maximizes the box using wrapped font sizing */}
-         <div className="relative w-full min-w-0 flex items-center justify-center"
-              style={{ height: 'min(45vh, 420px)', minHeight: 0 }}>
-           <div className="px-6 py-6 rounded-2xl w-full h-full min-w-0 min-h-0 flex items-center justify-center"
+         <div className="relative w-full h-full min-w-0 min-h-0 flex items-center justify-center overflow-hidden">
+           <div className="px-4 py-3 rounded-2xl w-full h-full min-w-0 min-h-0 flex items-center justify-center"
                style={{
                  background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
                  border: `1px solid rgba(255,255,255,0.1)`,
@@ -2100,45 +2121,45 @@ export function TVDisplay({
           </div>
         </div>
 
-        {/* Divider line with glow */}
-        <div className="w-full max-w-2xl h-px"
-             style={{
-               background: `linear-gradient(90deg, transparent, ${modalBorderColor}, transparent)`,
-               boxShadow: `0 0 12px ${modalBorderColor}66`
-             }} />
-
         {/* Room info */}
-         <div className="flex items-center gap-4 flex-wrap justify-center w-full min-w-0"
-              style={{ maxHeight: '14vh', overflow: 'hidden' }}>
-          <span style={{
-             fontSize: 'clamp(20px, 3vmin, 42px)',
-            color: modalTextColor,
-            opacity: 0.7,
-            fontWeight: 500,
-            letterSpacing: '0.1em',
-             textTransform: 'uppercase',
-             flexShrink: 0,
-          }}>
-            Please proceed to
-          </span>
-           <div className="min-w-0 flex-1"
-                style={{ height: 'clamp(42px, 9vmin, 110px)', minWidth: '180px', overflow: 'hidden' }}>
-             <FitText
-               text={currentPatient.room}
-               className="w-full h-full min-w-0"
-               baseStyle={{
-                 fontWeight: 800,
-                 color: modalBorderColor,
-                 textShadow: `0 0 30px ${modalBorderColor}55`,
-                 letterSpacing: '0.05em',
-                 textAlign: 'center',
-               }}
-               maxFontSize={isFullscreen ? 120 : 90}
-               minFontSize={20}
-               wrap
-               testId="highlight-patient-room"
-             />
-           </div>
+         <div className="flex items-center justify-center w-full h-full min-w-0 min-h-0 overflow-hidden">
+          <div className="flex items-center w-full h-full min-w-0 min-h-0 overflow-hidden">
+            <div className="h-full min-w-0 overflow-hidden" style={{ width: '34%' }}>
+              <FitText
+                text="PLEASE PROCEED TO"
+                className="w-full h-full min-w-0 min-h-0"
+                baseStyle={{
+                  color: modalTextColor,
+                  opacity: 0.7,
+                  fontWeight: 500,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  textAlign: 'left',
+                }}
+                maxFontSize={isFullscreen ? 42 : 34}
+                minFontSize={10}
+                testId="highlight-proceed-label"
+                align="start"
+              />
+            </div>
+            <div className="h-full min-w-0 overflow-hidden" style={{ width: '66%' }}>
+              <FitText
+                text={currentPatient.room}
+                className="w-full h-full min-w-0 min-h-0"
+                baseStyle={{
+                  fontWeight: 800,
+                  color: modalBorderColor,
+                  textShadow: `0 0 30px ${modalBorderColor}55`,
+                  letterSpacing: '0.03em',
+                  textAlign: 'right',
+                }}
+                maxFontSize={isFullscreen ? 100 : 78}
+                minFontSize={12}
+                testId="highlight-patient-room"
+                align="end"
+              />
+            </div>
+          </div>
         </div>
 
       </div>
