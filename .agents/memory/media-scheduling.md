@@ -7,4 +7,4 @@ Recurring media schedules are interpreted in `Asia/Kuala_Lumpur` time. A matchin
 
 **Why:** Clinic operators set schedules in local Malaysian time, while the server or TV browser may run in another timezone. Preserving the existing fallback also makes schedules opt-in and avoids blank displays.
 
-**How to apply:** Keep schedule matching day-aware, support overnight slots, refresh TV media at least once per minute, and ensure `own` schedules do not inherit a stale YouTube URL while `combine` schedules may use YouTube audio.
+**How to apply:** Keep schedule matching day-aware, support overnight slots, refresh TV media at least once per minute, and ensure `own` schedules do not inherit a stale YouTube URL while `combine` schedules may use YouTube audio. The media gallery is a shared library available in both current-settings and schedule modes; schedules select existing uploaded media by ID instead of creating duplicate uploads.

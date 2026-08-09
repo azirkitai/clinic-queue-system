@@ -1553,11 +1553,23 @@ export default function Settings() {
             </div>
             )}
 
-            {/* Media Gallery Section - Show if "own" or "combine" media is selected */}
-            {currentSettings.mediaScheduleMode === 'current' &&
-              (currentSettings.dashboardMediaType === "own" || currentSettings.dashboardMediaType === "combine") && (
+            {/* Shared Media Gallery - available for current settings and schedules */}
+            {(currentSettings.mediaScheduleMode === 'schedule' ||
+              currentSettings.dashboardMediaType === "own" ||
+              currentSettings.dashboardMediaType === "combine") && (
               <div className="space-y-4">
-                <Label className="text-base font-semibold">Media Gallery:</Label>
+                <div>
+                  <Label className="text-base font-semibold">
+                    {currentSettings.mediaScheduleMode === 'schedule'
+                      ? "Shared Media Library"
+                      : "Media Gallery"}
+                  </Label>
+                  {currentSettings.mediaScheduleMode === 'schedule' && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Upload images here once, then select them in any media schedule below.
+                    </p>
+                  )}
+                </div>
                 
                 <div className="space-y-4 p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
                   <div className="text-center space-y-4">
