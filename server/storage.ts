@@ -1753,6 +1753,25 @@ export class DatabaseStorage implements IStorage {
           user_id VARCHAR NOT NULL
         )
       `);
+      // Render deployments do not run Replit's publish-time Drizzle schema
+      // sync. Keep this DDL idempotent so existing Render databases receive
+      // the schedule table on the next deploy without affecting its data.
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS media_schedules (
+          id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+          name TEXT NOT NULL,
+          start_time TEXT NOT NULL,
+          end_time TEXT NOT NULL,
+          days JSON NOT NULL DEFAULT '[]'::json,
+          media_type TEXT NOT NULL,
+          media_ids JSON NOT NULL DEFAULT '[]'::json,
+          youtube_url TEXT,
+          is_active BOOLEAN NOT NULL DEFAULT true,
+          created_at TIMESTAMP NOT NULL DEFAULT now(),
+          updated_at TIMESTAMP NOT NULL DEFAULT now(),
+          user_id VARCHAR NOT NULL
+        )
+      `);
       console.log('[MIGRATION] Database schema migrations completed successfully');
     } catch (error) {
       console.error('[MIGRATION] Error running migrations:', error);
