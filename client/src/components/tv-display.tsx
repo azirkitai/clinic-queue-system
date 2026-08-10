@@ -1199,6 +1199,7 @@ export function TVDisplay({
       return false;
     }
   });
+  const [scheduleAudioBlocked, setScheduleAudioBlocked] = useState(false);
 
   // Schedule mode is self-starting. The TV start button in the standalone
   // page has already supplied the browser gesture, so persist that unlock
@@ -1218,6 +1219,7 @@ export function TVDisplay({
   }, [isScheduleMode]);
 
   const unlockAudio = () => {
+    setScheduleAudioBlocked(false);
     try { sessionStorage.setItem('tv-audio-unlocked', '1'); } catch {}
     // CRITICAL: call unMute/setVolume/playVideo SYNCHRONOUSLY inside the click
     // handler so the browser still considers this a user gesture. If we wait
@@ -1234,7 +1236,9 @@ export function TVDisplay({
     setAudioUnlocked(true);
   };
 
-  const showAudioGate = isFullscreen && !!youtubeAudioItemEarly && !audioUnlocked && !isScheduleMode;
+  const showAudioGate = isFullscreen && !!youtubeAudioItemEarly && (
+    (!isScheduleMode && !audioUnlocked) || scheduleAudioBlocked
+  );
 
   const [ytPlayerState, setYtPlayerState] = useState<string>('INIT');
 
@@ -1372,6 +1376,7 @@ export function TVDisplay({
         events: {
           onReady: (e: any) => {
             ytAudioReadyRef.current = true;
+              setScheduleAudioBlocked(false);
             try {
               const vol = ytAudioDuckedRef.current ? 0 : ytAudioVolumeRef.current;
                const alreadyUnlocked = (() => {
@@ -1387,6 +1392,22 @@ export function TVDisplay({
                 e.target.unMute();
                 e.target.setVolume(vol);
                 console.log('🔊 [YT Audio] Player ready, AUTO-UNMUTED (session unlocked) vol:', vol);
+                  // Some TV browsers accept playVideo() but silently reject
+                  // unMute(). Keep a user-gesture fallback for that case.
+                  if (isScheduleMode) {
+                    setTimeout(() => {
+                      try {
+                        if (
+                          ytAudioPlayerRef.current &&
+                          typeof ytAudioPlayerRef.current.isMuted === 'function' &&
+                          ytAudioPlayerRef.current.isMuted()
+                        ) {
+                          setScheduleAudioBlocked(true);
+                          console.warn('🔊 [YT Audio] Schedule autoplay was muted by browser policy');
+                        }
+                      } catch {}
+                    }, 1200);
+                  }
               } else {
                 console.log('🔊 [YT Audio] Player ready, baseline volume set to:', vol);
               }
@@ -1524,12 +1545,20 @@ export function TVDisplay({
       }
       ytAudioReadyRef.current = false;
     };
-  }, [isFullscreen, youtubeAudioItemEarly?.url]);
+  }, [isFullscreen, youtubeAudioItemEarly?.url, isScheduleMode]);
 
   // Keep latest volume in a ref so closures (onReady/onStateChange/setTimeout) always read fresh value
   useEffect(() => {
     ytAudioVolumeRef.current = youtubeAudioVolume;
     if (!ytAudioPlayerRef.current || !ytAudioReadyRef.current) return;
+    const persistedAudioUnlocked = (() => {
+      try { return sessionStorage.getItem('tv-audio-unlocked') === '1'; } catch { return false; }
+    })();
+    if (!isScheduleMode && !audioUnlocked && !persistedAudioUnlocked) {
+      // Do not bypass the audio gate just because the settings volume changed.
+      try { ytAudioPlayerRef.current.mute(); } catch {}
+      return;
+    }
     const vol = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
     try {
       ytAudioPlayerRef.current.unMute();
@@ -1538,7 +1567,7 @@ export function TVDisplay({
     } catch (err) {
       console.error('🔊 [YT Audio] setVolume error:', err);
     }
-  }, [youtubeAudioVolume]);
+  }, [youtubeAudioVolume, audioUnlocked, isScheduleMode]);
 
   // Media slideshow management 
   useEffect(() => {
