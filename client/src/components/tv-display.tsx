@@ -493,6 +493,10 @@ export function TVDisplay({
     return acc;
   }, {});
 
+  // Scheduled playback is an all-in-one TV mode: the schedule controls the
+  // media and audio without requiring the operator to enable sound separately.
+  const isScheduleMode = settingsObj.mediaScheduleMode === 'schedule';
+
   const youtubeAudioVolumeRaw = parseInt(settingsObj.youtubeAudioVolume || '50', 10);
   // Apply perceptual (exponential) curve so slider feels linear to human ear.
   // Human hearing is logarithmic, so YT setVolume(10) sounds much louder than 10%.
@@ -1067,7 +1071,7 @@ export function TVDisplay({
       setIsBlinking(false);
       
       const audioSettings: AudioSettings = {
-        enableSound: (settingsObj.enableSound ?? 'true') === 'true',
+        enableSound: isScheduleMode || (settingsObj.enableSound ?? 'true') === 'true',
         volume: parseInt(settingsObj.volume || '70', 10),
         soundMode: 'preset',
         presetKey: (settingsObj.presetKey || 'notification_sound') as any,
@@ -1196,6 +1200,23 @@ export function TVDisplay({
     }
   });
 
+  // Schedule mode is self-starting. The TV start button in the standalone
+  // page has already supplied the browser gesture, so persist that unlock
+  // and apply it to the YouTube player as soon as it becomes available.
+  useEffect(() => {
+    if (!isScheduleMode) return;
+    try { sessionStorage.setItem('tv-audio-unlocked', '1'); } catch {}
+    setAudioUnlocked(true);
+    const player = ytAudioPlayerRef.current;
+    if (player && ytAudioReadyRef.current) {
+      try {
+        player.playVideo();
+        player.unMute();
+        player.setVolume(ytAudioVolumeRef.current);
+      } catch {}
+    }
+  }, [isScheduleMode]);
+
   const unlockAudio = () => {
     try { sessionStorage.setItem('tv-audio-unlocked', '1'); } catch {}
     // CRITICAL: call unMute/setVolume/playVideo SYNCHRONOUSLY inside the click
@@ -1213,7 +1234,7 @@ export function TVDisplay({
     setAudioUnlocked(true);
   };
 
-  const showAudioGate = isFullscreen && !!youtubeAudioItemEarly && !audioUnlocked;
+  const showAudioGate = isFullscreen && !!youtubeAudioItemEarly && !audioUnlocked && !isScheduleMode;
 
   const [ytPlayerState, setYtPlayerState] = useState<string>('INIT');
 
@@ -1353,14 +1374,14 @@ export function TVDisplay({
             ytAudioReadyRef.current = true;
             try {
               const vol = ytAudioDuckedRef.current ? 0 : ytAudioVolumeRef.current;
-              const alreadyUnlocked = (() => {
+               const alreadyUnlocked = (() => {
                 try { return sessionStorage.getItem('tv-audio-unlocked') === '1'; } catch { return false; }
               })();
               // Set baseline volume so unMute() won't spike to default 100.
               e.target.setVolume(vol);
               e.target.mute();
               e.target.playVideo();
-              if (alreadyUnlocked) {
+               if (isScheduleMode || alreadyUnlocked) {
                 // User has tapped earlier (or refreshed within session).
                 // Browser autoplay quota is granted — unmute under our control.
                 e.target.unMute();
@@ -1390,9 +1411,9 @@ export function TVDisplay({
             // and the user has already authorized audio, force playVideo()
             // again. Browser autoplay quota is granted for the whole session
             // after the first user gesture, so this will succeed.
-            const isUnlocked = (() => {
+             const isUnlocked = isScheduleMode || (() => {
               try { return sessionStorage.getItem('tv-audio-unlocked') === '1'; } catch { return false; }
-            })();
+             })();
             if (isUnlocked && (e.data === -1 || e.data === 5 || e.data === 2 || e.data === 0) && ytAudioPlayerRef.current) {
               setTimeout(() => {
                 try {
@@ -1411,9 +1432,9 @@ export function TVDisplay({
               // Only attempt unMute if user has already authorized audio.
               // Otherwise stay muted; the click handler will unmute under
               // a fresh user gesture.
-              const alreadyUnlocked = (() => {
+             const alreadyUnlocked = isScheduleMode || (() => {
                 try { return sessionStorage.getItem('tv-audio-unlocked') === '1'; } catch { return false; }
-              })();
+             })();
               if (!alreadyUnlocked) {
                 console.log('🔊 [YT Audio] PLAYING (muted) - waiting for user tap');
                 return;
@@ -1477,9 +1498,9 @@ export function TVDisplay({
       if (cancelled) return;
       const player = ytAudioPlayerRef.current;
       if (!player || !ytAudioReadyRef.current) return;
-      const isUnlocked = (() => {
+       const isUnlocked = isScheduleMode || (() => {
         try { return sessionStorage.getItem('tv-audio-unlocked') === '1'; } catch { return false; }
-      })();
+       })();
       if (!isUnlocked) return;
       try {
         const state = typeof player.getPlayerState === 'function' ? player.getPlayerState() : null;
@@ -1571,7 +1592,11 @@ export function TVDisplay({
   const getYouTubeEmbedUrl = (url: string): string => {
     const videoId = getYouTubeVideoId(url);
     if (!videoId) return url;
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}`;
+    // Scheduled YouTube media is intended to play with audio automatically.
+    // Current-media mode keeps the muted autoplay fallback for browser policy
+    // compatibility.
+    const mute = isScheduleMode ? 0 : 1;
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=${mute}&loop=1&playlist=${videoId}`;
   };
 
   const getYouTubeAudioEmbedUrl = (url: string): string => {

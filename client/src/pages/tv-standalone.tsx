@@ -519,6 +519,14 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
   const enterFullscreen = async () => {
     try {
       await audioSystem.unlock();
+      // Starting the TV display is the user gesture needed by Smart TV/Chrome
+      // autoplay policies. Schedule mode should not require a second audio
+      // button after fullscreen opens.
+      if (settings.mediaScheduleMode === 'schedule') {
+        try {
+          sessionStorage.setItem('tv-audio-unlocked', '1');
+        } catch {}
+      }
       const el = document.documentElement as any;
       if (el.requestFullscreen) {
         await el.requestFullscreen();
