@@ -4,6 +4,10 @@
 import type { SoundModeType, PresetSoundKeyType } from "@shared/schema";
 import { getTtsName } from "@/lib/name-utils";
 
+// Queue announcements must remain at full playback volume so the caller's
+// voice is clear even when the notification/media volume is configured lower.
+const TTS_PLAYBACK_VOLUME = 100;
+
 // Import preset audio files via @assets
 // Original 5 files
 import notificationSound from "@assets/notification-sound-3-262896_1759056866786.mp3";
@@ -557,15 +561,15 @@ export class AudioSystem {
       if (lang === 'both') {
         const msText = this.buildTtsText(callInfo, 'ms-MY');
         const msAudio = await this.synthesizeFromServer(msText, 'ms-MY');
-        await this.playBase64Audio(msAudio, settings.volume);
+        await this.playBase64Audio(msAudio, TTS_PLAYBACK_VOLUME);
         await new Promise(r => setTimeout(r, 600));
         const enText = this.buildTtsText(callInfo, 'en-US');
         const enAudio = await this.synthesizeFromServer(enText, 'en-US');
-        await this.playBase64Audio(enAudio, settings.volume);
+        await this.playBase64Audio(enAudio, TTS_PLAYBACK_VOLUME);
       } else {
         const text = this.buildTtsText(callInfo, lang);
         const audio = await this.synthesizeFromServer(text, lang);
-        await this.playBase64Audio(audio, settings.volume);
+        await this.playBase64Audio(audio, TTS_PLAYBACK_VOLUME);
       }
     } catch (error) {
       console.error('TTS playback error:', error);
@@ -592,7 +596,7 @@ export class AudioSystem {
           const ttsData = await ttsPromise;
           if (ttsData) {
             for (const audio of ttsData) {
-              await this.playBase64Audio(audio.content, item.settings.volume);
+              await this.playBase64Audio(audio.content, TTS_PLAYBACK_VOLUME);
               if (ttsData.indexOf(audio) < ttsData.length - 1) {
                 await new Promise(r => setTimeout(r, 600));
               }
