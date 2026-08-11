@@ -1398,6 +1398,34 @@ export default function Settings() {
                   </div>
                 </div>
 
+                 {(scheduleForm.mediaType === "youtube" || scheduleForm.mediaType === "combine") && (
+                   <div className="space-y-2 rounded-md border bg-background/60 p-3">
+                     <Label htmlFor="scheduled-youtube-volume">
+                       Scheduled YouTube Volume: {currentSettings.youtubeAudioVolume}%
+                     </Label>
+                     <div className="flex items-center gap-3">
+                       <Volume2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                       <input
+                         id="scheduled-youtube-volume"
+                         type="range"
+                         min="0"
+                         max="100"
+                         step="5"
+                         value={currentSettings.youtubeAudioVolume}
+                         onChange={(event) => updateDisplaySetting('youtubeAudioVolume', Number(event.target.value))}
+                         className="flex-1 h-2 rounded-lg appearance-none cursor-pointer accent-primary"
+                         data-testid="input-scheduled-youtube-volume"
+                       />
+                       <span className="text-sm text-muted-foreground w-10 text-right">
+                         {currentSettings.youtubeAudioVolume}%
+                       </span>
+                     </div>
+                     <p className="text-xs text-muted-foreground">
+                       Controls YouTube volume for scheduled videos and background audio. Queue announcements will temporarily lower it while a call is playing.
+                     </p>
+                   </div>
+                 )}
+
                 <div className="space-y-2">
                   <Label>Active days</Label>
                   <div className="flex flex-wrap gap-2">
