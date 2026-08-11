@@ -1281,7 +1281,7 @@ export default function Settings() {
                     />
                   </div>
 
-                  {currentSettings.dashboardMediaType === "combine" && (
+                  {(currentSettings.dashboardMediaType === "youtube" || currentSettings.dashboardMediaType === "combine") && (
                     <div className="space-y-2">
                       <Label>YouTube Audio Volume: {currentSettings.youtubeAudioVolume}%</Label>
                       <div className="flex items-center gap-3">
@@ -1299,7 +1299,7 @@ export default function Settings() {
                         <span className="text-sm text-muted-foreground w-10 text-right">{currentSettings.youtubeAudioVolume}%</span>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Audio will auto-play when TV display is started. No manual unmute needed.
+                        Applies to YouTube Video and Combine background audio. Queue announcements will temporarily lower it while a call is playing.
                       </p>
                     </div>
                   )}

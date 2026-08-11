@@ -130,9 +130,10 @@ async function getDisplayMediaForUser(userId: string, now: Date = new Date()) {
   }
 
   const lightweightMedia = allMedia.map(({ data, ...rest }) => rest);
-  const includeYoutubeAudio = schedule
-    ? dashboardMediaType === "combine"
-    : dashboardMediaType === "combine" || dashboardMediaType === "own";
+  // Keep current-media and scheduled-media behavior identical:
+  // YouTube audio is only an explicit part of the Combine mode. Upload
+  // Images/own mode must not inherit a previously saved YouTube URL.
+  const includeYoutubeAudio = dashboardMediaType === "combine";
   if (includeYoutubeAudio && youtubeUrl) {
     lightweightMedia.push({
       id: "youtube-audio",
