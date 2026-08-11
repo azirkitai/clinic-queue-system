@@ -8,6 +8,7 @@ import { CLINIC_LOGO } from "@/lib/clinic-logo";
 import { audioSystem } from "@/lib/audio-system";
 import type { AudioSettings } from "@/lib/audio-system";
 import { getDisplayName } from "@/lib/name-utils";
+import prayerTimeLogo from "@assets/photo_(2)_1786425346281.png";
 
 const IsolatedClock = memo(function IsolatedClock() {
   const [now, setNow] = useState(new Date());
@@ -1998,9 +1999,13 @@ export function TVDisplay({
             {/* Compact Prayer Times block (right of clock, single row) */}
             {showPrayerTimes && (
               <div className="flex items-center gap-4" data-testid="prayer-times-inline">
-                <div className="text-center leading-tight">
-                  <span style={{ color: '#b45309', fontSize: '36px' }}>🕌</span>
-                  <div className="font-bold" style={{ color: '#111827', fontSize: '20px' }}>PRAYER<br />TIME</div>
+                <div className="flex h-24 w-28 shrink-0 items-center justify-center">
+                  <img
+                    src={prayerTimeLogo}
+                    alt="Waktunya Solat"
+                    className="h-full w-full object-contain"
+                    data-testid="prayer-time-logo"
+                  />
                 </div>
 
                 {prayerTimesLoading && (
