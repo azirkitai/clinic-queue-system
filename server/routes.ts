@@ -2477,12 +2477,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const ownedMedia = await storage.getMedia(req.session.userId as string);
       const ownedIds = new Set(ownedMedia.map(media => media.id));
-      if (payload.mediaIds.some(id => !ownedIds.has(id))) {
-        return res.status(400).json({ error: "One or more selected media files are invalid" });
+      const validMediaIds = payload.mediaIds.filter(id => ownedIds.has(id));
+      if ((payload.mediaType === "own" || payload.mediaType === "combine") && validMediaIds.length === 0) {
+        return res.status(400).json({ error: "Select at least one uploaded image" });
       }
 
       const schedule = await storage.createMediaSchedule({
         ...payload,
+        mediaIds: validMediaIds,
         userId: req.session.userId as string,
       });
       if (globalIo) {
@@ -2508,16 +2510,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (parsed.data.mediaType && (parsed.data.mediaType === "youtube" || parsed.data.mediaType === "combine") && !parsed.data.youtubeUrl) {
         return res.status(400).json({ error: "YouTube URL is required for this media type" });
       }
+      let normalizedData = parsed.data;
       if (parsed.data.mediaIds) {
         const ownedMedia = await storage.getMedia(req.session.userId as string);
         const ownedIds = new Set(ownedMedia.map(media => media.id));
-        if (parsed.data.mediaIds.some(id => !ownedIds.has(id))) {
-          return res.status(400).json({ error: "One or more selected media files are invalid" });
+        const validMediaIds = parsed.data.mediaIds.filter(id => ownedIds.has(id));
+        if (
+          parsed.data.mediaType &&
+          (parsed.data.mediaType === "own" || parsed.data.mediaType === "combine") &&
+          validMediaIds.length === 0
+        ) {
+          return res.status(400).json({ error: "Select at least one uploaded image" });
         }
+        normalizedData = { ...parsed.data, mediaIds: validMediaIds };
       }
       const schedule = await storage.updateMediaSchedule(
         req.params.id,
-        parsed.data,
+        normalizedData,
         req.session.userId as string,
       );
       if (!schedule) return res.status(404).json({ error: "Schedule not found" });

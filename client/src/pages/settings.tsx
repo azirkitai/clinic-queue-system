@@ -925,13 +925,17 @@ export default function Settings() {
 
   const scheduleMutation = useMutation({
     mutationFn: async (form: MediaScheduleForm) => {
+      // A schedule can outlive one of its uploaded images. Do not resend
+      // stale IDs when an existing schedule is edited and a new image is
+      // added; the server will validate the remaining IDs.
+      const availableMediaIds = new Set(mediaFiles.map((media) => String(media.id)));
       const payload = {
         name: form.name.trim(),
         startTime: form.startTime,
         endTime: form.endTime,
         days: form.days,
         mediaType: form.mediaType,
-        mediaIds: form.mediaIds,
+        mediaIds: form.mediaIds.filter((id) => availableMediaIds.has(String(id))),
         youtubeUrl: form.youtubeUrl.trim() || null,
       };
       return apiRequest(form.id ? 'PATCH' : 'POST', form.id ? `/api/media-schedules/${form.id}` : '/api/media-schedules', payload);
@@ -997,11 +1001,16 @@ export default function Settings() {
       toast({ title: "YouTube URL is required", variant: "destructive" });
       return;
     }
-    if ((scheduleForm.mediaType === "own" || scheduleForm.mediaType === "combine") && scheduleForm.mediaIds.length === 0) {
+    const availableMediaIds = new Set(mediaFiles.map((media) => String(media.id)));
+    const validSelectedMediaIds = scheduleForm.mediaIds.filter((id) => availableMediaIds.has(String(id)));
+    if ((scheduleForm.mediaType === "own" || scheduleForm.mediaType === "combine") && validSelectedMediaIds.length === 0) {
       toast({ title: "Select media first", description: "Select at least one image for this schedule.", variant: "destructive" });
       return;
     }
-    scheduleMutation.mutate(scheduleForm);
+    scheduleMutation.mutate({
+      ...scheduleForm,
+      mediaIds: validSelectedMediaIds,
+    });
   };
 
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
