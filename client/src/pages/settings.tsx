@@ -411,7 +411,13 @@ export default function Settings() {
         dashboardMediaType: settingsObj.dashboardMediaType || 'own',
         mediaScheduleMode: settingsObj.mediaScheduleMode === 'schedule' ? 'schedule' : 'current',
         youtubeUrl: settingsObj.youtubeUrl || '',
-        youtubeAudioVolume: Number(settingsObj.youtubeAudioVolume) || 50,
+        // Preserve an intentional 0% volume; `|| 50` would turn it back into
+        // 50% after refresh and make schedule/current mode behave differently.
+        youtubeAudioVolume: settingsObj.youtubeAudioVolume !== undefined &&
+          settingsObj.youtubeAudioVolume !== null &&
+          settingsObj.youtubeAudioVolume !== ''
+          ? Math.max(0, Math.min(100, Number(settingsObj.youtubeAudioVolume)))
+          : 50,
         theme: settingsObj.theme || 'blue',
         showPrayerTimes: settingsObj.showPrayerTimes === 'true',
         showWeather: settingsObj.showWeather === 'true',
