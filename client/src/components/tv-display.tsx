@@ -916,9 +916,11 @@ export function TVDisplay({
   const fadeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const ytAudioIframeRef = useRef<HTMLIFrameElement | null>(null);
   const ytAudioContainerRef = useRef<HTMLDivElement | null>(null);
+  const ytVideoContainerRef = useRef<HTMLDivElement | null>(null);
   const ytAudioPlayerRef = useRef<any>(null);
   const ytAudioReadyRef = useRef(false);
   const ytAudioDuckedRef = useRef(false);
+  const ytDuckingCountRef = useRef(0);
   const ytAudioVolumeRef = useRef(50);
   const ytAudioOriginalSrcRef = useRef<string>('');
 
@@ -1084,20 +1086,29 @@ export function TVDisplay({
 
       if (!disableAudio && (audioSettings.enableSound || audioSettings.ttsEnabled)) {
         const player = ytAudioPlayerRef.current;
+        ytDuckingCountRef.current += 1;
+        ytAudioDuckedRef.current = true;
         if (isFullscreen && player && ytAudioReadyRef.current) {
-          ytAudioDuckedRef.current = true;
           try { player.setVolume(0); } catch {}
           console.log('🔇 YouTube audio ducked for calling sequence');
         }
 
         const restoreAudio = () => {
-          ytAudioDuckedRef.current = false;
+          ytDuckingCountRef.current = Math.max(0, ytDuckingCountRef.current - 1);
+          ytAudioDuckedRef.current = ytDuckingCountRef.current > 0;
           const playerNow = ytAudioPlayerRef.current;
           if (isFullscreen && playerNow && ytAudioReadyRef.current) {
             try {
-              playerNow.unMute();
-              playerNow.setVolume(youtubeAudioVolume);
-              console.log('🔊 YouTube audio restored, volume:', youtubeAudioVolume);
+              const unlocked = isScheduleMode || audioUnlocked || (() => {
+                try { return sessionStorage.getItem('tv-audio-unlocked') === '1'; } catch { return false; }
+              })();
+              if (unlocked && !ytAudioDuckedRef.current) {
+                playerNow.unMute();
+                playerNow.setVolume(ytAudioVolumeRef.current);
+                console.log('🔊 YouTube audio restored, volume:', ytAudioVolumeRef.current);
+              } else {
+                playerNow.mute();
+              }
             } catch {}
           }
         };
@@ -1190,6 +1201,15 @@ export function TVDisplay({
 
   const youtubeAudioItemEarly = mediaItems.find(m => m.type === 'youtube-audio');
   const visibleMediaItems = mediaItems.filter(m => m.type !== 'youtube-audio');
+  const mediaSignature = mediaItems.map(item => `${item.type}:${item.url}`).join('|');
+  const currentMedia = visibleMediaItems.length > 0
+    ? visibleMediaItems[currentMediaIndex % visibleMediaItems.length]
+    : null;
+  // A schedule may either play YouTube as hidden audio alongside an image, or
+  // as the visible media itself. Both cases must use the same controllable
+  // YouTube player so calling audio can duck the actual source.
+  const youtubePlaybackItem = youtubeAudioItemEarly
+    || (currentMedia?.type === 'youtube' ? currentMedia : undefined);
 
   const [audioUnlocked, setAudioUnlocked] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true;
@@ -1236,7 +1256,7 @@ export function TVDisplay({
     setAudioUnlocked(true);
   };
 
-  const showAudioGate = isFullscreen && !!youtubeAudioItemEarly && (
+  const showAudioGate = isFullscreen && !!youtubePlaybackItem && (
     (!isScheduleMode && !audioUnlocked) || scheduleAudioBlocked
   );
 
@@ -1288,12 +1308,12 @@ export function TVDisplay({
 
   let audioDiagnostic: string | null = null;
   if (isFullscreen) {
-    if (!youtubeAudioItemEarly) {
+    if (!youtubePlaybackItem) {
       audioDiagnostic = 'AUDIO: NO URL (settings)';
     } else {
-      const vid = extractYtId(youtubeAudioItemEarly.url);
+      const vid = extractYtId(youtubePlaybackItem.url);
       if (!vid) {
-        audioDiagnostic = `AUDIO: BAD URL (${(youtubeAudioItemEarly.url || '').slice(0, 30)})`;
+        audioDiagnostic = `AUDIO: BAD URL (${(youtubePlaybackItem.url || '').slice(0, 30)})`;
       } else if (youtubeAudioVolume === 0) {
         audioDiagnostic = 'AUDIO: VOL 0%';
       } else if (!audioUnlocked) {
@@ -1341,8 +1361,8 @@ export function TVDisplay({
   // loaded when the user taps the gate, and we can call unMute() synchronously
   // inside the click handler (preserving the user gesture context).
   useEffect(() => {
-    if (!isFullscreen || !youtubeAudioItemEarly) return;
-    const videoId = getYouTubeVideoId(youtubeAudioItemEarly.url);
+    if (!isFullscreen || !youtubePlaybackItem) return;
+    const videoId = getYouTubeVideoId(youtubePlaybackItem.url);
     if (!videoId) return;
 
     let cancelled = false;
@@ -1351,7 +1371,10 @@ export function TVDisplay({
     const createPlayer = () => {
       if (cancelled) return;
       const YT = (window as any).YT;
-      if (!YT || !YT.Player || !ytAudioContainerRef.current) return;
+      const targetContainer = youtubeAudioItemEarly
+        ? ytAudioContainerRef.current
+        : ytVideoContainerRef.current;
+      if (!YT || !YT.Player || !targetContainer) return;
 
       // Destroy old player if any
       if (ytAudioPlayerRef.current) {
@@ -1361,9 +1384,13 @@ export function TVDisplay({
       ytAudioReadyRef.current = false;
 
       // Create a target div for YT.Player
-      ytAudioContainerRef.current.innerHTML = '<div id="yt-audio-player-target"></div>';
+      targetContainer.innerHTML = '<div id="yt-audio-player-target"></div>';
+      const target = targetContainer.querySelector('#yt-audio-player-target') as HTMLElement | null;
+      if (!target) return;
+      target.style.width = '100%';
+      target.style.height = '100%';
 
-      ytAudioPlayerRef.current = new YT.Player('yt-audio-player-target', {
+      ytAudioPlayerRef.current = new YT.Player(target, {
         videoId,
         playerVars: {
           autoplay: 1,
@@ -1386,7 +1413,7 @@ export function TVDisplay({
               e.target.setVolume(vol);
               e.target.mute();
               e.target.playVideo();
-               if (isScheduleMode || alreadyUnlocked) {
+                if ((isScheduleMode || alreadyUnlocked) && !ytAudioDuckedRef.current) {
                 // User has tapped earlier (or refreshed within session).
                 // Browser autoplay quota is granted — unmute under our control.
                 e.target.unMute();
@@ -1435,7 +1462,7 @@ export function TVDisplay({
              const isUnlocked = isScheduleMode || (() => {
               try { return sessionStorage.getItem('tv-audio-unlocked') === '1'; } catch { return false; }
              })();
-            if (isUnlocked && (e.data === -1 || e.data === 5 || e.data === 2 || e.data === 0) && ytAudioPlayerRef.current) {
+             if (isUnlocked && !ytAudioDuckedRef.current && (e.data === -1 || e.data === 5 || e.data === 2 || e.data === 0) && ytAudioPlayerRef.current) {
               setTimeout(() => {
                 try {
                   if (!ytAudioPlayerRef.current) return;
@@ -1460,10 +1487,12 @@ export function TVDisplay({
                 console.log('🔊 [YT Audio] PLAYING (muted) - waiting for user tap');
                 return;
               }
-              try {
+               try {
                 // Baseline already set in onReady, so unMute restores to `vol` not 100
                 ytAudioPlayerRef.current.setVolume(vol);
-                ytAudioPlayerRef.current.unMute();
+                 if (!ytAudioDuckedRef.current) {
+                   ytAudioPlayerRef.current.unMute();
+                 }
                 ytAudioPlayerRef.current.setVolume(vol);
                 console.log('🔊 [YT Audio] PLAYING - volume forced to:', vol);
 
@@ -1528,9 +1557,14 @@ export function TVDisplay({
         // 1=PLAYING, 3=BUFFERING are healthy
         if (state === 1 || state === 3) return;
         // Stuck — kick it
-        player.playVideo();
-        player.unMute();
-        player.setVolume(ytAudioVolumeRef.current);
+         player.playVideo();
+         if (!ytAudioDuckedRef.current) {
+           player.unMute();
+           player.setVolume(ytAudioVolumeRef.current);
+         } else {
+           player.mute();
+           player.setVolume(0);
+         }
         console.log('🔊 [YT Audio] Watchdog kicked stuck player from state', state);
       } catch {}
     }, 1500);
@@ -1544,8 +1578,12 @@ export function TVDisplay({
         ytAudioPlayerRef.current = null;
       }
       ytAudioReadyRef.current = false;
+      const targetContainer = youtubeAudioItemEarly
+        ? ytAudioContainerRef.current
+        : ytVideoContainerRef.current;
+      if (targetContainer) targetContainer.innerHTML = '';
     };
-  }, [isFullscreen, youtubeAudioItemEarly?.url, isScheduleMode]);
+  }, [isFullscreen, youtubePlaybackItem?.url, youtubeAudioItemEarly?.url, isScheduleMode]);
 
   // Keep latest volume in a ref so closures (onReady/onStateChange/setTimeout) always read fresh value
   useEffect(() => {
@@ -1561,7 +1599,11 @@ export function TVDisplay({
     }
     const vol = ytAudioDuckedRef.current ? 0 : youtubeAudioVolume;
     try {
-      ytAudioPlayerRef.current.unMute();
+      if (ytAudioDuckedRef.current) {
+        ytAudioPlayerRef.current.mute();
+      } else {
+        ytAudioPlayerRef.current.unMute();
+      }
       ytAudioPlayerRef.current.setVolume(vol);
       console.log('🔊 [YT Audio] Volume updated to:', vol);
     } catch (err) {
@@ -1569,29 +1611,34 @@ export function TVDisplay({
     }
   }, [youtubeAudioVolume, audioUnlocked, isScheduleMode]);
 
+  // Reset the visual transition whenever the server switches media sets.
+  // Without this, a slot change that happens during the 500ms fade can leave
+  // the new YouTube player running behind an invisible white layer.
+  useEffect(() => {
+    setCurrentMediaIndex(0);
+    setIsMediaVisible(true);
+    if (mediaTimerRef.current) clearInterval(mediaTimerRef.current);
+    if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+  }, [mediaSignature]);
+
   // Media slideshow management 
   useEffect(() => {
-    if (visibleMediaItems.length > 1) {
-      mediaTimerRef.current = setInterval(() => {
-        setIsMediaVisible(false);
-        
-        fadeTimerRef.current = setTimeout(() => {
-          setCurrentMediaIndex((prev) => (prev + 1) % visibleMediaItems.length);
-          setIsMediaVisible(true);
-        }, 500);
-        
-      }, 10000);
-      
-      return () => {
-        if (mediaTimerRef.current) {
-          clearInterval(mediaTimerRef.current);
-        }
-        if (fadeTimerRef.current) {
-          clearTimeout(fadeTimerRef.current);
-        }
-      };
-    }
-  }, [visibleMediaItems.length]);
+    if (visibleMediaItems.length <= 1) return;
+
+    mediaTimerRef.current = setInterval(() => {
+      setIsMediaVisible(false);
+
+      fadeTimerRef.current = setTimeout(() => {
+        setCurrentMediaIndex((prev) => (prev + 1) % visibleMediaItems.length);
+        setIsMediaVisible(true);
+      }, 500);
+    }, 10000);
+
+    return () => {
+      if (mediaTimerRef.current) clearInterval(mediaTimerRef.current);
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+    };
+  }, [mediaSignature, visibleMediaItems.length]);
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -1639,8 +1686,6 @@ export function TVDisplay({
     }
     return `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
   };
-
-  const currentMedia = visibleMediaItems.length > 0 ? visibleMediaItems[currentMediaIndex % visibleMediaItems.length] : null;
 
   // Fixed 1920×1080 stage styling (only for fullscreen)
   const stageStyle = isFullscreen ? {
@@ -1706,12 +1751,10 @@ export function TVDisplay({
               }}
             >
               {isYouTubeUrl(currentMedia.url) ? (
-                <iframe
-                  src={getYouTubeEmbedUrl(currentMedia.url)}
+                <div
+                  ref={ytVideoContainerRef}
                   className="w-full h-full"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
+                  style={{ backgroundColor: '#000000' }}
                   data-testid="youtube-content"
                 />
               ) : currentMedia.type === "image" ? (
