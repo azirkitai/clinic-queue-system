@@ -3,3 +3,4 @@
 - [TV browser compatibility](tv-browser-compatibility.md) — separate bundle parsing, audio, fullscreen, WebSocket, and responsive API compatibility instead of treating them as one failure.
 - [Media scheduling](media-scheduling.md) — recurring media slots use Malaysia time, scheduled media overrides defaults, and no active slot falls back to normal media settings.
 - [Deployment dependency firewall](deployment-dependency-firewall.md) — keep cloud storage dependencies current when the package firewall blocks vulnerable transitive XML parsers.
+- [Production hosting boundary](production-hosting-boundary.md) — the live custom domain runs on Render, so Replit deployment logs do not show its request traffic.
