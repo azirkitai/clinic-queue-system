@@ -294,7 +294,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     queryKey: [`/api/tv/${token}/patients`],
     enabled: !!clinicInfo,
     staleTime: 30000,
-    refetchInterval: 15000,
+    refetchInterval: 60000,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
   });
