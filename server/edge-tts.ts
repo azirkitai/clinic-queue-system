@@ -1,6 +1,6 @@
 import express from "express";
 import { EdgeTTS } from "node-edge-tts";
-import { CHROMIUM_FULL_VERSION, generateSecMsGecToken, TRUSTED_CLIENT_TOKEN } from "node-edge-tts/dist/drm";
+import { CHROMIUM_FULL_VERSION, generateSecMsGecToken, TRUSTED_CLIENT_TOKEN } from "node-edge-tts/dist/drm.js";
 import { WebSocket } from "ws";
 import fs from "fs";
 import path from "path";
