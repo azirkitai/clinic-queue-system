@@ -202,7 +202,7 @@ export default function Dashboard() {
 
   // ✅ Use lightweight TV patients endpoint (85% bandwidth reduction: ~70KB → ~10KB!)
   // Replaces heavy /api/dashboard/current-call + /api/dashboard/history endpoints
-  const { currentPatient, queueWaiting, queueHistory, isLoading: tvPatientsLoading } = useTvPatients();
+  const { currentPatient, queueWaiting, queueHistory, isLoading: tvPatientsLoading } = useTvPatients(wsConnected);
 
   // Fetch windows data (WebSocket updates automatically, polling as fallback)
   const { data: windows = [] } = useQuery<any[]>({

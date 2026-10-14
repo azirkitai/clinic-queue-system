@@ -32,11 +32,13 @@ interface UseTvPatientsResult {
   error: Error | null;
 }
 
-export function useTvPatients(): UseTvPatientsResult {
+export function useTvPatients(realtimeConnected = false): UseTvPatientsResult {
   const { data: tvPatients = [], isLoading, error } = useQuery<TvQueueItem[]>({
     queryKey: ['/api/patients/tv'],
     staleTime: 120000,
-    refetchInterval: 60000,
+    // WebSocket events invalidate this query immediately. Poll only while the
+    // socket is unavailable; reconnect handlers refetch persisted state.
+    refetchInterval: realtimeConnected ? false : 60000,
     refetchOnReconnect: true,
     refetchOnWindowFocus: false,
     refetchOnMount: false,

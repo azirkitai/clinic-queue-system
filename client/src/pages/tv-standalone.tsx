@@ -85,6 +85,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
   const [error, setError] = useState<string | null>(null);
   const [browserCompatibility] = useState<TvBrowserCompatibility>(() => inspectTvBrowser());
   const queryClient = useQueryClient();
+  const [socketConnected, setSocketConnected] = useState(false);
 
   useEffect(() => {
     fetch(`/api/tv/${token}`)
@@ -189,6 +190,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     socketRef.current = socket;
 
     socket.on('connect', () => {
+      setSocketConnected(true);
       console.log('[TV WS] Connected:', socket.id);
       socket.emit('tv:join', { token });
       queryClient.invalidateQueries({ queryKey: [`/api/tv/${token}/patients`] });
@@ -256,6 +258,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     });
 
     socket.on('disconnect', (reason) => {
+      setSocketConnected(false);
       console.warn('[TV WS] Disconnected:', reason);
     });
 
@@ -287,6 +290,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
       manager.off('reconnect_error');
       socket.disconnect();
       socketRef.current = null;
+      setSocketConnected(false);
     };
   }, [clinicInfo, token, queryClient]);
 
@@ -294,7 +298,7 @@ export default function TvStandalone({ token }: TvStandaloneProps) {
     queryKey: [`/api/tv/${token}/patients`],
     enabled: !!clinicInfo,
     staleTime: 30000,
-    refetchInterval: 60000,
+    refetchInterval: socketConnected ? false : 60000,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
   });
