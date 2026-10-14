@@ -22,20 +22,4 @@ pool.on('error', (err) => {
   console.error('[DB POOL] Unexpected error on idle client:', err.message);
 });
 
-let keepaliveInterval: ReturnType<typeof setInterval> | null = null;
-
-export function startDatabaseKeepalive() {
-  if (keepaliveInterval) return;
-  
-  keepaliveInterval = setInterval(async () => {
-    try {
-      await pool.query('SELECT 1');
-    } catch (err: any) {
-      console.error('[DB KEEPALIVE] Ping failed:', err.message);
-    }
-  }, 4 * 60 * 1000);
-  
-  console.log('[DB KEEPALIVE] Started (every 4 minutes)');
-}
-
 export const db = drizzle({ client: pool, schema });

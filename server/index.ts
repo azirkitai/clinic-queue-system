@@ -7,7 +7,6 @@ import { Server } from "socket.io";
 import { registerRoutes, setGlobalIo } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupWebSocket } from "./websocket";
-import { startDatabaseKeepalive } from "./db";
 import { startEodScheduler } from "./eod-scheduler";
 import path from "path";
 import fs from "fs";
@@ -213,8 +212,6 @@ app.use((req, res, next) => {
   
   await registerRoutes(app);
   
-  startDatabaseKeepalive();
-
   // AUTO-CLEANUP: Delete old completed patients on startup to reduce database size
   // This runs once when server starts to ensure old data doesn't accumulate
   try {
