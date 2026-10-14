@@ -573,6 +573,7 @@ export class AudioSystem {
       }
     } catch (error) {
       console.error('TTS playback error:', error);
+      throw error;
     }
   }
 

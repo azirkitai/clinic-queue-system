@@ -1,10 +1,64 @@
 import express from "express";
 import { EdgeTTS } from "node-edge-tts";
+import { CHROMIUM_FULL_VERSION, generateSecMsGecToken, TRUSTED_CLIENT_TOKEN } from "node-edge-tts/dist/drm";
+import { WebSocket } from "ws";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 
 const router = express.Router();
+const TTS_OUTPUT_FORMAT = "audio-24khz-96kbitrate-mono-mp3";
+const TTS_ORIGIN = "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold";
+
+// Microsoft moved Edge Read Aloud synthesis to api.msedgeservices.com in
+// October 2026. node-edge-tts 1.2.10 still connects to the old Bing host,
+// which now rejects synthesis handshakes with HTTP 403.
+class CompatibleEdgeTTS extends EdgeTTS {
+  override async _connectWebSocket(): Promise<WebSocket> {
+    const host = "api.msedgeservices.com";
+    const params = new URLSearchParams({
+      "Ocp-Apim-Subscription-Key": TRUSTED_CLIENT_TOKEN,
+      "Sec-MS-GEC": generateSecMsGecToken(),
+      "Sec-MS-GEC-Version": `1-${CHROMIUM_FULL_VERSION}`,
+    });
+    const socket = new WebSocket(
+      `wss://${host}/tts/cognitiveservices/websocket/v1?${params.toString()}`,
+      {
+        host,
+        origin: TTS_ORIGIN,
+        headers: {
+          Pragma: "no-cache",
+          "Cache-Control": "no-cache",
+          "User-Agent": `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${CHROMIUM_FULL_VERSION.split(".")[0]}.0.0.0 Safari/537.36 Edg/${CHROMIUM_FULL_VERSION.split(".")[0]}.0.0.0`,
+          "Accept-Encoding": "gzip, deflate, br, zstd",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+      },
+    );
+
+    return new Promise((resolve, reject) => {
+      socket.once("open", () => {
+        socket.send(`Content-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n
+          {
+            "context": {
+              "synthesis": {
+                "audio": {
+                  "metadataoptions": {
+                    "sentenceBoundaryEnabled": "false",
+                    "wordBoundaryEnabled": "true"
+                  },
+                  "outputFormat": "${TTS_OUTPUT_FORMAT}"
+                }
+              }
+            }
+          }
+        `);
+        resolve(socket);
+      });
+      socket.once("error", reject);
+    });
+  }
+}
 
 const VOICE_MAP: Record<string, { voice: string; lang: string }> = {
   "ms-MY-FEMALE": { voice: "ms-MY-YasminNeural", lang: "ms-MY" },
@@ -71,10 +125,10 @@ router.post("/synthesize", async (req, res) => {
     const fileId = crypto.randomBytes(8).toString("hex");
     const audioPath = path.join(tmpDir, `${fileId}.mp3`);
 
-    const tts = new EdgeTTS({
+    const tts = new CompatibleEdgeTTS({
       voice: voiceConfig.voice,
       lang: voiceConfig.lang,
-      outputFormat: "audio-24khz-96kbitrate-mono-mp3",
+      outputFormat: TTS_OUTPUT_FORMAT,
       rate: "+0%",
       pitch: "+0Hz",
       timeout: 15000,
