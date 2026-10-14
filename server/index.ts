@@ -23,6 +23,72 @@ process.on('uncaughtException', (err) => {
 
 const app = express();
 
+type BandwidthTotals = { requests: number; bodyBytes: number };
+const bandwidthTotals = new Map<string, BandwidthTotals>();
+
+function bandwidthCategory(path: string): string {
+  if (path === "/api/patients/tv" || /^\/api\/tv\/[^/]+\/patients$/.test(path)) {
+    return "tv-queue";
+  }
+  if (/^\/api\/tv\/[^/]+\/media\/[^/]+\/file$/.test(path)) {
+    return "tv-media-file";
+  }
+  if (path === "/api/tts/synthesize") {
+    return "tts";
+  }
+  if (path.startsWith("/api/tv/")) {
+    return "tv-api-other";
+  }
+  if (path.startsWith("/api/")) {
+    return "api-other";
+  }
+  return "page-or-static";
+}
+
+function responseChunkBytes(chunk: unknown, encoding?: unknown): number {
+  if (typeof chunk === "string") {
+    return Buffer.byteLength(chunk, typeof encoding === "string" ? encoding as BufferEncoding : "utf8");
+  }
+  if (Buffer.isBuffer(chunk) || chunk instanceof Uint8Array) {
+    return chunk.byteLength;
+  }
+  return 0;
+}
+
+// Install before compression so the wrapped response methods count the
+// compressed bytes handed to the underlying HTTP response. Log only route
+// categories and totals; never include URL tokens, query strings, or payloads.
+app.use((req, res, next) => {
+  let bodyBytes = 0;
+  const originalWrite = res.write.bind(res) as (...args: any[]) => any;
+  const originalEnd = res.end.bind(res) as (...args: any[]) => any;
+
+  (res as any).write = (chunk: unknown, ...args: any[]) => {
+    bodyBytes += responseChunkBytes(chunk, args[0]);
+    return originalWrite(chunk, ...args);
+  };
+  (res as any).end = (chunk?: unknown, ...args: any[]) => {
+    bodyBytes += responseChunkBytes(chunk, args[0]);
+    return originalEnd(chunk, ...args);
+  };
+
+  res.on("finish", () => {
+    const key = `${bandwidthCategory(req.path)}:${res.statusCode}`;
+    const totals = bandwidthTotals.get(key) ?? { requests: 0, bodyBytes: 0 };
+    totals.requests += 1;
+    totals.bodyBytes += bodyBytes;
+    bandwidthTotals.set(key, totals);
+  });
+  next();
+});
+
+const bandwidthSummaryTimer = setInterval(() => {
+  if (bandwidthTotals.size === 0) return;
+  console.info("[BANDWIDTH] HTTP response totals (compressed body bytes):", JSON.stringify(Object.fromEntries(bandwidthTotals)));
+  bandwidthTotals.clear();
+}, 5 * 60 * 1000);
+bandwidthSummaryTimer.unref();
+
 // Enable gzip compression for all responses (reduces bandwidth by 70%)
 app.use(compression({
   level: 6, // Balance between speed and compression
